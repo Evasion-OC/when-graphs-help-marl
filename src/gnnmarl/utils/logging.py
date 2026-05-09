@@ -1,8 +1,8 @@
-"""Lightweight CSV logger.
+"""Lightweight CSV logger with a fixed schema.
 
-Each row = one logical event (typically per episode or per training step).
-Header is inferred from the first row passed to `log()`. New keys later
-trigger a header rewrite (rare; we expect a stable schema).
+The schema is supplied at construction time so that heterogeneous rows
+(training rows vs evaluation rows) all map cleanly into one CSV file.
+Missing keys in a row land as empty strings; unknown keys raise.
 """
 from __future__ import annotations
 
@@ -12,31 +12,23 @@ from typing import Any
 
 
 class CSVLogger:
-    def __init__(self, path: str | Path):
+    def __init__(self, path: str | Path, fieldnames: list[str]):
         self.path = Path(path)
         self.path.parent.mkdir(parents=True, exist_ok=True)
-        self._fieldnames: list[str] | None = None
-        self._fh = None
-        self._writer = None
+        self._fieldnames = list(fieldnames)
+        self._fh = open(self.path, "w", newline="")
+        self._writer = csv.DictWriter(self._fh, fieldnames=self._fieldnames)
+        self._writer.writeheader()
+        self._fh.flush()
 
     def log(self, row: dict[str, Any]) -> None:
-        if self._fieldnames is None:
-            self._fieldnames = list(row.keys())
-            self._fh = open(self.path, "w", newline="")
-            self._writer = csv.DictWriter(self._fh, fieldnames=self._fieldnames)
-            self._writer.writeheader()
-        else:
-            # If new keys appear, append them to the header (extend by None for old rows
-            # would require a rewrite; instead, we just add unknown keys silently to
-            # the schema and let DictWriter's `extrasaction='ignore'` drop them).
-            new = [k for k in row.keys() if k not in self._fieldnames]
-            if new:
-                # Re-open with extended fieldnames is expensive; for our workload
-                # the schema is stable so we just ignore new keys.
-                pass
-        assert self._writer is not None
+        unknown = [k for k in row if k not in self._fieldnames]
+        if unknown:
+            raise KeyError(
+                f"CSVLogger row contains keys not in schema: {unknown}. "
+                f"Schema: {self._fieldnames}"
+            )
         self._writer.writerow({k: row.get(k, "") for k in self._fieldnames})
-        assert self._fh is not None
         self._fh.flush()
 
     def close(self) -> None:

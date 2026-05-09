@@ -37,6 +37,7 @@ class Args:
     coordination_graph: str = "full"
     edge_p: float = 0.5
     knn_k: int = 2
+    shape_distance: bool = False
     total_steps: int = 50_000
     warmup_steps: int = 1_000
     batch_size: int = 64
@@ -72,6 +73,7 @@ def main(args: Args) -> Path:
         coordination_graph=args.coordination_graph,
         edge_p=args.edge_p,
         knn_k=args.knn_k,
+        shape_distance=args.shape_distance,
     )
     env = CoordGridEnv(env_cfg, seed=args.seed)
 

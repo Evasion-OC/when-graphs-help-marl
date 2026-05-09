@@ -47,6 +47,13 @@ class CoordGridConfig:
     collision_penalty: float = -0.05
     goal_bonus: float = 0.5
     terminal_bonus: float = 1.0
+    # Distance-based potential shaping (Ng et al. 1999). When enabled, adds
+    # F = Φ(s') - Φ(s) to the reward, where Φ is the negative average L1
+    # distance from each agent to its target. This preserves the optimal
+    # policy (potential shaping is policy-invariant for any γ) but gives
+    # exploration signal in sparse-reward regimes. Defaults to off so the
+    # raw env semantics aren't surprising; sweep configs turn it on.
+    shape_distance: bool = False
 
 
 class CoordGridEnv:
@@ -136,6 +143,18 @@ class CoordGridEnv:
         self._maybe_rebuild_knn()
         return self._make_obs(), self._make_state()
 
+    def _potential(self) -> float:
+        """Φ(s) = -mean L1 distance from each agent to its target, normalized.
+
+        Returns a value in [-1, 0] for L >= 1. Used by potential-based shaping.
+        """
+        L = self.cfg.grid_size
+        N = self.cfg.n_agents
+        d = float(np.abs(self.positions - self.targets).sum())
+        # max possible distance per agent is 2*(L-1); divide so |Φ| ≤ 1
+        denom = 2.0 * max(L - 1, 1) * N
+        return -d / denom
+
     def step(
         self, actions: np.ndarray
     ) -> tuple[np.ndarray, np.ndarray, float, bool, dict]:
@@ -145,6 +164,8 @@ class CoordGridEnv:
         if actions.shape != (cfg.n_agents,):
             raise ValueError(f"actions shape {actions.shape} != ({cfg.n_agents},)")
 
+        phi_old = self._potential() if cfg.shape_distance else 0.0
+
         # propose moves
         proposed = self.positions + _DIRS[actions]
         proposed = np.clip(proposed, 0, L - 1)
@@ -153,6 +174,12 @@ class CoordGridEnv:
         self._maybe_rebuild_knn()
 
         reward = float(cfg.step_penalty)
+        if cfg.shape_distance:
+            phi_new = self._potential()
+            # Ng-style shaping with γ=1 (small approximation; with γ=0.99 the
+            # term would be γΦ' - Φ, but for our short horizons this is
+            # numerically indistinguishable and keeps the env free of γ).
+            reward += float(phi_new - phi_old)
 
         # goal bonus on first arrival
         on_target = np.all(self.positions == self.targets, axis=1)

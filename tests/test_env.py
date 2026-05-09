@@ -74,6 +74,32 @@ def test_n_actions_constant():
     assert N_ACTIONS == 5
 
 
+def test_potential_shaping_pulls_toward_target():
+    """When shape_distance is on, moving closer to target gives positive shaping
+    relative to moving away. Concretely, comparing two episodes with the same
+    seed but different actions, the move-closer one should accumulate a higher
+    return component beyond the step penalty."""
+    cfg_on = CoordGridConfig(
+        grid_size=5,
+        n_agents=2,
+        max_steps=2,
+        shape_distance=True,
+        step_penalty=0.0,
+        collision_penalty=0.0,
+        goal_bonus=0.0,
+        terminal_bonus=0.0,
+    )
+    env = CoordGridEnv(cfg_on, seed=0)
+    env.reset(seed=0)
+    # Place agents far from their targets, then move agent 0 closer.
+    env.positions[:] = np.array([[0, 0], [4, 4]], dtype=np.int32)
+    env.targets[:] = np.array([[4, 0], [0, 4]], dtype=np.int32)
+    # Action 1 = UP (row -1). Closer for agent 1, farther for agent 0.
+    # Use action DOWN for agent 0 (toward target) and STAY for agent 1.
+    _, _, r_closer, _, _ = env.step(np.array([2, 0]))  # DOWN, STAY
+    assert r_closer > 0.0  # only shaping is non-zero, and it should be positive
+
+
 def test_collision_penalty_applied():
     cfg = CoordGridConfig(
         grid_size=5,

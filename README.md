@@ -21,12 +21,27 @@ Active development. See `docs/PHASES.md` for the phase plan.
 
 | Phase | Branch | PR | Status |
 |---|---|---|---|
-| 0 — Experimental harness | `phase-0-harness` | open | **complete (harness only)** |
-| 1 — Pilot results | `phase-1-pilot` | — | next |
-| 2 — Full E1 sweep | `phase-2-e1-full` | — | not started |
+| 0 — Experimental harness | `phase-0-harness` | open | complete |
+| 1 — Pilot results | `phase-1-pilot` | open | **complete** |
+| 2 — Full E1 sweep | `phase-2-e1-full` | — | next |
 | 3 — MPE benchmarks (E2, E3) | `phase-3-mpe` | — | not started |
 | 4 — Depth/structure ablations | `phase-4-ablations` | — | not started |
 | 5 — Paper writeup integration | `phase-5-writeup` | — | not started |
+
+## Phase 1 headline
+
+A 12-run pilot (4 algorithms × 3 seeds × 10k steps on 2 agents / 4×4)
+surfaced two findings that re-shape Phase 2:
+
+1. **IQL and VDN both exhibit peak-then-collapse** on this small coop
+   coordination task — peak ~0.6–0.75 success around episode 150, then
+   monotonic decline to ~0.15 by end of training.
+2. **QMIX and GNN-QMIX with literature-default `embed_dim=32` fail to
+   learn at all** — q_tot diverges (+12 vs VDN's +2), suggesting the
+   monotonic mixer is over-parameterized for this 8-dim global state.
+
+See `docs/PHASE_1_NOTES.md` and `results/pilot/SUMMARY.md` for the full
+breakdown.
 
 ## Quick start
 

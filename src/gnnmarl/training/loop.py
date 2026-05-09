@@ -1,6 +1,7 @@
 """Training loop. Algorithm-agnostic: takes any BaseAgent + env."""
 from __future__ import annotations
 
+from collections import deque
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -26,6 +27,28 @@ class TrainConfig:
     eval_every_episodes: int = 50
     eval_episodes: int = 10
     progress_every_steps: int = 5_000
+    success_window: int = 100  # rolling window for online success-rate display
+
+
+# CSV schema: union of training-row and eval-row fields. We pre-declare it so
+# heterogeneous rows write into one file cleanly.
+LOG_FIELDS = [
+    "step",
+    "episode",
+    "kind",  # 'train' or 'eval'
+    "ep_return",
+    "ep_length",
+    "ep_success",
+    "rolling_success_100",
+    "epsilon",
+    "loss",
+    "q_mean",
+    "q_tot_mean",
+    "eval_return_mean",
+    "eval_return_std",
+    "eval_success_rate",
+    "eval_length_mean",
+]
 
 
 def _epsilon(step: int, cfg: TrainConfig) -> float:
@@ -37,9 +60,7 @@ def _epsilon(step: int, cfg: TrainConfig) -> float:
 
 def evaluate(agent: BaseAgent, env: CoordGridEnv, n_episodes: int, seed: int) -> dict:
     rng = np.random.default_rng(seed)
-    returns = []
-    successes = []
-    lengths = []
+    returns, successes, lengths = [], [], []
     for ep in range(n_episodes):
         obs, _state = env.reset(seed=seed + 1000 + ep)
         ep_ret = 0.0
@@ -80,12 +101,14 @@ def train(
 
     log_path = Path(cfg.log_path)
     log_path.parent.mkdir(parents=True, exist_ok=True)
-    logger = CSVLogger(log_path)
+    logger = CSVLogger(log_path, fieldnames=LOG_FIELDS)
 
     obs, state = env.reset(seed=seed)
     ep_return = 0.0
     ep_len = 0
     ep_count = 0
+    success_window: deque[int] = deque(maxlen=cfg.success_window)
+    metrics: dict = {}
 
     step = 0
     while step < cfg.total_steps:
@@ -104,34 +127,38 @@ def train(
         ):
             batch = buffer.sample(cfg.batch_size)
             metrics = agent.learn(batch, env.graph)
-        else:
-            metrics = {}
 
         if done:
             ep_count += 1
+            success_window.append(int(info.get("success", False)))
+            rolling = sum(success_window) / max(len(success_window), 1)
             row = {
                 "step": step,
                 "episode": ep_count,
+                "kind": "train",
                 "ep_return": ep_return,
                 "ep_length": ep_len,
                 "ep_success": int(info.get("success", False)),
+                "rolling_success_100": rolling,
                 "epsilon": eps,
-                **metrics,
+                "loss": metrics.get("loss", ""),
+                "q_mean": metrics.get("q_mean", ""),
+                "q_tot_mean": metrics.get("q_tot_mean", ""),
             }
             logger.log(row)
+
             if ep_count % cfg.eval_every_episodes == 0:
                 eval_metrics = evaluate(agent, env, cfg.eval_episodes, seed=seed + 9999)
                 logger.log(
                     {
                         "step": step,
                         "episode": ep_count,
-                        "ep_return": "",
-                        "ep_length": "",
-                        "ep_success": "",
+                        "kind": "eval",
                         "epsilon": eps,
                         **eval_metrics,
                     }
                 )
+
             obs, state = env.reset()
             ep_return = 0.0
             ep_len = 0
@@ -139,7 +166,11 @@ def train(
             obs, state = next_obs, next_state
 
         if step % cfg.progress_every_steps == 0:
-            print(f"  step {step}/{cfg.total_steps}  episodes={ep_count}  eps={eps:.2f}")
+            roll = sum(success_window) / max(len(success_window), 1)
+            print(
+                f"  step {step}/{cfg.total_steps}  ep={ep_count}  "
+                f"eps={eps:.2f}  rolling_succ={roll:.2f}"
+            )
 
     logger.close()
     return log_path
