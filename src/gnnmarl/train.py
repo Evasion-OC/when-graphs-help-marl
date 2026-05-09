@@ -16,6 +16,14 @@ from .algos.qmix import QMIX
 from .algos.vdn import VDN
 from .envs.coord_grid import CoordGridConfig, CoordGridEnv
 from .training.loop import TrainConfig, train
+
+# MPE is optional (Phase 3 only). Import lazily so users without mpe2
+# installed can still run coord_grid experiments.
+try:
+    from .envs.mpe_env import MPEConfig, MPEEnv
+    _MPE_AVAILABLE = True
+except ImportError:  # pragma: no cover
+    _MPE_AVAILABLE = False
 from .utils.seeding import pick_device, set_global_seed
 
 ALGO_CLASSES = {
@@ -38,6 +46,8 @@ class Args:
     edge_p: float = 0.5
     knn_k: int = 2
     shape_distance: bool = False
+    # MPE-only knobs (Phase 3). Ignored when --env=coord_grid.
+    mpe_max_cycles: int = 25
     total_steps: int = 50_000
     warmup_steps: int = 1_000
     batch_size: int = 64
@@ -63,22 +73,38 @@ class Args:
 def main(args: Args) -> Path:
     if args.algo not in ALGO_CLASSES:
         raise ValueError(f"Unknown algo: {args.algo}. Choices: {list(ALGO_CLASSES)}")
-    if args.env != "coord_grid":
-        raise ValueError(f"Phase 0 supports env='coord_grid' only; got {args.env!r}")
 
     set_global_seed(args.seed)
     device = pick_device(args.device)
 
-    env_cfg = CoordGridConfig(
-        grid_size=args.grid_size,
-        n_agents=args.n_agents,
-        max_steps=args.max_steps,
-        coordination_graph=args.coordination_graph,
-        edge_p=args.edge_p,
-        knn_k=args.knn_k,
-        shape_distance=args.shape_distance,
-    )
-    env = CoordGridEnv(env_cfg, seed=args.seed)
+    if args.env == "coord_grid":
+        env_cfg = CoordGridConfig(
+            grid_size=args.grid_size,
+            n_agents=args.n_agents,
+            max_steps=args.max_steps,
+            coordination_graph=args.coordination_graph,
+            edge_p=args.edge_p,
+            knn_k=args.knn_k,
+            shape_distance=args.shape_distance,
+        )
+        env = CoordGridEnv(env_cfg, seed=args.seed)
+    elif args.env == "simple_spread":
+        if not _MPE_AVAILABLE:
+            raise RuntimeError(
+                "MPEEnv requires `mpe2`. Install with: pip install mpe2"
+            )
+        mpe_cfg = MPEConfig(
+            name="simple_spread",
+            n_agents=args.n_agents,
+            max_cycles=args.mpe_max_cycles,
+            coordination_graph=args.coordination_graph,
+            seed=args.seed,
+        )
+        env = MPEEnv(mpe_cfg)
+    else:
+        raise ValueError(
+            f"Unknown env: {args.env}. Choices: 'coord_grid', 'simple_spread'."
+        )
 
     algo_cfg = AlgoConfig(
         n_agents=args.n_agents,
@@ -111,10 +137,9 @@ def main(args: Args) -> Path:
     )
 
     print(
-        f"[{args.algo}] device={device} "
-        f"agents={args.n_agents} grid={args.grid_size}x{args.grid_size} "
-        f"graph={args.coordination_graph} (diam={env.graph_diameter}) "
-        f"steps={args.total_steps} seed={args.seed}"
+        f"[{args.algo}] device={device} env={args.env} "
+        f"agents={env.cfg.n_agents} graph={args.coordination_graph} "
+        f"(diam={env.graph_diameter}) steps={args.total_steps} seed={args.seed}"
     )
     return train(agent, env, train_cfg, seed=args.seed)
 

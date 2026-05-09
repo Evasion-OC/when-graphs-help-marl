@@ -102,15 +102,25 @@ Outputs:
 - `results/phase_2_main/h1_tests.{csv,md}`
 - `results/phase_2_main/SUMMARY.md`
 
-## Phase 3 — MPE (E2, E3)
+## Phase 3 — MPE simple_spread
 
-**Branch:** `phase-3-mpe` (off `phase-2-e1-full`)
+**Branch:** `phase-3-mpe` (off `phase-2-tuning`; sibling to `phase-2-main`)
 
-External-validity replication on canonical PettingZoo benchmarks.
+External-validity replication on a canonical cooperative MARL benchmark.
+Uses Phase 2A's locked hyperparameters directly to ask: do the findings
+transfer to a benchmark the field actually publishes against?
 
-- E2: simple_spread, agents ∈ {3, 6}.
-- E3: simple_tag (3 predators, 1 prey).
-- Same algorithm set, 5 seeds, ≥ 1M env steps per run.
+- simple_spread (`mpe2.simple_spread_v3`), agents ∈ {3, 6}, max_cycles=25
+- Same 4 algorithms, 5 seeds, 30k env steps per run = 40 runs total
+- Wall-clock estimate: ~3.5 hours on M1 Pro / MPS
+
+simple_tag was originally in the plan but has heterogeneous observation
+spaces (predators vs prey) that don't fit the homogeneous cooperative
+setup we use. Skipped for Phase 3; documented as future work.
+
+The MPE adapter (`src/gnnmarl/envs/mpe_env.py`) wraps the PettingZoo
+parallel API into the same duck-typed interface as `CoordGridEnv` so
+the existing trainer drives it without modification.
 
 ## Phase 4 — Depth / structure ablations (H3)
 
