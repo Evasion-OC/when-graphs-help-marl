@@ -43,6 +43,29 @@ Acceptance: VDN and QMIX both clearly beat IQL (sanity for the harness);
 GNN-QMIX runs to completion. Results may or may not show GNN-QMIX winning —
 this is a sanity gate, not a hypothesis test.
 
+## Phase 1b — Mixer-capacity diagnostic
+
+**Branch:** `phase-1b-diagnostic` (off `phase-1-pilot`)
+
+Phase 1 found that QMIX and GNN-QMIX with `embed_dim=32` fail to learn
+on this 8-dim global state. Phase 1b is a 4-run diagnostic on seed 0
+that shrinks the mixer's `embed_dim` to {8, 16} and asks: does that
+fix the divergence?
+
+This is cheap insurance (~10 min wall-clock) before committing to
+Phase 2's larger tuning grid. Three possible outcomes:
+
+- `embed_dim=8` learns: hypothesis confirmed; Phase 2 tunes around 8.
+- `embed_dim=16` learns but 8 doesn't: sweet spot somewhere between
+  8 and 32; Phase 2's grid is the right shape.
+- Neither learns: hypothesis wrong; the issue is elsewhere
+  (initialization, LR schedule, target-update period). Phase 2
+  needs to be redesigned with a wider diagnostic first.
+
+Acceptance: every diagnostic run completes; `check_diagnostic.py`
+prints a verdict. The verdict informs Phase 2 — it doesn't gate
+shipping Phase 1b.
+
 ## Phase 2 — Full E1 sweep (H1, H2)
 
 **Branch:** `phase-2-e1-full` (off `phase-1-pilot`)

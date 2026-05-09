@@ -20,21 +20,35 @@ The pilot surfaced two phenomena that shape Phase 2's design:
 
 ## What Phase 2 must do
 
-### 2A. Per-algorithm hyperparameter tuning (small, principled grid)
+### 2A. Per-algorithm hyperparameter tuning (wider grid than first envisioned)
 
-Same per-agent Q-net for all algorithms (parameter-matched control),
-but mixer capacity per algorithm. Grid:
+**Update from Phase 1b**: shrinking `embed_dim` alone (32→8 / 32→16) on
+QMIX did *not* fix learning at this scale — peak success stayed at
+0.10 in both cases, even though `q_tot` no longer diverged
+(+12 → +3.7). The mixer family has at least one additional issue
+beyond capacity. Phase 2's tuning grid is now wider:
 
-| algo | hidden | embed_dim | gnn_layers | lr |
-|---|---|---|---|---|
-| iql | 64 | — | — | {3e-4, 5e-4} |
-| vdn | 64 | — | — | {3e-4, 5e-4} |
-| qmix | 64 | {8, 16, 32} | — | {3e-4, 5e-4} |
-| gnn_qmix | 64 | {8, 16, 32} | {1, 2, 3} | {3e-4, 5e-4} |
+| algo | hidden | embed_dim | gnn_layers | mixer_lr | init |
+|---|---|---|---|---|---|
+| iql | 64 | — | — | — | default |
+| vdn | 64 | — | — | — | default |
+| qmix | 64 | {8, 16} | — | {1e-4, 5e-4} | {default, orthogonal(0.1)} |
+| gnn_qmix | 64 | {8, 16} | {1, 2} | {1e-4, 5e-4} | {default, orthogonal(0.1)} |
 
-Pick the best (algo, hyperparameters) per algorithm by mean final-window
-success rate over 3 seeds. Then **lock those hyperparameters** for the
-full sweep — no further tuning.
+Same per-agent Q-net for all algorithms (parameter-matched control).
+Mixer learning rate is now a separate axis from the Q-net learning
+rate (5e-4 fixed for Q-nets across all algos). Initialization is
+explicit because untuned initialization may be why QMIX's mixer
+absorbs the prediction error through its bias.
+
+Pick the best (algo, hyperparameters) per algorithm by mean
+final-window success rate over 3 seeds. Then **lock those
+hyperparameters** for the full sweep — no further tuning.
+
+If even this grid fails to make QMIX/GNN-QMIX learn, Phase 2 will
+add a deeper diagnostic step (gradient flow analysis: is the agent
+Q-net actually receiving useful gradients via the mixer, or is the
+state-conditioned bias absorbing all the TD error?).
 
 ### 2B. The actual sweep
 
