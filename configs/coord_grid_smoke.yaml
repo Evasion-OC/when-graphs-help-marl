@@ -1,0 +1,26 @@
+# Smoke-test config: trains all four algorithms for ~60 seconds each.
+# Validates the harness end-to-end. Not a real result.
+
+defaults:
+  env: coord_grid
+  grid_size: 5
+  n_agents: 3
+  max_steps: 25
+  coordination_graph: full
+  total_steps: 3000
+  warmup_steps: 200
+  batch_size: 32
+  eps_decay_steps: 1500
+  eval_every_episodes: 25
+  eval_episodes: 5
+  seed: 0
+
+runs:
+  - algo: iql
+    log_path: results/smoke/iql.csv
+  - algo: vdn
+    log_path: results/smoke/vdn.csv
+  - algo: qmix
+    log_path: results/smoke/qmix.csv
+  - algo: gnn_qmix
+    log_path: results/smoke/gnn_qmix.csv

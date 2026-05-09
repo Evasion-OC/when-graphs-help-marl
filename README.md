@@ -21,8 +21,8 @@ Active development. See `docs/PHASES.md` for the phase plan.
 
 | Phase | Branch | PR | Status |
 |---|---|---|---|
-| 0 — Experimental harness | `phase-0-harness` | — | in progress |
-| 1 — Pilot results | `phase-1-pilot` | — | not started |
+| 0 — Experimental harness | `phase-0-harness` | open | **complete (harness only)** |
+| 1 — Pilot results | `phase-1-pilot` | — | next |
 | 2 — Full E1 sweep | `phase-2-e1-full` | — | not started |
 | 3 — MPE benchmarks (E2, E3) | `phase-3-mpe` | — | not started |
 | 4 — Depth/structure ablations | `phase-4-ablations` | — | not started |
