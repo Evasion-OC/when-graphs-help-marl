@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual envs
+.venv/
+venv/
+env/
+
+# Build artifacts
+build/
+dist/
+*.egg
+
+# Editor
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Results — keep CSVs, ignore heavy binaries
+results/checkpoints/
+results/runs/*.pt
+results/wandb/
+results/tensorboard/
+*.npz
+*.h5
+
+# Logs
+logs/
+*.log
+
+# Large generated assets
+*.mp4
+*.gif
