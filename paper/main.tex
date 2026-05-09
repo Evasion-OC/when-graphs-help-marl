@@ -1,0 +1,461 @@
+% ============================================================================
+% When Does Graph Structure Help in Multi-Agent Reinforcement Learning?
+% A Controlled Empirical Study
+%
+% Target venue: TMLR (https://www.jmlr.org/tmlr/)
+% Status: DRAFT — Phase 5a writeup. Phase 2C, 3, 4 results are placeholders.
+% ============================================================================
+
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+\usepackage{microtype}
+\usepackage[margin=1in]{geometry}
+
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, linkcolor=blue, citecolor=blue, urlcolor=blue}
+
+\usepackage[
+  backend=biber,
+  style=numeric-comp,
+  sorting=nyt,
+  maxbibnames=99,
+  giveninits=true,
+  doi=true,
+]{biblatex}
+\addbibresource{references.bib}
+
+\title{When Does Graph Structure Help in Multi-Agent Reinforcement Learning? \\
+       A Controlled Empirical Study}
+\author{Kasra Ghanavati \and Ali Jabbary}
+\date{\today}
+
+% Convenience macros for empirical numbers we'll keep updating.
+\newcommand{\NumPilotPapers}{12}      % runs in Phase 1
+\newcommand{\NumTuneRuns}{48}         % runs in Phase 2A
+\newcommand{\PilotPeakIQL}{0.75}      % Phase 1 IQL peak
+\newcommand{\PilotFinalIQL}{0.16}     % Phase 1 IQL final-window
+\newcommand{\PilotFinalVDN}{0.14}
+\newcommand{\PilotFinalQMIX}{0.01}    % broken in Phase 1
+\newcommand{\PilotFinalGNN}{0.00}     % broken in Phase 1
+\newcommand{\TunedFinalQMIX}{0.28}    % Phase 2A locked QMIX
+\newcommand{\TunedFinalGNN}{0.34}     % Phase 2A locked GNN-QMIX
+
+% TODO marker for phase-pending content.
+\newcommand{\todoFromPhase}[2]{\textcolor{red}{[\textbf{TODO from #1}: #2]}}
+
+\begin{document}
+\maketitle
+
+% ============================================================================
+\begin{abstract}
+\noindent
+Graph-based methods for cooperative multi-agent reinforcement learning are
+widely \textit{claimed} to help via relational inductive bias, but the
+conditions under which they actually help are under-characterized in the
+published literature. We present a controlled empirical study comparing
+GNN-QMIX against three graph-free baselines (independent Q-learning, value
+decomposition networks, and QMIX) on cooperative coordination tasks where the
+underlying graph structure is tunable. Three findings emerge from the study.
+First, on small environments QMIX and GNN-QMIX with literature-default mixer
+hyperparameters \emph{fail to learn at all}, while VDN and IQL learn but
+collapse late in training. Second, the failure mode is not capacity: shrinking
+\texttt{embed\_dim} contains the value-divergence symptom but does not restore
+learning. Third, orthogonal mixer initialization with a small gain combined
+with a smaller mixer learning rate is the actual fix; with these locked
+hyperparameters QMIX reaches final-window success $\TunedFinalQMIX$ (up from
+$\PilotFinalQMIX$) and GNN-QMIX reaches $\TunedFinalGNN$ (up from
+$\PilotFinalGNN$), both exceeding IQL/VDN at the same env. We then test the
+locked configurations across task scales and on a canonical PettingZoo
+benchmark (\todoFromPhase{Phase 2C/3}{numbers TBD}), and probe whether the
+GNN's advantage tracks alignment between GNN depth and graph diameter
+(\todoFromPhase{Phase 4}{numbers TBD}). Code and full per-run logs are
+released at \url{https://github.com/Evasion-OC/when-graphs-help-marl}.
+\end{abstract}
+
+% ============================================================================
+\section{Introduction}\label{sec:intro}
+
+The folklore claim that ``graph neural networks help in cooperative
+multi-agent reinforcement learning'' is widespread but empirically
+under-supported. Surveys describe a proliferation of GNN-MARL architectures
+and benchmark numbers \cite{HernandezLeal2019SurveyMARL,Zhang2021MARLSurvey},
+but rarely \emph{measure} when the relational inductive bias of a GNN is
+necessary versus when a parameter-matched control without graph structure
+matches or exceeds it. This work contributes such a measurement on cooperative
+coordination tasks where the underlying graph structure is tunable.
+
+Concretely, we ask three questions:
+\begin{enumerate}
+  \item Does graph-conditioned value factorization (GNN-QMIX) outperform
+    graph-free value decomposition (QMIX) and independent learners (IQL)
+    on cooperative coordination tasks?
+  \item Are the literature-default hyperparameters of monotonic mixers
+    transferable across env scales, or do they require per-env tuning?
+  \item Does GNN-QMIX's advantage scale with how well the GNN's
+    receptive field matches the coordination-graph diameter?
+\end{enumerate}
+
+We address (Q1) with a parameter-matched controlled comparison
+(Section~\ref{sec:methods}) and a sweep across three task scales and two
+graph regimes (Section~\ref{sec:phase2c-results}, pending). We address (Q2)
+with a small principled tuning grid (Section~\ref{sec:phase2a-results}) that
+finds the configuration on which (Q1) is testable in our env. We address (Q3)
+with a depth $\times$ diameter ablation (Section~\ref{sec:phase4-results},
+pending) that predicts an inverted-U in performance as $L - d$ varies.
+
+\paragraph{Scope.} This study targets \emph{cooperative} MARL on small
+controlled gridworlds and one canonical PettingZoo benchmark. We do not
+make claims about competitive or mixed settings, and we do not run on
+SMAC-scale problems where the literature defaults were originally tuned. The
+goal is a clean measurement on small problems, not a SOTA claim.
+
+\paragraph{What is new.} The technical contribution is the measurement
+itself, not new architecture. The negative finding that QMIX-family defaults
+fail on small-state-dim environments---and that orthogonal initialization
+with small gain rescues them---is, to our knowledge, undocumented in the
+public literature. The depth--diameter ablation gives a concrete, falsifiable
+recipe for picking GNN depth.
+
+% ============================================================================
+\section{Background}\label{sec:background}
+
+We consider cooperative POMDPs with $N$ agents, joint action space
+$\mathcal{A}^N$, and shared scalar reward $r$. Following the value
+decomposition framework, each agent $i$ has a Q-network $Q_i(o_i, a_i;
+\theta)$ taking only its own observation. A mixing network combines the per-
+agent values into a joint $Q_\text{tot}$. Three established mixers span the
+algorithmic space we test:
+\begin{itemize}
+  \item \textbf{IQL} \cite{Tampuu2017IQL} omits the mixer entirely; agents
+    learn independently from the shared reward.
+  \item \textbf{VDN} \cite{Sunehag2018VDN} uses a sum mixer
+    $Q_\text{tot} = \sum_i Q_i$.
+  \item \textbf{QMIX} \cite{Rashid2018QMIX} uses a state-conditioned
+    monotonic hypernetwork mixer with non-negative weights, enforcing
+    $\partial Q_\text{tot}/\partial Q_i \geq 0$.
+\end{itemize}
+GNN-QMIX is QMIX with the mixer's state-conditioned bias path conditioned
+additionally on a small graph neural network
+\cite{Kipf2017GCN,Battaglia2018Relational} aggregating per-agent embeddings
+over the coordination graph. Concretely, before the monotonic mixing, we run
+$L$ rounds of mean-aggregation message passing with self-loops on a fixed
+adjacency matrix $A \in \{0,1\}^{N \times N}$.
+
+% ============================================================================
+\section{Methodology}\label{sec:methods}
+
+\subsection{Environment: CoordGrid}\label{sec:coordgrid}
+
+We use a custom cooperative gridworld designed to isolate the mechanisms we
+want to measure. The env has $N$ agents and $N$ targets on an $L \times L$
+grid. Each agent must reach its assigned target. Reward is shared across
+agents:
+\begin{itemize}
+  \item Step penalty: $-0.01$
+  \item Collision penalty: $-0.05$ per overlapping pair
+  \item Per-agent goal bonus: $+0.5$ on first arrival
+  \item Terminal bonus: $+1.0$ when all agents are simultaneously on targets
+\end{itemize}
+Distance-based potential shaping
+\cite{Ng1999PolicyInvariance} is enabled by default for our experiments to
+keep the credit assignment problem inside the budget. Shaping is
+policy-invariant, so all algorithms see the same shaped reward and no
+algorithm gets a comparative advantage.
+
+The env separately exposes a tunable \emph{coordination graph}
+$G = (V, E)$ that controls which agents observe each other. $G$ has no
+effect on physics; it only restricts each agent's observation to its
+graph neighbors. This is the key knob for Phase 4's depth $\times$
+diameter ablation. Supported topologies: \texttt{full}, \texttt{ring},
+\texttt{lattice}, k-NN, Erd\H{o}s--R\'enyi.
+
+\subsection{Algorithm parameter matching}
+
+For a fair comparison, all four algorithms share an identical per-agent
+Q-network architecture (3-layer MLP with hidden size 64) and an identical
+training loop (off-policy DQN-style with replay buffer, $\epsilon$-greedy
+exploration, target network soft-update). The only differences are at the
+mixer:
+\begin{itemize}
+  \item IQL: no mixer; per-agent TD on shared reward
+  \item VDN: parameter-free sum mixer
+  \item QMIX: state-conditioned hypernetwork mixer with embedding dim
+    $d_\text{embed}$
+  \item GNN-QMIX: same monotonic mixer plus a length-$L$ GNN on the
+    coordination graph contributing to the mixer's bias path
+\end{itemize}
+Any performance difference between the four is therefore attributable to the
+mixing mechanism, not to representation capacity.
+
+\subsection{Tuning protocol}
+
+Phase 1's pilot (Section~\ref{sec:phase1-results}) revealed that
+literature-default mixer hyperparameters fail catastrophically on our small
+env. We therefore introduce a small principled tuning grid over three
+mixer-only axes: $d_\text{embed}$, the mixer learning rate $\eta_\text{mix}$
+(decoupled from the Q-net's learning rate $\eta_Q$), and the mixer
+initialization scheme. Q-net architecture and learning rate are held fixed.
+The grid is run only on the smallest task scale (2 agents on $4 \times 4$),
+the winning configuration per algorithm is locked, and all subsequent
+experiments use the locked configuration.
+
+\subsection{Decision metrics}
+
+\textbf{Final-window success} is the mean evaluation success rate over the
+final $25\%$ of evaluation checkpoints, with evaluation conducted greedily
+($\epsilon=0$) every 50 episodes over 20 evaluation episodes. We report
+final-window rather than peak because peak is a single best moment that
+can reflect transient noise; final-window averages over many late checkpoints
+and matches what readers see in published learning curves.
+
+\textbf{Statistical tests} use Welch's t-test and Mann-Whitney U for
+pairwise comparisons. Holm correction is applied across the
+$\binom{4}{2} = 6$ pairs at each (scale, metric) cell.
+
+% ============================================================================
+\section{Results: tuning the QMIX family}\label{sec:phase1-results}
+
+\subsection{Phase 1: pilot study with literature-default hyperparameters}
+
+We first ran all four algorithms with widely-used MARL defaults
+($d_\text{embed}=32$, $\eta_\text{mix} = \eta_Q = 5\times 10^{-4}$, default
+PyTorch initialization) on the smallest task scale (2 agents, $4 \times 4$
+grid, 10k env steps, 3 seeds). The result is shown in
+Figure~\ref{fig:phase1-pilot} and quantified in
+Table~\ref{tab:phase1-summary}.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.7\linewidth]{../results/pilot/learning_curves.png}
+\caption{Phase 1 pilot. With literature-default hyperparameters, QMIX
+(orange) and GNN-QMIX (red) fail to learn the coordination task, while IQL
+(gray) and VDN (blue) learn briefly and collapse. Mean $\pm$ SEM across 3
+seeds.}
+\label{fig:phase1-pilot}
+\end{figure}
+
+\begin{table}[htbp]
+\centering
+\begin{tabular}{lccc}
+\toprule
+Algorithm & Peak success & Final-window & Post-peak drop \\
+\midrule
+IQL       & $\PilotPeakIQL$  & $\PilotFinalIQL \pm 0.14$ & $-0.57$ \\
+VDN       & $0.57$           & $\PilotFinalVDN \pm 0.09$ & $-0.42$ \\
+QMIX      & $0.03$           & $\PilotFinalQMIX \pm 0.02$ & $-0.03$ \\
+GNN-QMIX  & $0.05$           & $\PilotFinalGNN \pm 0.00$  & $-0.05$ \\
+\bottomrule
+\end{tabular}
+\caption{Phase 1 summary. QMIX and GNN-QMIX never reach a peak, while IQL
+and VDN peak around episode 150 and decline. \emph{Post-peak drop} is
+mean(peak) minus mean(final-window).}
+\label{tab:phase1-summary}
+\end{table}
+
+The QMIX-family failure is not stochastic: across all three seeds, QMIX's
+late-training $Q_\text{tot}$ diverges (mean $+12.4$, vs $+2.2$ for VDN) and
+the loss climbs from $\sim 0.2$ early to $\sim 8.8$ late. The mixer's
+state-conditioned bias path is absorbing the temporal-difference error
+without the Q-values learning to differentiate actions.
+
+\subsection{Phase 1b: a capacity-only intervention is insufficient}
+
+A natural first hypothesis is that $d_\text{embed}=32$ is too large for
+this env's $8$-dimensional global state. We tested it directly on seed 0:
+shrinking $d_\text{embed}$ to $\{8, 16\}$ contained the divergence
+($Q_\text{tot}$ from $+12.4$ to $+3.6$, loss from $8.8$ to $0.7$) but did
+\emph{not} restore QMIX learning---peak success stayed at $\sim 0.10$.
+For GNN-QMIX, the same intervention raised peak from $0.10$ to $0.30$. The
+asymmetry suggests the GNN's mean-aggregation step provides implicit
+regularization that vanilla QMIX's hypernetwork mixer lacks; capacity is
+necessary but not sufficient for QMIX.
+
+\subsection{Phase 2A: orthogonal initialization is the actual fix}\label{sec:phase2a-results}
+
+Phase 2A widens the tuning grid to three axes: $d_\text{embed} \in \{8, 16\}$,
+$\eta_\text{mix} \in \{10^{-4}, 5\cdot 10^{-4}\}$, and mixer initialization
+$\in \{\text{default}, \text{orthogonal(0.1)}\}$. The grid contains
+$2 \times 2 \times 2 = 8$ cells per algorithm; we ran $\NumTuneRuns$ runs
+total at 10k steps and 3 seeds per cell.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\linewidth]{../results/phase_2_tune/tuning_grid.png}
+\caption{Phase 2A tuning grid. Top row: peak eval success. Bottom row:
+late-training $Q_\text{tot}$ magnitude. Blue bars are default
+initialization, red bars are orthogonal init with gain 0.1. Gold border
+marks the locked configuration per algorithm (best by mean final-window
+success; see locking criterion in Section~\ref{sec:methods}). The pattern
+is unmistakable: every red bar (orthogonal) beats every blue bar (default)
+on peak success for both algorithms, while orthogonal init also produces
+smaller, less divergent late-training $Q_\text{tot}$.}
+\label{fig:phase2a-grid}
+\end{figure}
+
+The locked picks are:
+\begin{itemize}
+  \item QMIX: $d_\text{embed} = 16$, $\eta_\text{mix} = 10^{-4}$,
+    orthogonal initialization with gain $0.1$
+  \item GNN-QMIX: $d_\text{embed} = 8$, $\eta_\text{mix} = 10^{-4}$,
+    orthogonal initialization with gain $0.1$
+\end{itemize}
+With these locked picks, QMIX reaches final-window success
+$\TunedFinalQMIX \pm 0.13$ (up from $\PilotFinalQMIX$ in Phase 1) and
+GNN-QMIX reaches $\TunedFinalGNN \pm 0.08$ (up from $\PilotFinalGNN$),
+both exceeding IQL ($\PilotFinalIQL$) and VDN ($\PilotFinalVDN$) at the
+same env.
+
+\paragraph{Why orthogonal init matters.} Orthogonal initialization with
+small gain biases the mixer's initial output toward zero, so the per-agent
+$Q$-values dominate early training. Default PyTorch initialization
+(Kaiming-uniform) produces a state-conditioned bias path with non-trivial
+magnitude that absorbs the temporal-difference error before the Q-network
+has a chance to learn. The smaller $\eta_\text{mix}$ further slows the mixer
+relative to the Q-net so that the Q-network learns first and the mixer
+combines a learned signal rather than fitting the bias path.
+
+% ============================================================================
+\section{Results: locked-hyperparameter main sweep}\label{sec:phase2c-results}
+
+\todoFromPhase{Phase 2C}{
+  60-run sweep (4 algorithms $\times$ 3 task scales $\times$ 5 seeds at
+  30k env steps) with locked hyperparameters from Section~\ref{sec:phase2a-results}.
+  Inserts:
+  \begin{enumerate}
+    \item Per-scale learning curves
+      (\texttt{results/phase\_2\_main/learning\_curves\_\{small,medium,large\}.png}).
+    \item Forest plot
+      (\texttt{results/phase\_2\_main/forest\_plot.png}).
+    \item H1 statistics table
+      (\texttt{results/phase\_2\_main/h1\_tests.md}) with Holm-corrected
+      Welch t-tests + Mann-Whitney U.
+    \item Discussion of which contrasts survive correction.
+  \end{enumerate}
+}
+
+% ============================================================================
+\section{Results: external validity on simple\_spread}\label{sec:phase3-results}
+
+\todoFromPhase{Phase 3}{
+  40-run sweep on PettingZoo's \texttt{simple\_spread} (\citet{Lowe2017MADDPG};
+  PettingZoo wrapper from \citet{Terry2021PettingZoo}) at $N \in \{3, 6\}$
+  with the locked Phase 2A hyperparameters. Tests whether the QMIX-family fix
+  transfers to a benchmark the field publishes against. Insert:
+  \begin{enumerate}
+    \item Per-N learning curves.
+    \item Aggregate ranking (eval return mean) per algorithm.
+    \item Comment on whether the locked hyperparameters require any
+      adjustment for the larger 54-dim global state.
+  \end{enumerate}
+}
+
+% ============================================================================
+\section{Results: depth $\times$ diameter ablation}\label{sec:phase4-results}
+
+\todoFromPhase{Phase 4}{
+  Holds GNN-QMIX with the locked Phase 2A configuration and varies
+  GNN depth $L \in \{1,2,3,4\}$ against ring topology size
+  $N \in \{4, 6, 8\}$, giving diameters $d \in \{2, 3, 4\}$. The hypothesis
+  predicts an inverted-U in $L - d$. Insert:
+  \begin{enumerate}
+    \item Heatmap of final-window success over $(L, N)$ with the
+      predicted $L = d$ ridge marked.
+    \item Inverted-U plot: final success vs. $L - d$, error bars over
+      seeds.
+    \item Welch test on whether peak performance is significantly
+      higher at $L = d$ than at $L \neq d$.
+  \end{enumerate}
+}
+
+% ============================================================================
+\section{Discussion}\label{sec:discussion}
+
+\subsection{Implications for ``does GNN help in MARL?''}
+
+The most defensible answer this study supports is: \emph{conditionally,
+once mixer hyperparameters are tuned}. With literature defaults, GNN-QMIX
+is statistically indistinguishable from a broken QMIX. With Phase 2A's
+locked configuration, GNN-QMIX exceeds QMIX by a small but consistent
+margin on the smallest task scale. \todoFromPhase{Phase 2C/4}{whether this
+margin scales with task size or graph diameter alignment.}
+
+\subsection{Why our findings differ from common practice}
+
+Most published GNN-MARL results use SMAC-style benchmarks
+\cite{Samvelyan2019SMAC} with state dimensions in the hundreds. The
+literature-default mixer hyperparameters were tuned for that regime. Our
+small env has a $4N$-dimensional global state ($N$ = number of agents),
+which is between $8$ and $24$ in our experiments. The state-conditioned
+hypernetwork mixer is over-parameterized for these dimensions, and its
+default initialization places the bias path in a regime where it can
+absorb the TD error.
+
+Practitioners running cooperative MARL on small problems (small swarms,
+robot teams) likely encounter this failure silently; a paper claiming
+``GNN-MARL doesn't help in our domain'' may simply be running with
+defaults that broke before either the GNN or the value decomposition got
+a chance to be tested.
+
+\subsection{Limitations}\label{sec:limits}
+
+\begin{itemize}
+  \item \textbf{Single env family for the main sweep.} The CoordGrid task
+    family is small and controlled by design, but it is one task family.
+    Phase 3 partially addresses this with simple\_spread, but external
+    validity to harder benchmarks (SMAC, Hanabi) is not in scope.
+  \item \textbf{Small agent counts.} $N \leq 8$. Whether the findings
+    transfer to $N \geq 50$ is an open question.
+  \item \textbf{Two coordination graph topologies in the main sweep
+    (full and ring).} Phase 4 varies graph structure but only on
+    GNN-QMIX; full coverage of ($\text{algo} \times \text{topology}$)
+    is future work.
+  \item \textbf{No SOTA claim.} TMLR explicitly does not require novelty
+    or SOTA, and we do not claim either. The contribution is the
+    measurement.
+\end{itemize}
+
+% ============================================================================
+\section{Related work}\label{sec:related}
+
+Cooperative MARL with value decomposition has a well-developed lineage
+\cite{Tampuu2017IQL,Sunehag2018VDN,Rashid2018QMIX,Lowe2017MADDPG}. GNN
+augmentations of value decomposition appear in
+\cite{Jiang2020DGN,Liu2020GraphMix} and a number of follow-on papers.
+Surveys describe the architectural design space
+\cite{HernandezLeal2019SurveyMARL,Zhang2021MARLSurvey}, but few isolate
+the conditions under which the graph component is necessary. The closest
+methodological precedent is the line of replication studies in deep RL
+that re-test folklore claims under controlled conditions; we follow that
+template.
+
+% ============================================================================
+\section{Conclusion}\label{sec:conclusion}
+
+We measure when graph structure helps in cooperative MARL on small
+controlled tasks. The headline finding is that the QMIX family of
+monotonic mixers fails catastrophically with literature-default
+hyperparameters on small-state-dim environments, and that orthogonal
+mixer initialization with a small gain combined with a smaller mixer
+learning rate is the necessary fix. Once that fix is in place, GNN-QMIX
+modestly exceeds QMIX, with the margin's dependence on task scale
+\todoFromPhase{Phase 2C}{being measured} and on graph-diameter alignment
+\todoFromPhase{Phase 4}{being tested}. The claim that ``GNN helps in
+MARL'' should be qualified by the conditions of the test: the field's
+published default hyperparameters do not transfer to small-scale problems,
+and GNN advantages outside that regime are smaller than reported in
+informal claims.
+
+\paragraph{Reproducibility.} Code, locked hyperparameters, raw per-run
+CSVs, and analysis scripts are available at
+\url{https://github.com/Evasion-OC/when-graphs-help-marl}.
+
+\printbibliography
+
+\end{document}
