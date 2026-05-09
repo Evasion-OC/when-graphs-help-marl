@@ -18,9 +18,19 @@ class AlgoConfig:
     embed_dim: int = 32
     gnn_layers: int = 2  # only used by gnn_qmix
     lr: float = 5e-4
+    # Optional separate mixer learning rate. None → use lr for both Q-net and mixer.
+    # Used by Phase 2's tuning grid to address Phase 1b's finding that QMIX
+    # didn't recover from embed_dim shrinkage alone — a smaller mixer LR may
+    # prevent the state-conditioned bias path from absorbing TD error.
+    mixer_lr: float | None = None
     gamma: float = 0.99
     target_update_every: int = 200
     grad_clip: float = 10.0
+    # Mixer-only initialization. 'default' → PyTorch defaults (kaiming_uniform).
+    # 'orthogonal' → orthogonal init with `init_scale` gain. Phase 1b suggested
+    # init might matter for QMIX in particular.
+    mixer_init: str = "default"
+    init_scale: float = 0.1  # only used when mixer_init='orthogonal'
 
 
 class BaseAgent(ABC):

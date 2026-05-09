@@ -1,0 +1,10 @@
+qmix:
+  embed_dim: 16
+  mixer_lr: 0.0001
+  mixer_init: orthogonal
+gnn_qmix:
+  embed_dim: 8
+  mixer_lr: 0.0001
+  mixer_init: orthogonal
+iql: {}
+vdn: {}

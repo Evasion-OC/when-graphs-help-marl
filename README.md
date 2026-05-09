@@ -22,8 +22,10 @@ Active development. See `docs/PHASES.md` for the phase plan.
 | Phase | Branch | PR | Status |
 |---|---|---|---|
 | 0 — Experimental harness | `phase-0-harness` | open | complete |
-| 1 — Pilot results | `phase-1-pilot` | open | **complete** |
-| 2 — Full E1 sweep | `phase-2-e1-full` | — | next |
+| 1 — Pilot results | `phase-1-pilot` | open | complete |
+| 1b — Mixer-capacity diagnostic | `phase-1b-diagnostic` | open | complete |
+| 2A — Tuning sweep | `phase-2-tuning` | open | **in progress** |
+| 2C — Locked main sweep | `phase-2-main` | — | not started |
 | 3 — MPE benchmarks (E2, E3) | `phase-3-mpe` | — | not started |
 | 4 — Depth/structure ablations | `phase-4-ablations` | — | not started |
 | 5 — Paper writeup integration | `phase-5-writeup` | — | not started |

@@ -12,6 +12,21 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
+def apply_orthogonal_init(module: nn.Module, gain: float = 0.1) -> None:
+    """Orthogonal init for every Linear in `module`, with the given gain.
+
+    Used by QMIX/GNN-QMIX mixers when `cfg.mixer_init == 'orthogonal'`.
+    Smaller gains (0.05–0.3) bias the mixer's initial output toward zero so
+    the agent Q-values dominate early training and the bias hypernetwork
+    cannot absorb the TD error before the Q-net has a chance to learn.
+    """
+    for m in module.modules():
+        if isinstance(m, nn.Linear):
+            nn.init.orthogonal_(m.weight, gain=gain)
+            if m.bias is not None:
+                nn.init.zeros_(m.bias)
+
+
 class QNet(nn.Module):
     """Per-agent Q-network: obs -> Q(a)."""
 

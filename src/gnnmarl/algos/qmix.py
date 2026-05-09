@@ -14,7 +14,7 @@ import torch.nn.functional as F
 from torch import optim
 
 from .base import AlgoConfig, BaseAgent
-from .networks import QMixer, QNet
+from .networks import QMixer, QNet, apply_orthogonal_init
 
 
 class QMIX(BaseAgent):
@@ -24,13 +24,25 @@ class QMIX(BaseAgent):
         super().__init__(cfg, device)
         self.q = QNet(cfg.obs_dim, cfg.n_actions, cfg.hidden).to(device)
         self.q_target = copy.deepcopy(self.q).eval().to(device)
-        self.mixer = QMixer(cfg.n_agents, cfg.state_dim, cfg.embed_dim).to(device)
+        # Build + initialize mixer on CPU, then move to device. PyTorch's MPS
+        # backend doesn't yet implement aten::linalg_qr (used by orthogonal
+        # init), so we have to do init before the device move.
+        mixer_cpu = QMixer(cfg.n_agents, cfg.state_dim, cfg.embed_dim)
+        if cfg.mixer_init == "orthogonal":
+            apply_orthogonal_init(mixer_cpu, gain=cfg.init_scale)
+        elif cfg.mixer_init != "default":
+            raise ValueError(f"Unknown mixer_init: {cfg.mixer_init}")
+        self.mixer = mixer_cpu.to(device)
         self.mixer_target = copy.deepcopy(self.mixer).eval().to(device)
         for p in chain(self.q_target.parameters(), self.mixer_target.parameters()):
             p.requires_grad_(False)
+        # Optionally use a separate learning rate for the mixer.
+        mixer_lr = cfg.mixer_lr if cfg.mixer_lr is not None else cfg.lr
         self.opt = optim.Adam(
-            list(self.q.parameters()) + list(self.mixer.parameters()),
-            lr=cfg.lr,
+            [
+                {"params": self.q.parameters(), "lr": cfg.lr},
+                {"params": self.mixer.parameters(), "lr": mixer_lr},
+            ]
         )
 
     @torch.no_grad()

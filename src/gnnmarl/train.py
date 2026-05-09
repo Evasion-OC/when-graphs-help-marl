@@ -46,6 +46,9 @@ class Args:
     hidden: int = 64
     embed_dim: int = 32
     gnn_layers: int = 2
+    mixer_lr: float | None = None
+    mixer_init: str = "default"
+    init_scale: float = 0.1
     target_update_every: int = 200
     grad_clip: float = 10.0
     eps_decay_steps: int = 20_000
@@ -86,6 +89,9 @@ def main(args: Args) -> Path:
         embed_dim=args.embed_dim,
         gnn_layers=args.gnn_layers,
         lr=args.lr,
+        mixer_lr=args.mixer_lr,
+        mixer_init=args.mixer_init,
+        init_scale=args.init_scale,
         gamma=args.gamma,
         target_update_every=args.target_update_every,
         grad_clip=args.grad_clip,

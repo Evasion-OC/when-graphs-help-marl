@@ -66,21 +66,41 @@ Acceptance: every diagnostic run completes; `check_diagnostic.py`
 prints a verdict. The verdict informs Phase 2 — it doesn't gate
 shipping Phase 1b.
 
-## Phase 2 — Full E1 sweep (H1, H2)
+## Phase 2 — Full E1 sweep (H1)
 
-**Branch:** `phase-2-e1-full` (off `phase-1-pilot`)
+Phase 2 is split into two PR-sized sub-phases for review tractability.
 
-The first real test of H1.
+### Phase 2A — Tuning grid
 
-- E1, agents ∈ {4, 8, 16}, 5 seeds, 200k steps.
-- Two graph regimes: **structured** (lattice + nearest-neighbor edges; small
-  diameter relative to N) vs **random** (Erdős–Rényi at matched edge density).
-- Algorithms: IQL, VDN, QMIX, GNN-QMIX.
+**Branch:** `phase-2-tuning` (off `phase-1b-diagnostic`)
+
+Per-algorithm hyperparameter selection on the small env (Phase 1 pilot
+config) to fix the QMIX/GNN-QMIX learning failure surfaced by Phase 1
+and Phase 1b. 16 cells × 3 seeds = 48 runs at 10k steps. Axes:
+`embed_dim ∈ {8, 16}`, `mixer_lr ∈ {1e-4, 5e-4}`,
+`mixer_init ∈ {default, orthogonal(0.1)}`.
+
+Output: `configs/phase_2_locked.yaml` with the winning configuration
+per algorithm. IQL and VDN are *not* tuned — Phase 1 confirmed defaults
+work and they are locked at `lr=5e-4`.
+
+### Phase 2C — Locked main sweep
+
+**Branch:** `phase-2-main` (off `phase-2-tuning`)
+
+Real H1 test on the locked configurations.
+
+- 4 algorithms × 3 task scales × 5 seeds = 60 runs at 30k steps each.
+- Task scales: small (2 ag / 4×4), medium (3 ag / 5×5), large (4 ag / 6×6).
+- Graph fixed at `full` (Phase 4 ablates graph structure).
+- Statistical tests: Welch + Mann-Whitney with Holm correction per
+  (scale, metric).
 
 Outputs:
-- Forest plot of episodes-to-80%, per algorithm × condition.
-- Statistical test (Welch's t / Mann-Whitney) per pair, with Holm correction.
-- A single summary CSV the paper reads from.
+- `results/phase_2_main/learning_curves_{scale}.png`
+- `results/phase_2_main/forest_plot.png`
+- `results/phase_2_main/h1_tests.{csv,md}`
+- `results/phase_2_main/SUMMARY.md`
 
 ## Phase 3 — MPE (E2, E3)
 
