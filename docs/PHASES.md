@@ -112,15 +112,32 @@ External-validity replication on canonical PettingZoo benchmarks.
 - E3: simple_tag (3 predators, 1 prey).
 - Same algorithm set, 5 seeds, ≥ 1M env steps per run.
 
-## Phase 4 — Depth / structure ablations (H3)
+## Phase 4 — Depth / diameter ablation (H3)
 
-**Branch:** `phase-4-ablations` (off `phase-3-mpe`)
+**Branch:** `phase-4-ablations` (off `phase-2-tuning`)
 
-Causal probe of *why* GNN helps when it does.
+Causal probe of *why* GNN helps when it does. Holds the algorithm
+fixed (GNN-QMIX with Phase 2A's locked embed_dim, mixer_lr,
+mixer_init) and varies two axes:
 
-- Vary GNN depth L ∈ {1, 2, 3, 4, 6}.
-- Vary task graph diameter d (in CoordGrid).
-- Predict and test the inverted-U: GNN-QMIX peaks when L ≈ d.
+- GNN depth L ∈ {1, 2, 3, 4}
+- Task graph diameter d, controlled via ring topology size:
+  N ∈ {4, 6, 8} → d ∈ {2, 3, 4}
+
+Sweep matrix (60 runs):
+- 4 L × 3 N × 5 seeds = 60 GNN-QMIX runs
+- Plus 3 N × 5 seeds = 15 QMIX runs as a no-GNN reference
+
+H3 prediction: GNN-QMIX final-window success is roughly an inverted-U
+in (L − d). Operationally:
+- Heatmap with the predicted L=d ridge marked
+- Inverted-U plot collapsed across N (final success vs L − d)
+
+If the prediction holds, this is direct evidence that the GNN's
+relational inductive bias is what's helping — and gives a concrete
+recipe for picking L given a task's coordination structure. If it
+doesn't hold, that's an equally publishable finding (the GNN's
+benefit is unrelated to receptive-field matching).
 
 ## Phase 5 — Paper writeup integration
 
