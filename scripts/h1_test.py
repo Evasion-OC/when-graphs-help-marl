@@ -31,8 +31,14 @@ METRICS = ["peak", "final"]
 
 
 def load_per_seed() -> pd.DataFrame:
-    """Reuse the per-seed extraction from plot_main_sweep.py."""
-    from scripts.plot_main_sweep import per_seed_summary  # noqa: PLC0415
+    """Reuse the per-seed extraction from plot_main_sweep.py.
+
+    Imports it as a sibling script via explicit path rather than as a
+    package, so this works regardless of the working directory.
+    """
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from plot_main_sweep import per_seed_summary  # type: ignore[import-not-found]  # noqa: PLC0415
+
     return per_seed_summary()
 
 
