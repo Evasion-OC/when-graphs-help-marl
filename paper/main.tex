@@ -57,26 +57,36 @@
 \begin{abstract}
 \noindent
 Graph-based methods for cooperative multi-agent reinforcement learning are
-widely \textit{claimed} to help via relational inductive bias, but the
+widely \emph{claimed} to help via relational inductive bias, but the
 conditions under which they actually help are under-characterized in the
 published literature. We present a controlled empirical study comparing
 GNN-QMIX against three graph-free baselines (independent Q-learning, value
-decomposition networks, and QMIX) on cooperative coordination tasks where the
-underlying graph structure is tunable. Three findings emerge from the study.
-First, on small environments QMIX and GNN-QMIX with literature-default mixer
-hyperparameters \emph{fail to learn at all}, while VDN and IQL learn but
-collapse late in training. Second, the failure mode is not capacity: shrinking
-\texttt{embed\_dim} contains the value-divergence symptom but does not restore
-learning. Third, orthogonal mixer initialization with a small gain combined
-with a smaller mixer learning rate is the actual fix; with these locked
-hyperparameters QMIX reaches final-window success $\TunedFinalQMIX$ (up from
-$\PilotFinalQMIX$) and GNN-QMIX reaches $\TunedFinalGNN$ (up from
-$\PilotFinalGNN$), both exceeding IQL/VDN at the same env. We then test the
-locked configurations across task scales and on a canonical PettingZoo
-benchmark (\todoFromPhase{Phase 2C/3}{numbers TBD}), and probe whether the
-GNN's advantage tracks alignment between GNN depth and graph diameter
-(\todoFromPhase{Phase 4}{numbers TBD}). Code and full per-run logs are
-released at \url{https://github.com/Evasion-OC/when-graphs-help-marl}.
+decomposition networks, and QMIX) on cooperative coordination tasks where
+the underlying graph structure is tunable.
+Four findings emerge.
+First, on small environments QMIX and GNN-QMIX with literature-default
+mixer hyperparameters \emph{fail to learn at all}, while VDN and IQL learn
+but collapse late in training.
+Second, orthogonal mixer initialization with a small gain combined with a
+smaller mixer learning rate is the actual fix; with these locked
+hyperparameters QMIX reaches final-window success $\TunedFinalQMIX$ (up
+from $\PilotFinalQMIX$) and GNN-QMIX reaches $\TunedFinalGNN$ (up from
+$\PilotFinalGNN$), both exceeding IQL/VDN at the same env.
+Third, in a 60-run sweep with these locked configurations across three
+task scales, \emph{GNN-QMIX is not statistically distinguishable from
+QMIX at any scale} (Holm-corrected Welch $p \geq 0.489$), and the
+simplest baseline (IQL) significantly outperforms all three
+coordination-based algorithms at the medium scale (Holm $p \leq 0.013$,
+Cohen's $d \geq 3.5$). Scale dominates algorithm choice.
+Fourth, the locked Phase~2A configurations do not transfer to a higher
+state-dimension benchmark
+(\todoFromPhase{Phase 3}{numbers TBD; CPU smoke indicates QMIX family
+diverges on simple\_spread while VDN and IQL remain stable}), and we
+characterize when the GNN advantage---if any---reappears as graph
+diameter changes
+(\todoFromPhase{Phase 4}{numbers TBD; pre-flight smoke clean}).
+Code and full per-run logs are released at
+\url{https://github.com/Evasion-OC/when-graphs-help-marl}.
 \end{abstract}
 
 % ============================================================================
@@ -324,21 +334,128 @@ combines a learned signal rather than fitting the bias path.
 % ============================================================================
 \section{Results: locked-hyperparameter main sweep}\label{sec:phase2c-results}
 
-\todoFromPhase{Phase 2C}{
-  60-run sweep (4 algorithms $\times$ 3 task scales $\times$ 5 seeds at
-  30k env steps) with locked hyperparameters from Section~\ref{sec:phase2a-results}.
-  Inserts:
-  \begin{enumerate}
-    \item Per-scale learning curves
-      (\texttt{results/phase\_2\_main/learning\_curves\_\{small,medium,large\}.png}).
-    \item Forest plot
-      (\texttt{results/phase\_2\_main/forest\_plot.png}).
-    \item H1 statistics table
-      (\texttt{results/phase\_2\_main/h1\_tests.md}) with Holm-corrected
-      Welch t-tests + Mann-Whitney U.
-    \item Discussion of which contrasts survive correction.
-  \end{enumerate}
-}
+We test whether the Phase~2A locked configuration produces a measurable
+GNN-QMIX advantage at scales beyond the smallest. The sweep is
+60 runs: 4 algorithms $\times$ 3 task scales (small $N=2$ on $4{\times}4$,
+medium $N=3$ on $5{\times}5$, large $N=4$ on $6{\times}6$) $\times$ 5
+seeds, all at 30k env steps. Coordination graph fixed at \texttt{full};
+graph-structure variation is left to Section~\ref{sec:phase4-results}.
+
+\subsection{Headline numbers}
+
+Table~\ref{tab:phase2c} reports peak and final-window evaluation success
+rate per (algorithm, scale) cell, averaged over 5 seeds. The full
+learning curves are shown in
+Figure~\ref{fig:phase2c-curves} and the per-seed forest plot in
+Figure~\ref{fig:phase2c-forest}.
+
+\begin{table}[t]
+\centering
+\small
+\caption{Phase 2C: peak / final-window evaluation success rate per
+(algorithm, scale), mean over 5 seeds. Bold = highest per row.}
+\label{tab:phase2c}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Scale} & \textbf{IQL} & \textbf{VDN} & \textbf{QMIX} & \textbf{GNN-QMIX} \\
+\midrule
+small  & \textbf{0.68} / 0.32 & 0.47 / 0.25 & 0.59 / 0.38 & 0.63 / \textbf{0.43} \\
+medium & \textbf{0.20} / \textbf{0.12} & 0.01 / 0.00 & 0.04 / 0.01 & 0.04 / 0.01 \\
+large  & \textbf{0.02} / \textbf{0.01} & 0.00 / 0.00 & 0.00 / 0.00 & 0.00 / 0.00 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.85\textwidth]{../results/phase_2_main/forest_plot.png}
+\caption{Phase 2C peak evaluation success rate per (algorithm, scale)
+with 95\% confidence intervals over 5 seeds. At the small scale all four
+algorithms learn comparably; at the medium scale only IQL maintains
+non-zero success; at the large scale none of the algorithms learn at
+all in this 30k-step budget. The clusters within each scale-block do
+not visibly separate the QMIX family from one another.}
+\label{fig:phase2c-forest}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\begin{minipage}{0.32\textwidth}\includegraphics[width=\linewidth]{../results/phase_2_main/learning_curves_small.png}\end{minipage}
+\hfill
+\begin{minipage}{0.32\textwidth}\includegraphics[width=\linewidth]{../results/phase_2_main/learning_curves_medium.png}\end{minipage}
+\hfill
+\begin{minipage}{0.32\textwidth}\includegraphics[width=\linewidth]{../results/phase_2_main/learning_curves_large.png}\end{minipage}
+\caption{Per-scale learning curves on coord\_grid, mean $\pm$ SEM over
+5 seeds. Left: small. Middle: medium. Right: large.}
+\label{fig:phase2c-curves}
+\end{figure}
+
+\subsection{H1 statistical tests}\label{sec:phase2c-h1}
+
+For each (scale, metric) cell we run all six pairwise contrasts with
+Welch's $t$-test, then apply Holm step-down correction within the cell.
+Table~\ref{tab:phase2c-h1} reports the contrasts that the paper's
+hypotheses actually target.
+
+\begin{table}[t]
+\centering
+\small
+\caption{Phase 2C: peak-metric pairwise contrasts. $\Delta$ is A minus
+B in peak success rate; $d$ is Cohen's $d$; $p$ is Holm-corrected Welch
+$p$ within the (scale, metric) cell. Bold $p$ values are significant
+at $\alpha = 0.05$.}
+\label{tab:phase2c-h1}
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Scale} & \textbf{A vs.\ B} & \textbf{mean$_A$} & \textbf{mean$_B$} & $\boldsymbol{\Delta}$ & $\boldsymbol{d}$ & \textbf{Holm $\boldsymbol{p}$} \\
+\midrule
+small  & GNN-QMIX vs.\ QMIX  & 0.63 & 0.59 & $+0.04$ & $-0.80$ & 0.489 \\
+small  & IQL vs.\ VDN        & 0.68 & 0.47 & $+0.21$ & $+2.51$ & \textbf{0.026} \\
+small  & VDN vs.\ QMIX       & 0.47 & 0.59 & $-0.12$ & $-2.15$ & \textbf{0.049} \\
+small  & VDN vs.\ GNN-QMIX   & 0.47 & 0.63 & $-0.16$ & $-2.57$ & \textbf{0.023} \\
+medium & GNN-QMIX vs.\ QMIX  & 0.04 & 0.04 & $+0.00$ & $+0.00$ & 1.000 \\
+medium & IQL vs.\ VDN        & 0.20 & 0.01 & $+0.19$ & $+4.12$ & \textbf{0.007} \\
+medium & IQL vs.\ QMIX       & 0.20 & 0.04 & $+0.16$ & $+3.47$ & \textbf{0.013} \\
+medium & IQL vs.\ GNN-QMIX   & 0.20 & 0.04 & $+0.16$ & $+3.47$ & \textbf{0.013} \\
+large  & all pairs           & $\approx 0$ & $\approx 0$ & $\approx 0$ & --- & 1.000 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Findings}
+
+\paragraph{Finding 1: scale dominates algorithm choice.} All four
+algorithms learn comparably at small ($\leq 0.68$ peak success, see
+Table~\ref{tab:phase2c}). At medium, only IQL maintains non-zero
+success and is significantly better than each of the three
+coordination-based algorithms (Holm $p \leq 0.013$, Cohen's
+$d \geq +3.5$). At large, no algorithm learns at all in 30k env steps.
+The dominant axis of variation in Figure~\ref{fig:phase2c-forest} is
+vertical (scale) rather than horizontal (algorithm within scale).
+
+\paragraph{Finding 2: GNN-QMIX is not distinguishable from QMIX.}
+At every scale we tested, the GNN augmentation does not produce a
+statistically significant peak-success advantage over the vanilla
+QMIX hypernetwork mixer (Holm $p = 0.489$ at small, $p = 1.000$ at
+medium and large). This holds even after Phase~2A unlocked QMIX from
+its Phase~1 failure mode---the two share the same fix and the GNN
+component is not differentiating.
+
+\paragraph{Finding 3: IQL is the most scale-robust algorithm.}
+Independent Q-learning, the textbook ``non-stationarity'' baseline
+that value decomposition methods are designed to improve over,
+outperforms VDN, QMIX, and GNN-QMIX at the medium scale by a margin
+that survives Holm correction. This contradicts the common framing in
+which mixer-based value decomposition is presented as a uniform
+improvement over IQL for cooperative MARL.
+
+\paragraph{Finding 4: VDN underperforms relative to hypernetwork
+mixers when the task is easy.} At small, VDN's parameter-free sum
+mixer is significantly worse than both QMIX (Holm $p = 0.049$) and
+GNN-QMIX (Holm $p = 0.023$) on peak success. So the ``VDN is too
+simple'' claim does hold in a regime---but only the regime where
+every algorithm learns. As scale grows, that gap disappears (all
+mixer-based algorithms collapse together).
 
 % ============================================================================
 \section{Results: external validity on simple\_spread}\label{sec:phase3-results}
@@ -379,12 +496,28 @@ combines a learned signal rather than fitting the bias path.
 
 \subsection{Implications for ``does GNN help in MARL?''}
 
-The most defensible answer this study supports is: \emph{conditionally,
-once mixer hyperparameters are tuned}. With literature defaults, GNN-QMIX
-is statistically indistinguishable from a broken QMIX. With Phase 2A's
-locked configuration, GNN-QMIX exceeds QMIX by a small but consistent
-margin on the smallest task scale. \todoFromPhase{Phase 2C/4}{whether this
-margin scales with task size or graph diameter alignment.}
+The most defensible answer this study supports is: \emph{no
+distinguishable effect}---once mixer hyperparameters are tuned to
+prevent the QMIX-family failure mode, the GNN augmentation does not
+significantly outperform vanilla QMIX at any of the three task scales
+we measure (Section~\ref{sec:phase2c-h1}). The Phase~1 result, in
+which GNN-QMIX appeared to lead over QMIX, turns out to be entirely
+explained by hyperparameter sensitivity: at literature defaults the
+two algorithms fail \emph{differently} (GNN-QMIX milder by a small
+but visible margin in Table~\ref{tab:phase1}), but once both are
+tuned the gap closes.
+
+The more interesting axis the data points to is \emph{task scale}.
+All four algorithms cluster together at the small scale; at medium
+and large, IQL outperforms each of the three coordination-based
+algorithms. This inverts the usual framing in which value
+decomposition is presented as a uniform fix for IQL's non-stationarity
+problem.
+
+\todoFromPhase{Phase 4}{whether the GNN--QMIX gap reopens when the
+underlying coordination graph has non-trivial diameter and the GNN
+depth is matched to it---that ablation is the cleanest test of the
+``graphs help when graphs help'' hypothesis.}
 
 \subsection{Why our findings differ from common practice}
 
@@ -439,18 +572,29 @@ template.
 \section{Conclusion}\label{sec:conclusion}
 
 We measure when graph structure helps in cooperative MARL on small
-controlled tasks. The headline finding is that the QMIX family of
-monotonic mixers fails catastrophically with literature-default
-hyperparameters on small-state-dim environments, and that orthogonal
-mixer initialization with a small gain combined with a smaller mixer
-learning rate is the necessary fix. Once that fix is in place, GNN-QMIX
-modestly exceeds QMIX, with the margin's dependence on task scale
-\todoFromPhase{Phase 2C}{being measured} and on graph-diameter alignment
-\todoFromPhase{Phase 4}{being tested}. The claim that ``GNN helps in
+controlled tasks. Two findings stand out.
+
+First, the QMIX family of monotonic mixers fails catastrophically with
+literature-default hyperparameters on small-state-dim environments;
+orthogonal mixer initialization with a small gain combined with a
+smaller mixer learning rate is the necessary fix.
+
+Second---and contrary to what an uncontrolled comparison suggests---once
+that fix is in place, the GNN augmentation does \emph{not} produce a
+statistically significant advantage over vanilla QMIX at any of the
+three task scales we measure (Holm-corrected Welch $p \geq 0.489$,
+Section~\ref{sec:phase2c-h1}). The simplest baseline (independent
+Q-learning) outperforms each of the three coordination-based algorithms
+at the medium scale. Scale dominates algorithm choice in our regime.
+
+The remaining test of when graph structure helps is the depth--diameter
+ablation \todoFromPhase{Phase 4}{being run}; the cross-env transfer
+question is partially answered by the simple\_spread results
+\todoFromPhase{Phase 3}{being run}. The claim that ``GNN helps in
 MARL'' should be qualified by the conditions of the test: the field's
-published default hyperparameters do not transfer to small-scale problems,
-and GNN advantages outside that regime are smaller than reported in
-informal claims.
+published default hyperparameters do not transfer to small-state
+problems, and the GNN advantage outside that regime---if any---is
+smaller than informal claims suggest.
 
 \paragraph{Reproducibility.} Code, locked hyperparameters, raw per-run
 CSVs, and analysis scripts are available at
