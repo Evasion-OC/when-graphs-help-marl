@@ -1,0 +1,22 @@
+ok
+started: 2026-05-09T18:00:48Z
+finished: 2026-05-10T00:23:18Z
+
+Outputs:
+  total 856
+  drwxr-xr-x@ 16 evasion  staff     512 May 10 01:23 .
+  drwxr-xr-x@  8 evasion  staff     256 May  9 22:02 ..
+  -rw-r--r--@  1 evasion  staff    6148 May  9 22:03 .DS_Store
+  -rw-r--r--@  1 evasion  staff      50 May  9 19:00 STATUS
+  -rw-r--r--@  1 evasion  staff   63485 May 10 01:23 forest_plot.png
+  drwxr-xr-x@ 17 evasion  staff     544 May 10 01:16 gnn_qmix
+  -rw-r--r--@  1 evasion  staff    5506 May 10 01:23 h1_tests.csv
+  -rw-r--r--@  1 evasion  staff    3689 May 10 01:23 h1_tests.md
+  drwxr-xr-x@ 17 evasion  staff     544 May  9 19:57 iql
+  -rw-r--r--@  1 evasion  staff   64559 May 10 01:23 learning_curves_large.png
+  -rw-r--r--@  1 evasion  staff   92639 May 10 01:23 learning_curves_medium.png
+  -rw-r--r--@  1 evasion  staff  179323 May 10 01:23 learning_curves_small.png
+  -rw-r--r--@  1 evasion  staff    1738 May 10 01:23 per_seed.csv
+  drwxr-xr-x@ 17 evasion  staff     544 May  9 23:29 qmix
+  -rw-r--r--@  1 evasion  staff     798 May 10 01:23 summary.csv
+  drwxr-xr-x@ 17 evasion  staff     544 May  9 21:37 vdn
