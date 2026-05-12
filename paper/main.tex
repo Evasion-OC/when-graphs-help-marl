@@ -4,29 +4,44 @@
 %
 % Target venue: TMLR (https://www.jmlr.org/tmlr/)
 % Status: All five findings measured; ready for submission review.
+%
+% Build (default: anonymized submission version):
+%   tectonic --untrusted main.tex
+%
+% For a non-anonymized preprint, change \usepackage{tmlr} to
+% \usepackage[preprint]{tmlr}. For a camera-ready accepted version,
+% change to \usepackage[accepted]{tmlr} and set \month/\year below.
 % ============================================================================
 
-\documentclass[11pt,a4paper]{article}
+\documentclass[10pt]{article}
+\usepackage[preprint]{tmlr}                       % anonymized submission
 
-\usepackage[utf8]{inputenc}
-\usepackage[T1]{fontenc}
+% Optional math commands from https://github.com/goodfeli/dlbook_notation
+\input{math_commands.tex}
+
 \usepackage{lmodern}            % full Latin glyph set incl. em-dash
-\usepackage[english]{babel}
-\usepackage{microtype}
-\usepackage[margin=1in]{geometry}
-
 \usepackage{amsmath,amssymb}
 \usepackage{booktabs}
 \usepackage{graphicx}
 \usepackage{xcolor}
-\usepackage[numbers,sort&compress]{natbib}
 \usepackage{hyperref}
-\hypersetup{colorlinks=true, linkcolor=blue, citecolor=blue, urlcolor=blue}
+\usepackage{url}
 
-\title{When Does Graph Structure Help in Multi-Agent Reinforcement Learning? \\
-       A Controlled Empirical Study}
-\author{Kasra Ghanavati \and Ali Jabbary}
-\date{\today}
+% Camera-ready metadata (only used by the [accepted] option).
+\def\month{05}
+\def\year{2026}
+\def\openreview{\url{https://openreview.net/forum?id=XXXXXXXX}}
+
+\title{When Does Graph Structure Help in Multi-Agent\\
+       Reinforcement Learning? A Controlled Empirical Study}
+
+% Authors must not appear in the submitted version. They are hidden when
+% the tmlr package is used without [accepted] or [preprint].
+\author{\name Kasra Ghanavati \email kasraghanavati@icloud.com \\
+        \addr Independent researcher
+        \AND
+        \name Ali Jabbary \email ali.jabbary@example.org \\
+        \addr Independent researcher}
 
 % Convenience macros for empirical numbers we'll keep updating.
 \newcommand{\NumPilotPapers}{12}      % runs in Phase 1
@@ -242,7 +257,7 @@ Table~\ref{tab:phase1-summary}.
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.7\linewidth]{../results/pilot/learning_curves.png}
+\includegraphics[width=0.7\linewidth]{figures/fig_phase1_pilot.png}
 \caption{Phase 1 pilot. With literature-default hyperparameters, QMIX
 (orange) and GNN-QMIX (red) fail to learn the coordination task, while IQL
 (gray) and VDN (blue) learn briefly and collapse. Mean $\pm$ SEM across 3
@@ -297,7 +312,7 @@ shows the full grid; the pattern dominates every other axis.
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=\linewidth]{../results/phase_2_tune/tuning_grid.png}
+\includegraphics[width=\linewidth]{figures/fig_phase2a_tuning_grid.png}
 \caption{Phase 2A tuning grid. Top row: peak eval success. Bottom row:
 late-training $Q_\text{tot}$ magnitude. Blue bars are default
 initialization, red bars are orthogonal init with gain 0.1. Gold border
@@ -373,7 +388,7 @@ large  & \textbf{0.02} / \textbf{0.01} & 0.00 / 0.00 & 0.00 / 0.00 & 0.00 / 0.00
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.85\textwidth]{../results/phase_2_main/forest_plot.png}
+\includegraphics[width=0.85\textwidth]{figures/fig_phase2c_forest.png}
 \caption{Phase 2C peak evaluation success rate per (algorithm, scale)
 with 95\% confidence intervals over 5 seeds. At the small scale all four
 algorithms learn comparably; at the medium scale only IQL maintains
@@ -385,11 +400,11 @@ not visibly separate the QMIX family from one another.}
 
 \begin{figure}[t]
 \centering
-\begin{minipage}{0.32\textwidth}\includegraphics[width=\linewidth]{../results/phase_2_main/learning_curves_small.png}\end{minipage}
+\begin{minipage}{0.32\textwidth}\includegraphics[width=\linewidth]{figures/fig_phase2c_curves_small.png}\end{minipage}
 \hfill
-\begin{minipage}{0.32\textwidth}\includegraphics[width=\linewidth]{../results/phase_2_main/learning_curves_medium.png}\end{minipage}
+\begin{minipage}{0.32\textwidth}\includegraphics[width=\linewidth]{figures/fig_phase2c_curves_medium.png}\end{minipage}
 \hfill
-\begin{minipage}{0.32\textwidth}\includegraphics[width=\linewidth]{../results/phase_2_main/learning_curves_large.png}\end{minipage}
+\begin{minipage}{0.32\textwidth}\includegraphics[width=\linewidth]{figures/fig_phase2c_curves_large.png}\end{minipage}
 \caption{Per-scale learning curves on coord\_grid, mean $\pm$ SEM over
 5 seeds. Left: small. Middle: medium. Right: large.}
 \label{fig:phase2c-curves}
@@ -500,9 +515,9 @@ GNN-QMIX & $-29.87 \pm 5.08$ & $-49.91 \pm 11.34$ \\
 
 \begin{figure}[t]
 \centering
-\begin{minipage}{0.48\textwidth}\includegraphics[width=\linewidth]{../results/phase_3_mpe/learning_curves_n3.png}\end{minipage}
+\begin{minipage}{0.48\textwidth}\includegraphics[width=\linewidth]{figures/fig_phase3_curves_n3.png}\end{minipage}
 \hfill
-\begin{minipage}{0.48\textwidth}\includegraphics[width=\linewidth]{../results/phase_3_mpe/learning_curves_n6.png}\end{minipage}
+\begin{minipage}{0.48\textwidth}\includegraphics[width=\linewidth]{figures/fig_phase3_curves_n6.png}\end{minipage}
 \caption{Phase 3 learning curves on \texttt{simple\_spread}. Left:
 $N=3$. Right: $N=6$. QMIX and GNN-QMIX exhibit a transient
 divergence-and-recovery pattern in early training (returns drop to
@@ -624,9 +639,9 @@ both pinned at $0.000$.
 
 \begin{figure}[t]
 \centering
-\begin{minipage}{0.48\textwidth}\includegraphics[width=\linewidth]{../results/phase_4_ablation/heatmap.png}\end{minipage}
+\begin{minipage}{0.48\textwidth}\includegraphics[width=\linewidth]{figures/fig_phase4_heatmap.png}\end{minipage}
 \hfill
-\begin{minipage}{0.48\textwidth}\includegraphics[width=\linewidth]{../results/phase_4_ablation/inverted_u.png}\end{minipage}
+\begin{minipage}{0.48\textwidth}\includegraphics[width=\linewidth]{figures/fig_phase4_inverted_u.png}\end{minipage}
 \caption{Phase 4: GNN-QMIX final-window success rate. Left: heatmap
 over $(L, N)$. Right: vs.\ $L - d$. All cells are at $0.000$. The
 predicted inverted-U cannot be characterized because the algorithm
@@ -788,8 +803,8 @@ are competitive or better at every regime that learns at all.
 CSVs, and analysis scripts are available at
 \url{https://github.com/Evasion-OC/when-graphs-help-marl}.
 
-\bibliographystyle{plainnat}
-\bibliography{references}
+\bibliography{main}
+\bibliographystyle{tmlr}
 
 \appendix
 
