@@ -1,14 +1,28 @@
-"""Training loop. Algorithm-agnostic: takes any BaseAgent + env."""
+"""Training loop. Algorithm-agnostic and env-agnostic.
+
+Any object exposing the following duck-typed interface can be passed as
+`env`:
+
+    env.cfg.n_agents       # int
+    env.obs_dim            # int
+    env.state_dim          # int
+    env.n_actions          # int
+    env.graph              # (N, N) np.ndarray
+    env.reset(seed=...) -> (obs, state)
+    env.step(actions)   -> (obs, state, reward, done, info)
+
+`CoordGridEnv` (Phase 1+) and `MPEEnv` (Phase 3) both satisfy this.
+"""
 from __future__ import annotations
 
 from collections import deque
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 
 from ..algos.base import BaseAgent
-from ..envs.coord_grid import CoordGridEnv
 from ..utils.logging import CSVLogger
 from .replay import ReplayBuffer
 
@@ -58,7 +72,7 @@ def _epsilon(step: int, cfg: TrainConfig) -> float:
     return cfg.eps_start + (cfg.eps_end - cfg.eps_start) * frac
 
 
-def evaluate(agent: BaseAgent, env: CoordGridEnv, n_episodes: int, seed: int) -> dict:
+def evaluate(agent: BaseAgent, env: Any, n_episodes: int, seed: int) -> dict:
     rng = np.random.default_rng(seed)
     returns, successes, lengths = [], [], []
     for ep in range(n_episodes):
@@ -86,7 +100,7 @@ def evaluate(agent: BaseAgent, env: CoordGridEnv, n_episodes: int, seed: int) ->
 
 def train(
     agent: BaseAgent,
-    env: CoordGridEnv,
+    env: Any,
     cfg: TrainConfig,
     seed: int,
 ) -> Path:
