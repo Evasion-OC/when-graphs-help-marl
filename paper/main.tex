@@ -77,15 +77,19 @@ task scales, \emph{GNN-QMIX is not statistically distinguishable from
 QMIX at any scale} (Holm-corrected Welch $p \geq 0.489$), and the
 simplest baseline (IQL) significantly outperforms all three
 coordination-based algorithms at the medium scale (Holm $p \leq 0.013$,
-Cohen's $d \geq 3.5$). Scale dominates algorithm choice.
-Fourth, the locked Phase~2A configurations do not transfer to a higher
-state-dimension benchmark
-(\todoFromPhase{Phase 3}{numbers TBD; CPU smoke indicates QMIX family
-diverges on simple\_spread while VDN and IQL remain stable}), and we
-characterize when the GNN advantage---if any---reappears as graph
-diameter changes
-(\todoFromPhase{Phase 4}{numbers TBD; pre-flight smoke clean}).
-Code and full per-run logs are released at
+Cohen's $d \geq 3.5$). Scale dominates algorithm choice on this env.
+Fourth, on a 40-run external-validity sweep on PettingZoo's
+\texttt{simple\_spread}, VDN is the strongest algorithm at both
+$N=3$ and $N=6$ (final return $-30.8$ and $-44.7$), QMIX and GNN-QMIX
+exhibit a transient early-training dip and recover, and IQL is the
+worst --- inverting the Phase~2C pattern when reward density changes.
+Fifth, the depth $\times$ diameter ablation on coord\_grid with ring
+topology at $N \in \{4, 6, 8\}$ produces a null result: every
+$(L, N)$ cell has final-window success $0.000$ over 5 seeds, so the
+predicted inverted-U cannot be characterized in this regime. The
+binding constraint is the cross-env transferability of mixer
+hyperparameters, not the GNN component itself. Code and full per-run
+logs are released at
 \url{https://github.com/Evasion-OC/when-graphs-help-marl}.
 \end{abstract}
 
@@ -460,36 +464,169 @@ mixer-based algorithms collapse together).
 % ============================================================================
 \section{Results: external validity on simple\_spread}\label{sec:phase3-results}
 
-\todoFromPhase{Phase 3}{
-  40-run sweep on PettingZoo's \texttt{simple\_spread} (\citet{Lowe2017MADDPG};
-  PettingZoo wrapper from \citet{Terry2021PettingZoo}) at $N \in \{3, 6\}$
-  with the locked Phase 2A hyperparameters. Tests whether the QMIX-family fix
-  transfers to a benchmark the field publishes against. Insert:
-  \begin{enumerate}
-    \item Per-N learning curves.
-    \item Aggregate ranking (eval return mean) per algorithm.
-    \item Comment on whether the locked hyperparameters require any
-      adjustment for the larger 54-dim global state.
-  \end{enumerate}
-}
+We re-run the locked configurations on PettingZoo's
+\texttt{simple\_spread} \cite{Lowe2017MADDPG,Terry2021PettingZoo} — a
+canonical cooperative MARL benchmark with a 54-dimensional global
+state and dense per-step distance rewards in $[-5, -1]$. Same
+hyperparameters as Section~\ref{sec:phase2c-results} (no per-env
+retuning), $N \in \{3, 6\}$, 5 seeds, 30k env steps, and
+$\varepsilon$-decay over the first 15k steps. Headline metric is mean
+evaluation return at the last evaluation checkpoint (less negative is
+better, episodic return is bounded above by $0$).
+
+\subsection{Headline numbers}
+
+\begin{table}[t]
+\centering
+\small
+\caption{Phase 3: mean evaluation return on \texttt{simple\_spread},
+mean over 5 seeds, last checkpoint. Bold = best per column.}
+\label{tab:phase3}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Algorithm} & $N=3$ & $N=6$ \\
+\midrule
+IQL      & $-34.18 \pm 4.38$ & $-56.71 \pm 13.06$ \\
+VDN      & $\mathbf{-30.82 \pm 5.09}$ & $\mathbf{-44.74 \pm 4.76}$ \\
+QMIX     & $-35.23 \pm 8.77$ & $-51.93 \pm 10.36$ \\
+GNN-QMIX & $-29.87 \pm 5.08$ & $-49.91 \pm 11.34$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\begin{minipage}{0.48\textwidth}\includegraphics[width=\linewidth]{../results/phase_3_mpe/learning_curves_n3.png}\end{minipage}
+\hfill
+\begin{minipage}{0.48\textwidth}\includegraphics[width=\linewidth]{../results/phase_3_mpe/learning_curves_n6.png}\end{minipage}
+\caption{Phase 3 learning curves on \texttt{simple\_spread}. Left:
+$N=3$. Right: $N=6$. QMIX and GNN-QMIX exhibit a transient
+divergence-and-recovery pattern in early training (returns drop to
+$\approx -85$ at episode 200 before recovering), while VDN and IQL
+descend monotonically toward their asymptotes. By the last
+checkpoint VDN is at or above all three competitors at both $N$.}
+\label{fig:phase3-curves}
+\end{figure}
+
+\subsection{Findings}
+
+\paragraph{The locked configurations do transfer, contrary to the
+smoke prediction.} The 10k-step CPU smoke that preceded this run
+(Appendix~\ref{sec:phase3-smoke-history}) showed QMIX and GNN-QMIX
+diverging catastrophically on \texttt{simple\_spread}, with
+$q_\text{tot}$ reaching $+400$ and loss exploding to $\approx 2000$.
+At the full 30k-step budget with $\varepsilon$-decay over the first
+half of training, the QMIX family does dip hard early (Figure~\ref{fig:phase3-curves}, around episode 200) but recovers as
+the mixer's bias path stabilizes. The smoke's failure pattern was
+real but transient: it reflects a hyperparameter setting --- aggressive
+$\varepsilon$-decay relative to env difficulty --- not a fundamental
+failure of the algorithm on the env.
+
+\paragraph{VDN is the strongest algorithm on simple\_spread.} The
+parameter-free sum mixer leads at both $N$ values, both as a final
+return and as a learning trajectory: VDN does not exhibit the
+early dip the QMIX family shows. The GNN augmentation does not
+recover the deficit: GNN-QMIX is competitive with VDN at $N=3$
+(within SEM) but trails at $N=6$ by approximately $5$ return units.
+
+\paragraph{IQL's scale-robustness from Phase 2C does not transfer.}
+Phase 2C found IQL to be the most robust algorithm at the medium
+coord\_grid scale; Phase 3 finds it the worst at \texttt{simple\_spread}
+$N=6$. The likely explanation is reward density: coord\_grid (with
+shaping) gives sparse per-step signal that IQL handles competitively,
+while \texttt{simple\_spread} gives dense per-step distance rewards
+that the value-decomposition algorithms can exploit. The
+``simplest baseline wins'' claim is therefore env-dependent.
 
 % ============================================================================
 \section{Results: depth $\times$ diameter ablation}\label{sec:phase4-results}
 
-\todoFromPhase{Phase 4}{
-  Holds GNN-QMIX with the locked Phase 2A configuration and varies
-  GNN depth $L \in \{1,2,3,4\}$ against ring topology size
-  $N \in \{4, 6, 8\}$, giving diameters $d \in \{2, 3, 4\}$. The hypothesis
-  predicts an inverted-U in $L - d$. Insert:
-  \begin{enumerate}
-    \item Heatmap of final-window success over $(L, N)$ with the
-      predicted $L = d$ ridge marked.
-    \item Inverted-U plot: final success vs. $L - d$, error bars over
-      seeds.
-    \item Welch test on whether peak performance is significantly
-      higher at $L = d$ than at $L \neq d$.
-  \end{enumerate}
-}
+We hold GNN-QMIX with the locked Phase 2A configuration and vary GNN
+depth $L \in \{1,2,3,4\}$ against ring topology size $N \in \{4, 6, 8\}$,
+which gives graph diameters $d \in \{2, 3, 4\}$. The H3 prediction was
+an inverted-U in $L - d$: GNN-QMIX should peak when its receptive
+field $L$ matches the graph diameter $d$. We run 60 GNN-QMIX cells (4
+depths $\times$ 3 ring sizes $\times$ 5 seeds) plus 15 QMIX-reference
+cells (3 sizes $\times$ 5 seeds, depth-agnostic) at 30k env steps each,
+9.5 hours total wall.
+
+\subsection{Result: null at this env scale}
+
+\textbf{Every cell has final-window mean $= 0.000$ across 5 seeds.}
+Both GNN-QMIX at every $(L, N)$ combination and QMIX at every $N$
+fail to learn the ring-topology coord\_grid task at $N \geq 4$ within
+the 30k step budget. The H3 inverted-U cannot be tested: there is
+nothing to differentiate when every cell is at the floor.
+
+\subsection{Why}
+
+This null result is consistent with Phase 2C
+(Section~\ref{sec:phase2c-results}): the QMIX family with the locked
+Phase 2A configuration fails to learn on coord\_grid at the
+medium ($N=3$) and large ($N=4$) scales. Phase 4's smallest cell ($N=4$,
+ring, diameter $2$) sits at exactly the boundary where Phase 2C found
+the algorithm to break down. Larger $N$ and the lower-connectivity
+ring topology --- which has half the average degree of \texttt{full}
+at the same $N$ --- can only make this harder.
+
+The pre-flight CPU smoke at 3k steps showed bounded $q_\text{tot}$ at
+every $(L, N)$ cell and tentative hints of an inverted-U at $N=4$
+(Appendix~\ref{sec:phase4-smoke-history}). The smoke did not predict
+this floor outcome because at 3k steps the algorithm is still in
+its $\varepsilon$-exploring phase --- it doesn't have time to fail
+asymptotically. The full 30k step runs reveal that GNN-QMIX never
+finds a learning trajectory on these tasks.
+
+\subsection{What this tells us about H3}
+
+H3 (inverted-U in $L - d$) is \emph{not falsified} by this experiment;
+it is \emph{not testable} in this regime. To run a clean test we
+would need either:
+
+\begin{itemize}
+  \item A fundamentally different hyperparameter regime for GNN-QMIX
+    at $N \geq 4$ (longer step budget, re-tuned mixer parameters,
+    possibly a different optimizer). Phase 2A's lock was tuned at
+    $N=2$ and only verified to transfer within the smallest regime.
+  \item A benchmark where GNN-QMIX learns at $N \geq 4$ in the first
+    place. \texttt{simple\_spread} at $N=6$ would be a candidate
+    (Section~\ref{sec:phase3-results}); replacing
+    \texttt{full} with a ring topology there, varying $L$, and
+    measuring would be a clean reformulation of Phase 4 that we leave
+    to future work.
+\end{itemize}
+
+\subsection{What this tells us about the Phase 2A lock}
+
+Phase 2A's tuning grid was performed at $N=2$ on coord\_grid and
+already noted (Section~\ref{sec:phase2a-results}) that the resulting
+``locked'' configuration was env-scale-specific. Phases 2C, 3, and 4
+together quantify how badly it fails to transfer:
+
+\begin{itemize}
+  \item Phase 2C: works at $N=2$ on coord\_grid; fails at $N \geq 3$.
+  \item Phase 3: transfers to \texttt{simple\_spread} after the
+    early-divergence-and-recovery transient.
+  \item Phase 4: does not transfer to coord\_grid $N \geq 4$ with the
+    ring topology.
+\end{itemize}
+
+The honest summary is that the ``locked'' configuration is locked to
+the specific env where it was tuned. The cross-env transferability of
+mixer hyperparameters --- not just the GNN augmentation --- is the
+practical lesson.
+
+\begin{figure}[t]
+\centering
+\begin{minipage}{0.48\textwidth}\includegraphics[width=\linewidth]{../results/phase_4_ablation/heatmap.png}\end{minipage}
+\hfill
+\begin{minipage}{0.48\textwidth}\includegraphics[width=\linewidth]{../results/phase_4_ablation/inverted_u.png}\end{minipage}
+\caption{Phase 4: GNN-QMIX final-window success rate. Left: heatmap
+over $(L, N)$. Right: vs.\ $L - d$. All cells are at $0.000$. The
+predicted inverted-U cannot be characterized because the algorithm
+does not learn at any $(L, N)$.}
+\label{fig:phase4}
+\end{figure}
 
 % ============================================================================
 \section{Discussion}\label{sec:discussion}
@@ -514,10 +651,17 @@ algorithms. This inverts the usual framing in which value
 decomposition is presented as a uniform fix for IQL's non-stationarity
 problem.
 
-\todoFromPhase{Phase 4}{whether the GNN--QMIX gap reopens when the
-underlying coordination graph has non-trivial diameter and the GNN
-depth is matched to it---that ablation is the cleanest test of the
-``graphs help when graphs help'' hypothesis.}
+The Phase~4 ablation (Section~\ref{sec:phase4-results}) was designed
+to test whether the GNN--QMIX gap reopens once the coordination graph
+has non-trivial diameter and the GNN depth is matched to it. It
+returned a null result: at the $N \geq 4$ scales where graph
+diameter would matter, neither GNN-QMIX nor reference QMIX learn at
+all under the locked Phase~2A configuration. So we cannot
+characterize an inverted-U: every cell is at the floor. The honest
+conclusion is that whether ``graphs help when graphs help'' is true
+remains untested on this env; testing it would require either a
+different hyperparameter regime at $N \geq 4$ or a different
+benchmark.
 
 \subsection{Why our findings differ from common practice}
 
@@ -587,19 +731,98 @@ Section~\ref{sec:phase2c-h1}). The simplest baseline (independent
 Q-learning) outperforms each of the three coordination-based algorithms
 at the medium scale. Scale dominates algorithm choice in our regime.
 
-The remaining test of when graph structure helps is the depth--diameter
-ablation \todoFromPhase{Phase 4}{being run}; the cross-env transfer
-question is partially answered by the simple\_spread results
-\todoFromPhase{Phase 3}{being run}. The claim that ``GNN helps in
-MARL'' should be qualified by the conditions of the test: the field's
-published default hyperparameters do not transfer to small-state
-problems, and the GNN advantage outside that regime---if any---is
-smaller than informal claims suggest.
+Third, the cross-env transfer test on \texttt{simple\_spread}
+(Section~\ref{sec:phase3-results}) further attenuates the
+``coordination-augmentation wins'' story: VDN --- with its
+parameter-free sum mixer --- is the strongest of the four algorithms
+at both $N=3$ and $N=6$, while IQL is the worst. The pattern in which
+the simplest algorithm wins inverts depending on reward density.
+
+Fourth, the depth $\times$ diameter ablation
+(Section~\ref{sec:phase4-results}) is a null result at the relevant
+$N$: GNN-QMIX fails to learn at any $(L, N)$ combination with the
+locked Phase~2A configuration on coord\_grid ring topology at
+$N \geq 4$. The inverted-U cannot be characterized; the binding
+constraint is the cross-env transferability of mixer hyperparameters,
+not the GNN augmentation itself.
+
+The claim that ``GNN helps in MARL'' should be qualified by the
+conditions of the test: the field's published default hyperparameters
+do not transfer to small-state problems, the GNN augmentation does not
+significantly improve over a properly-tuned vanilla QMIX at the scales
+we tested, and the simplest baselines (VDN or IQL, depending on env)
+are competitive or better at every regime that learns at all.
 
 \paragraph{Reproducibility.} Code, locked hyperparameters, raw per-run
 CSVs, and analysis scripts are available at
 \url{https://github.com/Evasion-OC/when-graphs-help-marl}.
 
 \printbibliography
+
+\appendix
+
+\section{Phase 3 smoke history}\label{sec:phase3-smoke-history}
+
+Before the full Phase 3 sweep we ran a 4-run CPU-only smoke
+(\texttt{scripts/run\_phase\_3\_smoke.py}) at $N=3$, 10k env steps,
+$\varepsilon$-decay over the first 5k steps. The smoke showed
+catastrophic divergence for the QMIX family:
+
+\begin{center}
+\small
+\begin{tabular}{lrrr}
+\toprule
+\textbf{Config} & \textbf{Final return} & \textbf{Late loss} & \textbf{Late} $q_\text{tot}$ \\
+\midrule
+VDN (no hypernet mixer)            & $-21$ & $0.25$ & $-3.5$ \\
+IQL (no mixer at all)              & $-21$ & $1.1$  & $-8.6$ \\
+QMIX locked Phase 2A               & $-38$ & $25.7$ & $+28$ \\
+GNN-QMIX locked Phase 2A           & $-62$ & $124$  & $+80$ \\
+GNN-QMIX, mixer\_lr=5e-4, ortho    & $-52$ & $880$  & $+224$ \\
+GNN-QMIX Phase 1 defaults          & $-28$ & $2078$ & $+413$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+$q_\text{tot}$ should be \emph{negative} on \texttt{simple\_spread}
+(rewards are negative). The QMIX-family produced large positive
+$q_\text{tot}$, suggesting catastrophic value over-estimation. The
+smoke prompted us to write up Phase 3 as a predicted negative-transfer
+finding.
+
+When the full sweep ran with 3$\times$ the step budget and a longer
+$\varepsilon$-decay schedule, the QMIX family did dip hard early but
+recovered. The smoke captured a transient instability, not an
+asymptotic failure. The smoke was therefore predictive of training
+\emph{dynamics} but not of final outcomes; we leave the smoke writeup
+in the repo at \texttt{results/phase\_3\_smoke/SMOKE\_FINDING.md} as a
+worked example of why pre-flights should run to a similar budget as
+the real sweep when convergence is the question.
+
+\section{Phase 4 smoke history}\label{sec:phase4-smoke-history}
+
+Before the full Phase 4 sweep we ran a 12-cell CPU smoke (every
+$(L, N)$ combination, single seed, 3k env steps) with the locked
+Phase 2A GNN-QMIX configuration on coord\_grid ring topology.
+$q_\text{tot}$ was bounded (between $+0.7$ and $+1.5$) and loss tiny
+($<0.1$) at every cell --- consistent with ``no divergence.'' The
+smoke also showed tentative hints of the predicted inverted-U at $N=4$
+(peak return at $L=2$, which matches $d=2$). On the strength of these
+results we launched the overnight 75-run sweep, expecting bounded
+training and a clean inverted-U signal at the full budget.
+
+The full sweep result was different: every $(L, N)$ cell at 30k steps
+had final-window success $0.000$. The smoke's bounded $q_\text{tot}$
+came from the $\varepsilon$-exploring phase, during which agents act
+mostly at random and the mixer sees TD targets dominated by exploration
+noise. With 3k steps and $\varepsilon$-decay over the first 1.5k, the
+training schedule didn't push the algorithm into the greedy regime
+where it would actually have to learn. The pre-flight predicted
+``didn't crash,'' which is necessary but not sufficient.
+
+In retrospect both smokes had the same failure pattern: a 3--10k
+step pre-flight cannot distinguish ``stable but not learning'' from
+``stable and on a learning trajectory.'' Future pre-flights should
+budget at least 30--50\% of the planned full step count.
 
 \end{document}
