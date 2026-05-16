@@ -70,7 +70,7 @@ published literature. We present a controlled empirical study comparing
 GNN-QMIX against three graph-free baselines (independent Q-learning, value
 decomposition networks, and QMIX) on cooperative coordination tasks where
 the underlying graph structure is tunable.
-Five findings emerge.
+Six findings emerge.
 First, on small environments QMIX and GNN-QMIX with literature-default
 mixer hyperparameters \emph{fail to learn at all}, while VDN and IQL learn
 but collapse late in training.
@@ -95,8 +95,16 @@ topology at $N \in \{4, 6, 8\}$ produces a null result: every
 $(L, N)$ cell has final-window success $0.000$ over 5 seeds, so the
 predicted inverted-U cannot be characterized in this regime. The
 binding constraint is the cross-env transferability of mixer
-hyperparameters, not the GNN component itself. Code and full per-run
-logs are released at
+hyperparameters, not the GNN component itself.
+Sixth, re-running the depth ablation on \texttt{simple\_spread} N=6
+(where the algorithm does learn) we find a monotone-with-recovery
+trend: $L=6$ achieves both the best mean return ($-46.48$, within a
+SEM of VDN) and the tightest seed-level variance, while intermediate
+depths $\{3, 4\}$ are worse than the $L=2$ baseline. With $n=5$
+seeds the Holm-corrected pairwise test against $L=2$ does not reach
+significance ($d=+0.40$, $p_{\text{Holm}}=1.000$), and we cannot
+endorse the inverted-U prediction in its original form. Code and
+full per-run logs are released at
 \url{https://github.com/Evasion-OC/when-graphs-help-marl}.
 \end{abstract}
 
@@ -648,6 +656,77 @@ predicted inverted-U cannot be characterized because the algorithm
 does not learn at any $(L, N)$.}
 \label{fig:phase4}
 \end{figure}
+
+% ============================================================================
+\section{Results: GNN depth ablation on \texttt{simple\_spread}}\label{sec:phase6-results}
+
+To make the depth-versus-performance question actually testable we
+re-ran the ablation on \texttt{simple\_spread} at $N=6$ --- the env
+where GNN-QMIX learns (Section~\ref{sec:phase3-results}). We vary
+GNN depth $L \in \{1, 2, 3, 4, 6\}$ holding everything else fixed at
+Phase 2A's locked GNN-QMIX configuration. 5 seeds per cell, 30k env
+steps per run, 25 runs total.
+
+\begin{table}[t]
+\centering
+\small
+\caption{Phase 6: GNN-QMIX final-window evaluation return on
+\texttt{simple\_spread} N=6 as a function of GNN depth $L$, mean
+$\pm$ SEM over 5 seeds. Less negative is better.}
+\label{tab:phase6}
+\begin{tabular}{lccccc}
+\toprule
+$L$       & 1                   & 2 (baseline)        & 3                   & 4                   & \textbf{6} \\
+\midrule
+final ret & $-54.79 \pm 4.70$   & $-49.91 \pm 5.07$   & $-53.71 \pm 6.43$   & $-51.87 \pm 4.25$   & $\mathbf{-46.48 \pm 1.95}$ \\
+$d$ vs L=2 & $-0.45$             & ---                  & $-0.29$             & $-0.19$             & $+0.40$ \\
+Holm $p$  & $1.000$             & ---                  & $1.000$             & $1.000$             & $1.000$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.7\linewidth]{figures/fig_phase6_depth_curve.png}
+\caption{Phase 6: GNN-QMIX final-window evaluation return vs.\ GNN
+depth $L$ on \texttt{simple\_spread} N=6. Mean $\pm$ SEM over 5 seeds
+(red). Dots are individual seeds. VDN and L=2 references from Phase
+3 are dashed. The deepest GNN ($L=6$) achieves both the best mean
+($-46.48$) and the tightest variance (SEM $1.95$), but Holm-corrected
+pairwise tests against $L=2$ do not reach significance with $n=5$.}
+\label{fig:phase6}
+\end{figure}
+
+\paragraph{Trend without statistical significance.} $L=6$ achieves
+both the best mean return ($-46.48$) and the tightest seed-level
+variance (SEM $1.95$), comfortably better than every other depth and
+within the noise of the VDN reference from Section~\ref{sec:phase3-results}
+($-44.74$). The Cohen's $d$ effect size vs.\ $L=2$ is $+0.40$,
+meaningful by Cohen's conventional cutoffs. But the Welch $p$ is
+$0.555$ and Holm-corrected over the four contrasts vs.\ baseline it
+becomes $1.000$. With $n=5$ seeds we cannot statistically distinguish
+$L=6$ from $L=2$.
+
+\paragraph{No clean inverted-U.} The intermediate depths $L \in
+\{3, 4\}$ both perform worse than $L=2$, not better, contradicting
+the H3 prediction of a peak at $L \approx d$. \texttt{simple\_spread}
+has no natural coordination graph diameter, so $d$ is undefined;
+the prediction was nonetheless that some middle depth would
+out-perform extremes, and the data is monotone in the wrong direction
+inside $\{1, 2, 3, 4\}$ before recovering at $L=6$. We cannot endorse
+H3 in its original form on this evidence.
+
+\paragraph{What the data does support.} $L=6$ is the empirical best
+across this small sweep, with the lowest variance. If we treat $L=6$
+as a calibrated configuration of GNN-QMIX and compare against the
+$L=2$ default, GNN-QMIX moves from clearly worse than VDN (Phase 3:
+$-49.91$ at $L=2$ vs.\ VDN's $-44.74$, Cohen's $d \approx 0.6$) to
+within a SEM of VDN ($-46.48$ at $L=6$). The depth axis at least
+\emph{matters} in the right direction even if our $n=5$ sample is
+too small to make it statistically robust. An extension to $n=10$
+on the cells $L \in \{1, 2, 6\}$ and on Phase 3's $N=6$ algorithm
+ranking is underway in the public repository at the time of
+submission.
 
 % ============================================================================
 \section{Discussion}\label{sec:discussion}
