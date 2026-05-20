@@ -25,9 +25,10 @@ dist/
 *.swp
 .DS_Store
 
-# Results — keep CSVs, ignore heavy binaries
+# Results — keep summary CSVs, ignore heavy binaries and ephemeral smoke outputs
 results/checkpoints/
 results/runs/*.pt
+results/smoke/
 results/wandb/
 results/tensorboard/
 *.npz

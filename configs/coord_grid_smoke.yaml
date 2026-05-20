@@ -1,0 +1,29 @@
+# 60-second smoke-test config: train any algo on a tiny CoordGrid for 1k steps.
+# Acceptance criterion (Phase 0): each of {iql, vdn, qmix, gnn_qmix} runs to
+# completion without crashing and writes a CSV under results/smoke/.
+
+env: coord_grid
+env_kwargs:
+  n_agents: 4
+  grid_size: 5
+  episode_steps: 25
+  graph: ring
+
+# algo is intentionally omitted — scripts/smoke.py iterates over all four.
+algo_kwargs:
+  buffer_capacity: 2000
+  batch_size: 32
+  target_update_interval: 100
+  lr: 5.0e-4
+  gamma: 0.99
+  gnn_layers: 2
+  gnn_hidden: 64
+
+total_env_steps: 1000
+
+eps_start: 1.0
+eps_end: 0.1
+eps_anneal_steps: 800
+
+seed: 0
+log_dir: results/smoke
