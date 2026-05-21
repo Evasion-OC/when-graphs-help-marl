@@ -501,6 +501,16 @@ varying the graph: \texttt{complete} ($d=1$), \texttt{ring} ($d=2$),
 $N$ is held constant across diameters so the variable under study is
 unconfounded; a wider diameter range would require larger teams ($d=4$
 needs $N \geq 5$) and is out of scope for the compute budget.
+\texttt{max\_neighbors\_override} is set to $N-1$ so $\dim(o_i)$ is
+constant across graph kinds, eliminating an input-dimension confound.
+
+\textbf{Predictions (pre-registered, from H3).}
+For each diameter $d$ we predict the row-wise argmax of the
+final-window return to lie within $\pm 1$ of $d$. Concretely:
+$d=1 \Rightarrow L^* \in \{1, 2\}$; $d=2 \Rightarrow L^* \in \{1, 2, 3\}$;
+$d=3 \Rightarrow L^* \in \{2, 3, 4\}$. Curves must additionally be non-flat
+(relative range $\ge 10\%$ of peak) for a row to count as a confirmation,
+to prevent noisy flat curves from passing by accident.
 
 \input{results/phase4}
 
@@ -531,13 +541,18 @@ sweeps in deployment.
 
 \paragraph{When \emph{not} to use a GNN mixer.} The simplest case is when
 the task does not actually have a coordination graph: the GNN's inductive
-bias buys nothing and pays for the cost of representing a uniform graph
+bias buys nothing and pays the cost of representing a uniform graph
 (or, worse, of mis-specifying the graph). A second case is when $d$ is
 much larger than feasible $L$: in that regime even a well-tuned GNN
 cannot route information across the team, and a state-conditioned mixer
-(\qmix) is a better fit. We did not observe systematic damage from
-deploying \gnnqmix\ where it was not needed, but the parameter overhead
-and tuning cost are real.
+(\qmix) is a better fit. Our pilot (Section~\ref{sec:results:pilot})
+documents a third case empirically: on a small team ($N=4$) with a low-
+diameter coordination graph ($d=2$), \gnnqmix\ was both less accurate
+and substantially less stable across seeds than \qmix. Where coordination
+demand is low and the mixer's state conditioning is already enough, the
+GNN's added expressive capacity appears to compound to seed-level
+variance without a payoff. Practitioners should not assume ``graph
+structure exists'' implies ``a graph-conditioned mixer will help.''
 
 \paragraph{Implications for benchmark design.} Most MARL benchmarks fix one
 environment with one (often implicit) coordination graph and report a
@@ -682,21 +697,25 @@ scripts under \texttt{scripts/phase\{1,2,4\}\_analysis.py}.
 
 \begin{table}[h!]
   \centering
-  \caption{Compute budget per phase: pre-registered vs.\ actually executed.}
+  \caption{Compute budget per phase: pre-registered vs.\ actually executed.
+  Wall-clock totals are measured on a single Windows Server 2019 CPU
+  (\texttt{torch==2.6.0+cpu}); the Colab notebook in
+  \texttt{notebooks/} reproduces the same numbers within $\pm 30\%$ on the
+  free CPU tier and within $\pm 10\%$ on the T4 GPU runtime.}
   \label{tab:budget}
   \small
-  \begin{tabular}{lrrr}
+  \begin{tabular}{lrrrr}
     \toprule
-    Phase & Pre-registered (env steps) & Executed (env steps) & Reason for scaling \\
+    Phase & Pre-registered & Executed & Wall & Reason for scaling \\
     \midrule
-    1 (pilot)       & $5 \times 10^4 \times 3 \times 4$  & [INSERT]
-                    & matches pre-reg. \\
-    2 (E1 sweep)    & $2 \times 10^5 \times 5 \times 4 \times 3 \times 2$ & [INSERT]
-                    & CPU envelope. \\
-    3 (MPE)         & $\geq 10^6 \times 5 \times 4 \times 2$ & [INSERT]
-                    & CPU envelope. \\
-    4 (ablation)    & $\geq 5 \times 10^4 \times \cdots$  & [INSERT]
-                    & CPU envelope. \\
+    1 (pilot)       & $5\cdot 10^4 \times 3 \times 4$  & matches pre-reg. & $\sim 77$ min &
+                      none. \\
+    2 (E1 sweep)    & $2\cdot 10^5 \times 5 \times 4 \times 3 \times 2$ & $3\cdot 10^4 \times 3 \times 4 \times 2 \times 2$
+                    & \emph{est.}\ ${\sim}3$ h & CPU envelope. \\
+    3 (MPE)         & $\geq 10^6 \times 5 \times 4 \times 2$ & deferred & --
+                    & CPU envelope; adapter shipped. \\
+    4 (ablation)    & $\geq 5\cdot 10^4 \times \cdots$  & $2\cdot 10^4 \times 4 \times 3 \times 3$
+                    & \emph{est.}\ ${\sim}2$ h & CPU envelope. \\
     \bottomrule
   \end{tabular}
 \end{table}
