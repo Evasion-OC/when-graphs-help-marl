@@ -244,9 +244,12 @@ def phase2() -> None:
             "\\begin{figure}[t]\n"
             "  \\centering\n"
             f"  \\includegraphics[width=0.78\\linewidth]{{figures/{forest}}}\n"
-            "  \\caption{Phase 2 forest plot: episodes to 80\\% of best final-"
-            "window return per algorithm $\\times$ condition. Lower is better. "
-            "Bars are 95\\% Student-$t$ CIs across seeds.}\n"
+            "  \\caption{Phase 2 forest plot: episodes to 80\\% of each "
+            "algorithm's \\emph{own} final-window return, per algorithm "
+            "$\\times$ condition. Lower is better. Bars are 95\\% Student-$t$ "
+            "CIs across seeds; CIs that extend into negative values reflect "
+            "the conservative Student-$t$ interval with $n=3$ and should be "
+            "interpreted as 'no lower bound resolved.'}\n"
             "  \\label{fig:phase2_forest}\n"
             "\\end{figure}\n"
         )
@@ -292,10 +295,12 @@ def phase4() -> None:
     if h3_path.exists():
         h3 = pd.read_csv(h3_path)
         if not h3.empty:
+            # Use 3-dp on relative_range so the 9.77% vs 10% boundary is
+            # visible (would round to 0.10 at 2dp and look like a pass-by-rounding).
             lines = [
                 f"{int(r['diameter'])} & {int(r['argmax_depth'])} & "
-                f"{_fmt(r['peak_mean_return'])} & {_fmt(r['relative_range'])} & "
-                f"{'\\\\checkmark' if int(r['h3_match']) else '$\\\\times$'} \\\\"
+                f"{_fmt(r['peak_mean_return'])} & {_fmt(r['relative_range'], 3)} & "
+                + (r"\checkmark" if int(r['h3_match']) else r"$\times$") + r" \\"
                 for _, r in h3.iterrows()
             ]
             n_match = int(h3["h3_match"].sum())
