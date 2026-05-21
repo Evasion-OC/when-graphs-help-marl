@@ -689,6 +689,21 @@ GNN's added expressive capacity appears to compound to seed-level
 variance without a payoff. Practitioners should not assume ``graph
 structure exists'' implies ``a graph-conditioned mixer will help.''
 
+\paragraph{When to consider one anyway.} Our negative result does not
+rule out graph-conditioned mixers categorically. The conditions under
+which one is worth trying, inverted from our limitations, are: (a) the
+task's team reward is \emph{non-separable} along the coordination
+graph --- it depends on properties of paths or subgraphs that no
+per-agent feature captures (cf.\ Section~\ref{sec:limitations}, item
+2); (b) the coordination graph is \emph{stable} across episodes, so
+the GCN's message-passing pattern is itself a learnable target rather
+than a moving one (cf.\ item 5); (c) the compute budget supports
+$\ge 10^5$ env steps per condition, sufficient for the
+larger-parameter mixer to converge (cf.\ item 1); and (d) the depth
+is set to $L \in \{1, 2\}$ (cf.\ the over-depth cliff above). Outside
+those conditions, the prior on ``simpler mixer wins'' should be the
+default.
+
 \paragraph{Implications for benchmark design.} Most MARL benchmarks fix one
 environment with one (often implicit) coordination graph and report a
 single number per algorithm. Our results suggest that comparisons reported
@@ -911,6 +926,56 @@ commands used to produce every table and figure in this paper are listed in
 \texttt{docs/REPRO.md} on the release tag. Each run is fully seeded; the
 CSV produced under \texttt{results/} is the input to the figure generation
 scripts under \texttt{scripts/phase\{1,2,4\}\_analysis.py}.
+
+\subsection*{Reproducibility checklist}
+\label{app:repro:checklist}
+
+\begin{description}[leftmargin=2em,style=nextline,itemsep=0pt,topsep=2pt]
+  \item[\textbf{All source code released.}] Yes ---
+        \url{https://github.com/Evasion-OC/when-graphs-help-marl}, MIT
+        licensed. Includes env, all four algorithms, training loop,
+        analysis, and the LaTeX source of this paper.
+  \item[\textbf{Pre-trained models or checkpoints released.}] No --- model
+        sizes are small ($<$50k parameters) and full retraining from the
+        released configs takes hours on commodity CPU; checkpoints would
+        add no value over re-running.
+  \item[\textbf{All hyperparameters reported.}] Yes ---
+        Table~\ref{tab:hparams_shared} (Appendix~\ref{app:hparams}) +
+        per-run \texttt{config.json} sidecars in
+        \texttt{results/<phase>/<run\_id>/}.
+  \item[\textbf{Number of random seeds reported.}] Yes --- 3 seeds per
+        condition (declared at the start of every Phase paragraph in
+        Section~\ref{sec:results}; flagged as a limitation in
+        Section~\ref{sec:limitations}, item 4).
+  \item[\textbf{Confidence intervals reported.}] Yes --- 95\%
+        Student-$t$ CIs across seeds for every aggregate; CI bounds
+        crossing zero are explicitly noted in the text.
+  \item[\textbf{Statistical tests with stated alternatives and corrections.}]
+        Yes --- Welch's two-sample $t$ as primary test with one-sided
+        $H_a$ stated per H1/H2 contrast; Holm--Bonferroni step-down
+        correction across the explicit pairwise family
+        (Section~\ref{sec:protocol}); Cohen's $d$ reported alongside
+        $p$-values (Table~\ref{tab:phase2_h1}).
+  \item[\textbf{Effect sizes.}] Yes --- mean differences and Cohen's
+        $d$ (Table~\ref{tab:phase2_h1}).
+  \item[\textbf{Compute described.}] Yes --- hardware, wall-clock per
+        phase, scaling decisions vs.\ pre-registered budget in
+        Appendix~\ref{app:budget}.
+  \item[\textbf{Datasets / environments accessible.}] Yes ---
+        \coordgrid\ is custom and shipped in the source repository;
+        MPE adapter shipped but Phase 3 results deferred (see
+        Section~\ref{sec:results:mpe}).
+  \item[\textbf{Pre-registered hypotheses.}] Yes ---
+        Section~\ref{sec:hypotheses}; H3 includes an explicit
+        falsifiability criterion (per-row non-flat + $|L^*-d|\le 1$;
+        family-level $\ge \lceil 2n/3 \rceil$).
+  \item[\textbf{Negative results reported.}] Yes --- both H1 and H3 are
+        falsified; the headline contribution is the negative finding.
+  \item[\textbf{One-click reproduction.}] Yes --- Colab notebook at
+        \texttt{notebooks/colab\_runner.ipynb} clones the repo, installs
+        dependencies, runs the toggled phases, builds the paper PDF, and
+        pushes a result branch back to GitHub.
+\end{description>
 
 \section{Compute scaling decisions}
 \label{app:budget}
