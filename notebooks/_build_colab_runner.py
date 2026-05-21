@@ -288,9 +288,11 @@ CELLS = [
         "**Token setup** (in order of preference):",
         "",
         "1. **Colab Secrets (recommended)** — in the left sidebar, click the key icon "
-        "(*Secrets*), add a secret named `GITHUB_TOKEN`, paste a personal access "
-        "token with `repo` scope, and toggle *Notebook access*. The cell picks it up "
-        "automatically; it survives runtime restarts within the same Google account.",
+        "(*Secrets*), add a secret named `GNNMARL_GITHUB_TOKEN` (project-specific so "
+        "it doesn't collide with tokens you have from other Colab projects), paste a "
+        "personal access token with `repo` scope, and toggle *Notebook access*. The "
+        "cell also accepts a generic `GITHUB_TOKEN` if you'd rather reuse one. Both "
+        "survive runtime restarts within the same Google account.",
         "2. **Interactive prompt** — if no secret is set, you'll be prompted at "
         "runtime (input is masked).",
         "3. **Skip** — set `PUSH_TO_GITHUB = False` below. The Drive checkpoint and "
@@ -306,11 +308,20 @@ CELLS = [
         "if PUSH_TO_GITHUB:\n",
         "    import subprocess, datetime, os, sys\n",
         "    \n",
-        "    # 1. Resolve the token.\n",
+        "    # 1. Resolve the token. We check a project-specific name first\n",
+        "    #    (so it doesn't collide with tokens from other Colab projects),\n",
+        "    #    then fall back to a generic name, then an interactive prompt.\n",
         "    token = ''\n",
         "    try:\n",
         "        from google.colab import userdata\n",
-        "        token = (userdata.get('GITHUB_TOKEN') or '').strip()\n",
+        "        for candidate in ('GNNMARL_GITHUB_TOKEN', 'GITHUB_TOKEN'):\n",
+        "            try:\n",
+        "                token = (userdata.get(candidate) or '').strip()\n",
+        "                if token:\n",
+        "                    print(f'using token from Colab Secret: {candidate}')\n",
+        "                    break\n",
+        "            except Exception:\n",
+        "                continue\n",
         "    except Exception:\n",
         "        pass\n",
         "    if not token:\n",
