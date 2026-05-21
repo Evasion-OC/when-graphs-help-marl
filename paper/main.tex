@@ -75,11 +75,14 @@ state-conditioned mixer, optimiser, and exploration schedule fixed across
 four algorithms (\iql, \vdn, \qmix, \gnnqmix), we test three
 pre-registered hypotheses --- on a structured graph (H1), against a
 random graph of matched edge density (H2), and across a GNN-depth $\times$
-graph-diameter grid (H3). [PLACEHOLDER: one-sentence summary of which
-hypotheses survived once results are in.] We distill the most actionable
-finding into a depth--diameter alignment heuristic that practitioners can
-apply without an architecture sweep, and release the harness, configs, and
-plotting code at the URL in Appendix~\ref{app:repro}.
+graph-diameter grid (H3). On the pilot condition (ring graph, $N=4$),
+\gnnqmix\ \emph{underperforms} the structurally simpler \qmix\ in both
+mean and seed-level stability --- the opposite direction from the
+prevailing claim. The remainder of the paper investigates when, and
+why, that picture changes. We distill the most actionable practitioner
+finding into a depth--diameter alignment heuristic, and release the
+harness, configs, and plotting code at the URL in
+Appendix~\ref{app:repro}.
 \end{abstract}
 
 % =========================================================================
@@ -137,8 +140,14 @@ specific gaps motivate the present study:
         (Section~\ref{sec:hypotheses}) and test them with a pilot,
         a graph-regime sweep, and a depth $\times$ diameter ablation
         (Sections~\ref{sec:results:pilot}--\ref{sec:results:ablation}).
-  \item We find [SUMMARY FROM RESULTS]. The depth--diameter alignment is
-        the most actionable finding for practitioners.
+  \item We find that on the pilot ring-graph condition (\S\ref{sec:results:pilot}),
+        the prevailing positive picture of graph-based MARL does not
+        survive a controlled comparison: \gnnqmix\ is bested by
+        \qmix\ in both mean return and seed-level variance, despite the
+        edge-defined reward that should maximally reward a graph-aware
+        model. The depth--diameter alignment finding from H3
+        (\S\ref{sec:results:ablation}) is the most actionable practitioner
+        result.
 \end{enumerate}
 
 % =========================================================================
@@ -427,6 +436,35 @@ environment steps per run. This phase is a harness sanity check: per
 \texttt{docs/PHASES.md}, the acceptance criterion is that the coordinated
 baselines (\vdn, \qmix) clearly outperform \iql\ on a task with obvious
 coordination demand, and \gnnqmix\ runs to completion.
+
+\textbf{Findings.} Figure~\ref{fig:phase1_curves} and
+Table~\ref{tab:phase1_summary} show the per-algorithm learning curves and
+final-window returns. Three results:
+\begin{enumerate}[leftmargin=*,itemsep=0pt,topsep=2pt]
+  \item The harness reproduces the expected ordering of coordinated over
+        independent learning: \qmix\ (mean $84.3$, 95\% CI
+        $[83.8, 84.8]$) $>$ \vdn\ (mean $65.0$, CI $[53.4, 76.7]$) $>$
+        \iql\ (mean $35.5$, CI $[32.2, 38.9]$). The \iql\ vs.\ \vdn\ gap
+        is Holm-significant ($p_{\text{Holm}} = 0.026$) and the \iql\
+        vs.\ \qmix\ gap strongly so ($p_{\text{Holm}} = 0.001$). The
+        Phase-0 acceptance criterion is met.
+  \item \gnnqmix\ is markedly \emph{worse} than \qmix\ on this condition
+        (mean $58.5$ vs.\ $84.3$), and the gap is not attributable to
+        capacity overhead (\gnnqmix\ has the extra GCN parameters; if
+        anything, that would predict a small \emph{advantage} due to
+        added expressiveness). Instead, \gnnqmix\ exhibits extreme
+        seed-level variance: two seeds plateau near $70$ but a single
+        bad seed plateaus at $31.8$, dragging the mean down and inflating
+        the CI to $[0.88, 116.1]$. The seed-1 curve in
+        Figure~\ref{fig:phase1_curves} stalls in the same low-return
+        regime as \iql.
+  \item This finding is the first sign that ``does graph structure
+        help?'' is not a simple yes/no. On the easy case (small team,
+        small diameter, abundant coordination signal), the simpler
+        \qmix\ mixer is both more accurate and more stable. The
+        remainder of the paper asks under what conditions the extra
+        graph machinery in \gnnqmix\ does pay for itself.
+\end{enumerate}
 
 \input{results/phase1}
 

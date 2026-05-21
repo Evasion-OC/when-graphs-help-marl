@@ -1,0 +1,14 @@
+[phase1] 12 runs x 50000 env steps -> C:\Users\Administrator\Desktop\Files\Github\when-graphs-help-marl\results\phase1
+[1/12] iql seed=0  done in 287.6s (elapsed 287.6s)
+[2/12] iql seed=1  done in 278.7s (elapsed 566.4s)
+[3/12] iql seed=2  done in 276.6s (elapsed 842.9s)
+[4/12] vdn seed=0  done in 299.0s (elapsed 1142.0s)
+[5/12] vdn seed=1  done in 328.9s (elapsed 1470.9s)
+[6/12] vdn seed=2  done in 287.0s (elapsed 1757.9s)
+[7/12] qmix seed=0  done in 409.1s (elapsed 2167.0s)
+[8/12] qmix seed=1  done in 406.1s (elapsed 2573.1s)
+[9/12] qmix seed=2  done in 424.9s (elapsed 2998.0s)
+[10/12] gnn_qmix seed=0  done in 553.9s (elapsed 3551.9s)
+[11/12] gnn_qmix seed=1  done in 524.2s (elapsed 4076.1s)
+[12/12] gnn_qmix seed=2  done in 531.0s (elapsed 4607.1s)
+[phase1] all 12 runs complete in 4607.1s
