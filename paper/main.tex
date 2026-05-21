@@ -513,8 +513,15 @@ GPU). See Table~\ref{tab:budget}.
         condition, \gnnqmix\ is \emph{worse} than \qmix\ ---
         Table~\ref{tab:phase2_h1} reports one-sided $p$-values in the
         $H_a$: \gnnqmix\ $>$ \qmix\ direction ranging from $0.983$ to
-        $0.999$. The mean gap ranges from $-60$ to $-147$ return units.
-        Increasing $N$ \emph{widens} the gap rather than closing it.
+        $0.999$, mean gaps from $-60$ to $-147$ return units, and
+        Cohen's $d$ from $-4.4$ to $-118$ (all an order of magnitude
+        or more beyond the conventional ``large effect'' threshold of
+        $|d| > 0.8$). Increasing $N$ \emph{widens} the gap rather
+        than closing it. Figures~\ref{fig:phase2_curves_N4ER} and
+        \ref{fig:phase2_curves_N8ring} show the most extreme cases:
+        \gnnqmix\ flat-lining near random-play return on $N=4$
+        Erd\H{o}s--R\'enyi, and \qmix\ scaling cleanly past 150 on
+        $N=8$ ring.
   \item \textbf{H2 is partially supported.} The difference-of-differences
         test (Table~\ref{tab:phase2_h2}) shows that at $N=4$ the
         \gnnqmix-\qmix\ gap is less negative on the structured ring than
@@ -563,6 +570,32 @@ estimate spans $[-11.5, 53.7]$ --- consistent with anything from
 ``broken'' to ``barely-learning.'' The CI for the gap
 $\Delta = \gnnqmix - \qmix = -146.6$ is the well-resolved quantity
 across the sweep, not the GNN-QMIX absolute number alone.
+
+\begin{figure}[t]
+  \centering
+  \begin{subfigure}[t]{0.49\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{figures/phase2__learning_curves_N4_erdos_renyi.pdf}
+    \caption{$N=4$, Erd\H{o}s--R\'enyi (matched edge density). \gnnqmix\
+    fails to leave random-play return; the GCN encoder appears unable
+    to exploit the per-episode-resampled adjacency.}
+    \label{fig:phase2_curves_N4ER}
+  \end{subfigure}\hfill
+  \begin{subfigure}[t]{0.49\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{figures/phase2__learning_curves_N8_ring.pdf}
+    \caption{$N=8$, ring. \qmix\ scales cleanly past $150$ and is the
+    highest-return configuration in the entire study; the \qmix-\gnnqmix\
+    gap is largest here in absolute terms ($-146.6$).}
+    \label{fig:phase2_curves_N8ring}
+  \end{subfigure}
+  \caption{Two per-condition learning curves selected as the most
+  extreme cases from the Phase 2 sweep. Shaded bands are $\pm 1$
+  s.d.\ across seeds of the 25-episode rolling mean. The remaining
+  two conditions ($N=4$ ring, $N=8$ Erd\H{o}s--R\'enyi) are in the
+  released artifact at \texttt{results/phase2/figures/}.}
+  \label{fig:phase2_two_curves}
+\end{figure}
 
 \subsection{External-validity replication on MPE: deferred}
 \label{sec:results:mpe}
@@ -713,11 +746,57 @@ recommend that future cooperative-MARL benchmarks expose the
 coordination graph as a controllable axis, in the spirit of
 \coordgrid.
 
+\subsection{Threats to validity, synthesised}
+\label{sec:threats}
+
+The detailed Limitations follow; for the reader who wants the
+single-paragraph version, the strongest alternative explanations a
+critical reader should weigh against our negative finding are:
+
+\begin{enumerate}[leftmargin=*,itemsep=0pt,topsep=2pt]
+  \item \textbf{Undertraining of the larger model.} \gnnqmix\ has
+        ${\sim}8$k more parameters than \qmix\ at $L=2$ and was given
+        $3\times 10^4$ env steps per Phase 2 condition. The Phase 1
+        run at $5\times 10^4$ steps on the same ring $N=4$ condition
+        gave \gnnqmix\ $= 58.5$ vs.\ Phase 2's $23.1$ at $3\times 10^4$,
+        a $\sim 2.5\times$ improvement from $1.67\times$ extra training.
+        \qmix\ is essentially unchanged across the same cut. Extra
+        training does not flip the \emph{sign} of the gap (\qmix\ is
+        still ahead at $84.3$), but it does substantially close the
+        magnitude. A follow-up at $\ge 10^5$ steps would close this
+        concern definitively.
+  \item \textbf{Reward design favours sum-mixer architectures.}
+        \coordgrid's edge-sum reward is monotonically decomposable
+        along the graph; the per-agent observation already encodes
+        ``am I near my neighbour;'' \qmix's monotonic mixer can
+        approximate this without message passing. Tasks whose reward
+        is non-separable along the graph would be the cleaner
+        positive test for GNN-MARL.
+  \item \textbf{Single GNN family tested.} We test a vanilla
+        GCN~\citep{kipf_2017_gcn}; attention-based
+        (GAT~\citep{velickovic_2018_gat}), GIN-style
+        injective aggregation~\citep{xu_2019_gin}, or learned-edge
+        variants might behave differently. The negative finding is
+        about ``vanilla GCN inserted into QMIX,'' not ``graph-based
+        MARL in general.''
+  \item \textbf{Three seeds.} Welch's $t$ at $n=3$ has limited power
+        against small effects. The Phase 2 effect sizes are large
+        enough (Cohen's $|d| \ge 4.4$ in every cell, often $> 15$)
+        that this is not load-bearing for our negative claim, but
+        \emph{positive} claims from similar three-seed studies should
+        be read with the same scepticism we apply to our own.
+  \item \textbf{Erd\H{o}s--R\'enyi resampled per episode.} The Phase 2
+        ER cells confound ``GCN cannot exploit this graph'' with
+        ``GCN cannot adapt to a graph that changes every reset.''
+        These two failure modes are not separated in our data.
+\end{enumerate}
+
 % =========================================================================
 \section{Limitations}
 \label{sec:limitations}
 
-We list explicit limitations rather than burying them.
+The list below is the detailed counterpart to the synthesised threats
+above; we list explicit limitations rather than burying them.
 \begin{enumerate}[leftmargin=*,itemsep=0pt,topsep=2pt]
   \item \textbf{Scale.} Compute constraints capped $N$ at 8 and step
         budgets below the pre-registered targets. Effects observed at

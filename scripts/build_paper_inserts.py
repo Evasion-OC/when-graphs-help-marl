@@ -187,7 +187,8 @@ def phase2() -> None:
         if not h.empty:
             lines = [
                 f"{int(r['n_agents'])} & {r['graph']} & {_fmt(r['gap_mean'])} "
-                f"& {_fmt(r['h1_p_one_sided'], 3)} \\\\"
+                f"& {_fmt(r.get('cohens_d', float('nan')))} & "
+                f"{_fmt(r['h1_p_one_sided'], 3)} \\\\"
                 for _, r in h.iterrows()
             ]
             h_block = (
@@ -195,14 +196,15 @@ def phase2() -> None:
                 "  \\centering\n"
                 "  \\small\n"
                 "  \\caption{H1 (within-condition): GNN-QMIX minus QMIX in "
-                "mean final-window return. $p$-values are one-sided Welch "
-                "$t$ ($H_a$: \\gnnqmix\\ $>$ \\qmix), not corrected (single "
-                "test per condition).}\n"
+                "mean final-window return, with Cohen's $d$ effect size "
+                "(pooled SD, sign convention $d > 0$ favours GNN-QMIX). "
+                "$p$-values are one-sided Welch $t$ ($H_a$: \\gnnqmix\\ $>$ "
+                "\\qmix), not corrected (single test per condition).}\n"
                 "  \\label{tab:phase2_h1}\n"
-                "  \\begin{tabular}{rlrr}\n"
+                "  \\begin{tabular}{rlrrr}\n"
                 "    \\toprule\n"
-                "    $N$ & graph & $\\Delta = $ GNN-QMIX $-$ QMIX & "
-                "$p$ (1-sided) \\\\\n"
+                "    $N$ & graph & $\\Delta = $ GNN $-$ QMIX & "
+                "Cohen's $d$ & $p$ (1-sided) \\\\\n"
                 "    \\midrule\n"
                 f"    {chr(10).join(lines)}\n"
                 "    \\bottomrule\n"

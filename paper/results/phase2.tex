@@ -37,16 +37,16 @@ ring & 8 & VDN & 83.08 & [25.94, 140.22] & 948 \\
 \begin{table}[t]
   \centering
   \small
-  \caption{H1 (within-condition): GNN-QMIX minus QMIX in mean final-window return. $p$-values are one-sided Welch $t$ ($H_a$: \gnnqmix\ $>$ \qmix), not corrected (single test per condition).}
+  \caption{H1 (within-condition): GNN-QMIX minus QMIX in mean final-window return, with Cohen's $d$ effect size (pooled SD, sign convention $d > 0$ favours GNN-QMIX). $p$-values are one-sided Welch $t$ ($H_a$: \gnnqmix\ $>$ \qmix), not corrected (single test per condition).}
   \label{tab:phase2_h1}
-  \begin{tabular}{rlrr}
+  \begin{tabular}{rlrrr}
     \toprule
-    $N$ & graph & $\Delta = $ GNN-QMIX $-$ QMIX & $p$ (1-sided) \\
+    $N$ & graph & $\Delta = $ GNN $-$ QMIX & Cohen's $d$ & $p$ (1-sided) \\
     \midrule
-    4 & erdos_renyi & -78.08 & 1.000 \\
-4 & ring & -60.37 & 0.999 \\
-8 & erdos_renyi & -128.98 & 0.983 \\
-8 & ring & -146.64 & 0.999 \\
+    4 & erdos_renyi & -78.08 & -118.23 & 1.000 \\
+4 & ring & -60.37 & -18.75 & 0.999 \\
+8 & erdos_renyi & -128.98 & -4.36 & 0.983 \\
+8 & ring & -146.64 & -15.78 & 0.999 \\
     \bottomrule
   \end{tabular}
 \end{table}
