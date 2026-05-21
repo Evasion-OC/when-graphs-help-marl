@@ -200,58 +200,45 @@ heuristic about the environment but a literal description of it.
 \section{Related Work}
 \label{sec:related}
 
-\paragraph{Value-decomposition MARL.} \iql~\citep{tan_1993_marl} ignores
-agent interaction and trains independent Q-learners on the shared reward,
-which is biased but a useful no-coordination baseline. \vdn
-\citep{sunehag_2018_vdn} sums per-agent utilities. \qmix
-\citep{rashid_2018_qmix,rashid_2020_qmix_jmlr} learns a monotonic state-conditioned
-mixer via a hypernetwork, enforcing $\partial \Qtot / \partial \Qi \geq 0$
-so decentralised greedy execution is consistent with the centralised
-argmax. \algoname{QTRAN} \citep{son_2019_qtran} and \algoname{MAVEN}
-\citep{mahajan_2019_maven} relax or extend the monotonicity assumption;
-\algoname{QPLEX} \citep{wang_2021_qplex} reformulates it through a
-duplex dueling architecture. Beyond value-factorisation,
-\algoname{MAPPO} \citep{yu_2022_mappo} shows that vanilla PPO with
-centralised critics is a surprisingly strong cooperative baseline; we
-restrict scope to value-decomposition methods to keep the architectural
-contrast with \gnnqmix\ clean.
+\paragraph{Value-decomposition MARL.} \iql~\citep{tan_1993_marl} trains
+independent Q-learners on the shared reward; biased, but the standard
+no-coordination baseline. \vdn~\citep{sunehag_2018_vdn} sums per-agent
+utilities; \qmix~\citep{rashid_2018_qmix,rashid_2020_qmix_jmlr} learns
+a monotonic state-conditioned mixer via a hypernetwork, enforcing
+$\partial \Qtot / \partial \Qi \geq 0$ so decentralised greedy execution
+is consistent with the centralised argmax.
+\algoname{QTRAN}~\citep{son_2019_qtran}, \algoname{MAVEN}
+\citep{mahajan_2019_maven}, and \algoname{QPLEX}~\citep{wang_2021_qplex}
+relax or extend the monotonicity assumption. Beyond value factorisation,
+\algoname{MAPPO}~\citep{yu_2022_mappo} is a strong actor-critic
+baseline; we restrict scope to value-factorisation methods to keep the
+architectural contrast with \gnnqmix\ clean.
+\algoname{RIAL/DIAL}~\citep{foerster_2016_rial_dial} and
+\algoname{CommNet}~\citep{sukhbaatar_2016_commnet} \emph{learn} an
+inter-agent communication graph and are out of scope here, where the
+graph is given.
 
-\paragraph{Learned and pre-specified inter-agent communication.}
-Pre-dating the graph-MARL literature, \algoname{RIAL/DIAL}
-\citep{foerster_2016_rial_dial} and \algoname{CommNet}
-\citep{sukhbaatar_2016_commnet} learn pairwise or all-to-all
-communication channels between agents. These methods can be viewed as
-implicitly learning a (typically dense) coordination graph rather than
-taking one as input. We exclude them from the experimental comparison
-because they confound the question we want to answer (does \emph{a given}
-graph help?) with the orthogonal question (can the agents learn a useful
-graph?).
+\paragraph{Graph-based MARL.} \algoname{DGN}~\citep{jiang_2020_dgn}
+applies graph convolution over a $k$-NN agent graph;
+\algoname{G2ANet}~\citep{liu_2020_g2anet} uses attention to abstract a
+game graph; \algoname{Deep Coordination Graphs}~\citep{boehmer_2020_dcg}
+factor $\Qtot$ over a hyperedge structure;
+\algoname{GraphMIX}~\citep{naderializadeh_2020_graphmix} interleaves a
+GNN with a QMIX-style monotonic mixer (closest in spirit to our
+\gnnqmix). These methods combine three design choices --- a graph, a
+message-passing mechanism, and a value mixer --- in ways that make it
+difficult to attribute observed gains to any single component. Our
+study isolates the GNN encoder by inserting it into an otherwise-
+identical \qmix.
 
-\paragraph{Graph-based MARL.} \algoname{DGN} \citep{jiang_2020_dgn} applies
-graph convolution over a $k$-NN agent graph, evaluated on both discrete
-and continuous cooperative tasks.
-\algoname{G2ANet} \citep{liu_2020_g2anet} uses attention to abstract a
-game graph. \algoname{Deep Coordination Graphs}
-\citep{boehmer_2020_dcg} factor $\Qtot$ over a hyperedge structure.
-\algoname{GraphMIX} \citep{naderializadeh_2020_graphmix} interleaves a GNN
-with a QMIX-style monotonic mixer, closest in spirit to the
-\gnnqmix\ baseline we evaluate here. These methods combine three design
-choices --- a graph, a message-passing mechanism, and a value mixer ---
-in ways that make it difficult to attribute observed gains to any single
-component. Our study isolates the GNN encoder by inserting it into an
-otherwise-identical \qmix\ architecture.
-
-\paragraph{Foundational GNNs.} We use a textbook graph convolutional
-network~\citep{kipf_2017_gcn}; \citet{velickovic_2018_gat} and
-\citet{xu_2019_gin} characterise alternatives.
-\citet{battaglia_2018_gn} surveys the broader graph-network family.
-
-\paragraph{Evaluation methodology.} Our protocol follows the recommendations
-of \citet{henderson_2018_drlmatters} and \citet{agarwal_2021_precipice}:
-multiple seeds, confidence intervals, an explicit sample-efficiency metric,
-and Holm-corrected pairwise tests in place of $p<0.05$ readings off a
-forest plot. We additionally report effect sizes (mean differences) so
-readers do not have to infer them from CI overlap.
+\paragraph{Foundational GNNs and evaluation methodology.} We use a
+textbook graph convolutional network~\citep{kipf_2017_gcn};
+\citet{velickovic_2018_gat}, \citet{xu_2019_gin}, and
+\citet{battaglia_2018_gn} characterise alternatives. The evaluation
+protocol follows \citet{henderson_2018_drlmatters} and
+\citet{agarwal_2021_precipice}: multiple seeds, confidence intervals,
+explicit sample-efficiency metric, Holm-corrected pairwise tests, and
+effect sizes alongside $p$-values.
 
 \paragraph{Benchmarks.} The Multi-agent Particle Environment
 \citep{lowe_2017_maddpg} and PettingZoo \citep{terry_2021_pettingzoo}
@@ -373,45 +360,10 @@ fit a same-shape \emph{MLP-depth} control alongside the GCN; we leave
 that ablation to a future revision. The depth-vs-diameter ablation
 (Section~\ref{sec:results:ablation}, H3) still cleanly isolates depth
 effects within \gnnqmix\ because depth is varied internally while the
-encoder stem and mixer are held fixed.
-
-\begin{algorithm}[t]
-\caption{Shared training loop (CTDE, off-policy, Double-DQN). For \iql,
-the team-loss line is replaced by a per-agent Huber sum (see
-Section~\ref{sec:algos}).}
-\label{alg:train}
-\begin{algorithmic}[1]
-\Require env $\mathcal{E}$, algo $\mathcal{A}$ (online + target nets, mixer),
-  total steps $T$, batch size $B$, target-update interval $\tau$,
-  exploration schedule $\epsilon(t)$, update period $k$, warmup $t_{\text{w}}$.
-\State Initialise replay buffer $\mathcal{D}$, target net $\theta^- \leftarrow \theta$.
-\State $(o, s) \leftarrow \mathcal{E}.\textsc{reset}()$;\; $A \leftarrow \mathcal{E}.\textsc{adjacency}()$
-\For{$t = 1, \dots, T$}
-  \State $a \leftarrow \mathcal{A}.\textsc{act}(o, A, \epsilon(t))$
-        \Comment{$\epsilon$-greedy per-agent, params shared}
-  \State $(o', s', r, \text{done}) \leftarrow \mathcal{E}.\textsc{step}(a)$
-  \State $\mathcal{D}.\textsc{add}((o, s, a, r, o', s', \text{done}, A))$
-  \If{$t \ge t_{\text{w}}$ \textbf{and} $t \bmod k = 0$}
-    \State $\text{batch} \sim \mathcal{D}$ \quad (size $B$)
-    \State $\mathbf{Q} \leftarrow \mathcal{A}.Q(o, A; \theta) \in \mathbb{R}^{B \times N \times |\Aagent|}$
-            \Comment{per-agent Q over all actions}
-    \State $q_a \leftarrow \mathrm{gather}(\mathbf{Q}, a) \in \mathbb{R}^{B \times N}$;\;
-           $Q_{\text{tot}} \leftarrow f_{\text{mix}}(q_a; s)$
-    \State $a^* \leftarrow \arg\max_{a'} \mathcal{A}.Q(o', A; \theta)$
-            \Comment{Double-DQN action selection, online net}
-    \State $\bar q \leftarrow \mathrm{gather}(\mathcal{A}.Q(o', A; \theta^-), a^*)$;\;
-           $Q^{-}_{\text{tot}} \leftarrow f_{\text{mix}}^{-}(\bar q; s')$
-    \State $y \leftarrow r + \gamma (1{-}\text{done}) \cdot Q^{-}_{\text{tot}}$
-    \State $\theta \leftarrow \theta - \eta \nabla_\theta \mathrm{Huber}(Q_{\text{tot}}, y)$
-            \Comment{Adam, grad-norm clip 10}
-    \If{$t \bmod \tau = 0$} $\theta^- \leftarrow \theta$ \EndIf
-  \EndIf
-  \If{$\text{done}$} $(o, s) \leftarrow \mathcal{E}.\textsc{reset}()$;\; $A \leftarrow \mathcal{E}.\textsc{adjacency}()$
-  \Else \;$(o, s) \leftarrow (o', s')$
-  \EndIf
-\EndFor
-\end{algorithmic}
-\end{algorithm}
+encoder stem and mixer are held fixed. The full Double-DQN training
+loop, identical across all four algorithms modulo the \iql\ per-agent
+loss override, is given as Algorithm~\ref{alg:train} in
+Appendix~\ref{app:algorithm}.
 
 \subsection{Evaluation protocol}
 \label{sec:protocol}
@@ -746,129 +698,61 @@ recommend that future cooperative-MARL benchmarks expose the
 coordination graph as a controllable axis, in the spirit of
 \coordgrid.
 
-\subsection{Threats to validity, synthesised}
-\label{sec:threats}
-
-The detailed Limitations follow; for the reader who wants the
-single-paragraph version, the strongest alternative explanations a
-critical reader should weigh against our negative finding are:
-
-\begin{enumerate}[leftmargin=*,itemsep=0pt,topsep=2pt]
-  \item \textbf{Undertraining of the larger model.} \gnnqmix\ has
-        ${\sim}8$k more parameters than \qmix\ at $L=2$ and was given
-        $3\times 10^4$ env steps per Phase 2 condition. The Phase 1
-        run at $5\times 10^4$ steps on the same ring $N=4$ condition
-        gave \gnnqmix\ $= 58.5$ vs.\ Phase 2's $23.1$ at $3\times 10^4$,
-        a $\sim 2.5\times$ improvement from $1.67\times$ extra training.
-        \qmix\ is essentially unchanged across the same cut. Extra
-        training does not flip the \emph{sign} of the gap (\qmix\ is
-        still ahead at $84.3$), but it does substantially close the
-        magnitude. A follow-up at $\ge 10^5$ steps would close this
-        concern definitively.
-  \item \textbf{Reward design favours sum-mixer architectures.}
-        \coordgrid's edge-sum reward is monotonically decomposable
-        along the graph; the per-agent observation already encodes
-        ``am I near my neighbour;'' \qmix's monotonic mixer can
-        approximate this without message passing. Tasks whose reward
-        is non-separable along the graph would be the cleaner
-        positive test for GNN-MARL.
-  \item \textbf{Single GNN family tested.} We test a vanilla
-        GCN~\citep{kipf_2017_gcn}; attention-based
-        (GAT~\citep{velickovic_2018_gat}), GIN-style
-        injective aggregation~\citep{xu_2019_gin}, or learned-edge
-        variants might behave differently. The negative finding is
-        about ``vanilla GCN inserted into QMIX,'' not ``graph-based
-        MARL in general.''
-  \item \textbf{Three seeds.} Welch's $t$ at $n=3$ has limited power
-        against small effects. The Phase 2 effect sizes are large
-        enough (Cohen's $|d| \ge 4.4$ in every cell, often $> 15$)
-        that this is not load-bearing for our negative claim, but
-        \emph{positive} claims from similar three-seed studies should
-        be read with the same scepticism we apply to our own.
-  \item \textbf{Erd\H{o}s--R\'enyi resampled per episode.} The Phase 2
-        ER cells confound ``GCN cannot exploit this graph'' with
-        ``GCN cannot adapt to a graph that changes every reset.''
-        These two failure modes are not separated in our data.
-\end{enumerate}
-
 % =========================================================================
-\section{Limitations}
+\section{Limitations and Threats to Validity}
 \label{sec:limitations}
 
-The list below is the detailed counterpart to the synthesised threats
-above; we list explicit limitations rather than burying them.
+We list both the methodological limitations and the strongest
+alternative explanations a critical reader should weigh against our
+negative finding.
+
 \begin{enumerate}[leftmargin=*,itemsep=0pt,topsep=2pt]
-  \item \textbf{Scale.} Compute constraints capped $N$ at 8 and step
-        budgets below the pre-registered targets. Effects observed at
-        $N{=}4{-}8$ on a tabular-flavoured gridworld may not extrapolate
-        to $N{\gg}10$ on visually complex tasks; SMAC-scale validation is
-        out of scope.
-  \item \textbf{One coordination-graph design.} \coordgrid\ ties reward to
-        graph edges directly. This is the cleanest test of graph-aware
-        models but is also the most favourable to them; tasks where the
-        ``true'' coordination structure differs from any observable graph
-        may not transfer.
-  \item \textbf{One GNN family.} We test a vanilla GCN. Whether attention
-        (\algoname{GAT}) or learned message passing (e.g.\
-        \algoname{GIN}) changes the depth--diameter trade-off is open.
-  \item \textbf{Single-CPU training.} Some learning-rate / batch-size
-        choices that work well on CPU may interact differently with GPU
-        throughput; we did not retune for GPU.
-  \item \textbf{Three seeds, with the resulting power floor.} The
-        compute envelope caps every condition at three seeds.
-        \citet{henderson_2018_drlmatters} and
-        \citet{agarwal_2021_precipice} recommend $\ge 5$. Welch's
-        $t$-test on $n=3$ vs.\ $n=3$ has very limited power against
-        anything but large effects; the Student-$t$ 95\% CIs we report
-        are correspondingly wide. We mitigate by reporting effect
-        sizes alongside $p$-values and by phrasing claims as
-        \emph{direction observed} rather than \emph{statistically
-        decisive} where appropriate, but a tighter follow-up with 5--10
-        seeds is warranted for the regimes where our point estimates
-        approach the null.
-  \item \textbf{Capacity overhead not separately controlled.}
-        \gnnqmix\ has $L \cdot (64^2+64)$ more parameters than \qmix\
-        (see Section~\ref{sec:algos}); a same-shape MLP-depth control
-        that adds exactly that overhead without graph signal is the
-        cleanest separation of ``graph structure'' from ``extra
-        depth.'' We leave that ablation to a future revision.
-  \item \textbf{Fixed-horizon episodes treated as terminating.}
-        Episodes are truncated at a fixed length; the Q-learning
-        bootstrap uses \texttt{done=True} on the truncation, biasing
-        the value at the truncation boundary toward zero. This is the
-        standard QMIX implementation choice and is not expected to
-        materially affect cross-algorithm comparisons (every algorithm
-        receives the same bias) but is noted for completeness.
-  \item \textbf{Identical recipe across algorithms, by design.}
-        We use $\eta = 5 \times 10^{-4}$ Adam, batch size 32, and the
-        same exploration schedule for all four algorithms. This is the
-        cleanest control for an architectural comparison but may
-        understate \gnnqmix\ performance under tuning that compensates
-        for the GCN's added optimisation difficulty. A reviewer who
-        believes the GCN deserves a lower learning rate or longer
-        warmup is making a defensible argument we did not test.
-  \item \textbf{Reward design favours sum-shaped mixers by
-        construction.} \coordgrid's reward
-        $r_t = \sum_{(i,j) \in \Egraph} \mathbf{1}[p_i = p_j]$ is
-        literally additive along graph edges. \qmix's monotonic mixer
-        can approximate such a sum cleanly without any need for
-        explicit message-passing: a per-agent Q-head with access to
-        relative-position features (which our observation provides)
-        captures ``am I near my graph neighbours.'' This makes
-        \coordgrid\ a \emph{harder} setting than typical for a graph
-        mixer to demonstrate value; tasks whose team reward is
-        non-separable along the graph (e.g., requiring agreement
-        across paths longer than one edge) would be the cleanest
-        follow-up where a depth-aware GNN encoder could in principle
-        pay for itself.
+  \item \textbf{Undertraining is the leading alternative explanation.}
+        \gnnqmix\ has ${\sim}8$k more parameters than \qmix\ at $L=2$
+        and gets $3\times 10^4$ env steps per Phase 2 condition. The
+        Phase 1 run at $5\times 10^4$ steps on the same ring $N=4$
+        condition reaches $58.5$ vs.\ Phase 2's $23.1$ at $3\times 10^4$
+        --- a ${\sim}2.5\times$ improvement from $1.67\times$ extra
+        training. \qmix\ is essentially unchanged across the same cut
+        ($84.3 \to 83.5$). Extra training does not flip the \emph{sign}
+        of the gap, but a follow-up at $\ge 10^5$ steps per condition
+        would close this concern definitively.
+  \item \textbf{Reward design favours sum-shaped mixers.} \coordgrid's
+        reward $r_t = \sum_{(i,j) \in \Egraph} \mathbf{1}[p_i = p_j]$
+        is monotonically decomposable along the graph; \qmix's mixer
+        can approximate it without message passing because the
+        per-agent observation already encodes ``am I near my
+        neighbour.'' Tasks whose team reward is non-separable along
+        the graph would be the cleaner positive test for GNN-MARL.
+  \item \textbf{Single GNN family.} We test vanilla
+        GCN~\citep{kipf_2017_gcn}; attention-based
+        \citep{velickovic_2018_gat}, injective
+        \citep{xu_2019_gin}, or learned-edge variants might behave
+        differently. The claim is bounded to ``vanilla GCN inserted
+        into QMIX,'' not graph-based MARL in general.
+  \item \textbf{Three seeds.} Welch's $t$ at $n=3$ has limited power
+        against small effects; \citet{henderson_2018_drlmatters} and
+        \citet{agarwal_2021_precipice} recommend $\ge 5$. The Phase 2
+        effect sizes are large (Cohen's $|d| \ge 4.4$, often $> 15$),
+        so this is not load-bearing for the negative claim --- but
+        positive claims from similar three-seed studies deserve the
+        same scepticism we apply to our own.
   \item \textbf{Erd\H{o}s--R\'enyi resampled per episode is
-        non-stationary in the graph input.} A GCN normally exploits a
-        fixed adjacency; per-episode resampling forces the GCN to learn
-        a policy that is robust to changing receptive fields. The Phase 2
-        ER cells confound ``GCN cannot exploit this graph'' with
-        ``GCN cannot adapt to a graph that changes every reset.''
-        Disentangling the two would require an additional condition we
-        leave to follow-up work.
+        non-stationary in the graph input.} The Phase 2 ER cells
+        confound ``GCN cannot exploit this graph'' with ``GCN cannot
+        adapt to a graph that changes every reset.'' These two
+        failure modes are not separated in our data.
+  \item \textbf{Scale and identical recipe.} $N$ is capped at 8; we
+        do not retune learning rate or warmup per algorithm (the
+        identical-recipe control is intentional but may understate
+        \gnnqmix). Extrapolation to $N \gg 10$ or to SMAC-scale tasks
+        is out of scope.
+  \item \textbf{Capacity overhead not separately controlled.} An
+        MLP-depth control of the same parameter count as \gnnqmix\ at
+        each $L$ would isolate ``graph structure'' from ``extra
+        depth''; we leave that ablation to follow-up.
+  \item \textbf{Fixed-horizon episodes treated as terminating.}
+        Standard QMIX truncation; bias is identical across algorithms.
 \end{enumerate}
 
 % =========================================================================
@@ -922,6 +806,55 @@ measurements cheaper to run for future architectures and tasks.
 \bibliography{references}
 
 \appendix
+
+% =========================================================================
+\section{Shared training loop}
+\label{app:algorithm}
+
+The Double-DQN training loop is identical across the four algorithms,
+modulo \iql's per-agent Huber-sum loss override (Section~\ref{sec:algos}).
+At each env step a transition is added to the replay; once the buffer
+has warmed up, a batch is sampled every $k$ env steps and one
+gradient step is taken with Double-DQN targets and Huber loss. The
+target net is hard-copied from the online net every $\tau$ gradient
+steps.
+
+\begin{algorithm}[h!]
+\caption{Shared training loop (CTDE, off-policy, Double-DQN). For \iql,
+the team-loss line (\ref{alg:line:loss}) is replaced by a per-agent
+Huber sum (Section~\ref{sec:algos}).}
+\label{alg:train}
+\begin{algorithmic}[1]
+\Require env $\mathcal{E}$, algo $\mathcal{A}$ (online + target nets, mixer),
+  total steps $T$, batch size $B$, target-update interval $\tau$,
+  exploration schedule $\epsilon(t)$, update period $k$, warmup $t_{\text{w}}$.
+\State Initialise replay buffer $\mathcal{D}$, target net $\theta^- \leftarrow \theta$.
+\State $(o, s) \leftarrow \mathcal{E}.\textsc{reset}()$;\; $A \leftarrow \mathcal{E}.\textsc{adjacency}()$
+\For{$t = 1, \dots, T$}
+  \State $a \leftarrow \mathcal{A}.\textsc{act}(o, A, \epsilon(t))$
+  \State $(o', s', r, \text{done}) \leftarrow \mathcal{E}.\textsc{step}(a)$
+  \State $\mathcal{D}.\textsc{add}((o, s, a, r, o', s', \text{done}, A))$
+  \If{$t \ge t_{\text{w}}$ \textbf{and} $t \bmod k = 0$}
+    \State $\text{batch} \sim \mathcal{D}$ \quad (size $B$)
+    \State $\mathbf{Q} \leftarrow \mathcal{A}.Q(o, A; \theta) \in \mathbb{R}^{B \times N \times |\Aagent|}$
+    \State $q_a \leftarrow \mathrm{gather}(\mathbf{Q}, a)$;\;
+           $Q_{\text{tot}} \leftarrow f_{\text{mix}}(q_a; s)$
+    \State $a^* \leftarrow \arg\max_{a'} \mathcal{A}.Q(o', A; \theta)$
+            \Comment{Double-DQN, online net}
+    \State $\bar q \leftarrow \mathrm{gather}(\mathcal{A}.Q(o', A; \theta^-), a^*)$;\;
+           $Q^{-}_{\text{tot}} \leftarrow f_{\text{mix}}^{-}(\bar q; s')$
+    \State $y \leftarrow r + \gamma (1{-}\text{done}) \cdot Q^{-}_{\text{tot}}$
+    \State \label{alg:line:loss}
+           $\theta \leftarrow \theta - \eta \nabla_\theta \mathrm{Huber}(Q_{\text{tot}}, y)$
+            \Comment{Adam, grad-norm clip 10}
+    \If{$t \bmod \tau = 0$} $\theta^- \leftarrow \theta$ \EndIf
+  \EndIf
+  \If{$\text{done}$} $(o, s) \leftarrow \mathcal{E}.\textsc{reset}()$;\; $A \leftarrow \mathcal{E}.\textsc{adjacency}()$
+  \Else \;$(o, s) \leftarrow (o', s')$
+  \EndIf
+\EndFor
+\end{algorithmic}
+\end{algorithm}
 
 % =========================================================================
 \section{Hyperparameters and compute}
