@@ -75,17 +75,18 @@ state-conditioned mixer, optimiser, and exploration schedule fixed across
 four algorithms (\iql, \vdn, \qmix, \gnnqmix), we test three
 pre-registered hypotheses --- on a structured graph (H1), against a
 random graph of matched edge density (H2), and across a GNN-depth $\times$
-graph-diameter grid (H3). Two findings emerge. First, on the pilot
-ring graph at $N=4$, \gnnqmix\ \emph{underperforms} structurally
-simpler \qmix\ in both mean return and seed-level stability ---
-opposite to the prevailing claim. Second, the depth--diameter
-alignment heuristic (deeper GNN for larger graph diameter) is
-\emph{not} confirmed at the family level (1 of 3 diameters pass);
-instead, the data reveal a sharp cliff above $L=2$, with $L \ge 3$
-catastrophic across every diameter tested. The practitioner rule we
-recommend is correspondingly blunter than H3 anticipated:
-do not stack more than two GCN layers in front of a QMIX-style mixer
-in small-team CTDE settings. We release the harness, configs, and
+graph-diameter grid (H3). Three findings emerge. First, \gnnqmix\ is
+worse than the structurally simpler \qmix\ in \emph{every} condition
+we tested --- a 16-cell sweep across $N \in \{4, 8\}$, two graph
+regimes, and four algorithms (one-sided $p \in [0.98, 1.00]$ that
+\gnnqmix\ improves on \qmix), with gaps ranging from $-60$ to $-147$
+return units. Second, H2's directional prediction (structure helps
+\gnnqmix\ more than matched-density random graphs) is supported at
+$N=4$ ($p=0.007$) but reverses at $N=8$. Third, the receptive-field
+alignment heuristic ($L \approx d$) is falsified: the data reveal an
+abrupt over-depth cliff at $L \ge 3$, suggesting the practitioner rule
+``do not stack more than two GCN layers in front of a QMIX-style mixer
+in small-team CTDE settings.'' We release the harness, configs, and
 plotting code at the URL in Appendix~\ref{app:repro}.
 \end{abstract}
 
@@ -485,6 +486,36 @@ GPU). See Table~\ref{tab:budget}.
 
 \input{results/phase2}
 
+\textbf{Findings.} Four observations across the 16-cell sweep:
+\begin{enumerate}[leftmargin=*,itemsep=0pt,topsep=2pt]
+  \item \textbf{H1 is conclusively falsified.} In every $(N, \text{graph})$
+        condition, \gnnqmix\ is \emph{worse} than \qmix\ ---
+        Table~\ref{tab:phase2_h1} reports one-sided $p$-values in the
+        $H_a$: \gnnqmix\ $>$ \qmix\ direction ranging from $0.983$ to
+        $0.999$. The mean gap ranges from $-60$ to $-147$ return units.
+        Increasing $N$ \emph{widens} the gap rather than closing it.
+  \item \textbf{H2 is partially supported.} The difference-of-differences
+        test (Table~\ref{tab:phase2_h2}) shows that at $N=4$ the
+        \gnnqmix-\qmix\ gap is less negative on the structured ring than
+        on the matched-density random graph ($\Delta_{\text{ring}} -
+        \Delta_{\text{ER}} = +17.7$, $p = 0.007$ one-sided). At $N=8$
+        the effect reverses to $-17.7$ ($p = 0.71$). H2 thus holds
+        directionally at small team sizes but not at moderate ones.
+  \item \textbf{The IQL $<$ VDN $<$ QMIX ordering is robust} across all
+        four conditions, replicating and strengthening the Phase-1 sanity
+        check. \qmix\ scaled to $N=8$ reaches a mean final-window return
+        of $137.5$ (Erd\H{o}s--R\'enyi) and $167.8$ (ring) --- the latter
+        is the highest absolute number observed in the study.
+  \item \textbf{\gnnqmix\ fails to learn at all in two of the four
+        Erd\H{o}s--R\'enyi cells} (final-window mean $6.6$ at $N=4$,
+        $8.5$ at $N=8$; cf.\ $\sim 4$ for random play). The
+        re-sampled graph structure between episodes appears to be a
+        substantially harder regime for the GCN encoder than the fixed
+        ring; the over-depth-cliff hypothesis advanced in
+        Section~\ref{sec:results:ablation} is one likely explanation
+        but the present data underdetermine the mechanism.
+\end{enumerate}
+
 \subsection{Phase 3 --- External validity on MPE}
 \label{sec:results:mpe}
 
@@ -552,16 +583,26 @@ and more concerning --- pattern than H3 predicted:
 \section{Discussion}
 \label{sec:discussion}
 
-\paragraph{Where graph structure helps.} Across the conditions tested in
-Sections~\ref{sec:results:scale}--\ref{sec:results:ablation}, the
-\gnnqmix\ encoder helps over the structurally identical \qmix\ baseline
-\emph{only} when [PLACEHOLDER: insert the H1/H2 condition that held]. In
-the remaining regimes the mixer-only baseline is competitive or better.
-This is a more constrained reading of graph-based MARL than the prevailing
-positive framing in the literature \citep{jiang_2020_dgn,liu_2020_g2anet,
-naderializadeh_2020_graphmix} suggests, and is consistent with the
-broader evaluation-rigour concerns raised by
-\citet{henderson_2018_drlmatters} and \citet{agarwal_2021_precipice}.
+\paragraph{Where graph structure helps in our experiments: nowhere.}
+Across the 16-cell Phase-2 sweep (Sections~\ref{sec:results:scale}) and
+the depth ablation (Section~\ref{sec:results:ablation}),
+\gnnqmix\ never improves on the structurally identical \qmix\ baseline.
+In every $(N, \text{graph})$ condition \qmix\ is significantly better
+(one-sided $p \in [0.98, 1.00]$); the only positive directional result
+is H2 at $N=4$, where the \gnnqmix-\qmix\ gap is \emph{less negative}
+on the ring than on Erd\H{o}s--R\'enyi --- a difference between two
+losses, not a positive case for the graph mixer. This is a substantially
+more constrained reading of graph-based MARL than the prevailing
+positive framing in the literature
+\citep{jiang_2020_dgn,liu_2020_g2anet,naderializadeh_2020_graphmix}
+allows, and is consistent with the broader evaluation-rigour concerns
+of \citet{henderson_2018_drlmatters} and \citet{agarwal_2021_precipice}.
+Two caveats are central: (i) we test a single GNN family (vanilla GCN,
+no attention or learned edge features) and (ii) the compute envelope
+limits per-condition seeds to three, so the absence of a positive case
+in our data does not preclude one in larger-scale or differently-
+configured studies. What our data \emph{do} establish is that the
+positive claim cannot be assumed to hold by default.
 
 \paragraph{The depth--diameter heuristic does not survive contact with
 the data.} The pre-registered H3 prediction was that GNN depth $L$
@@ -665,19 +706,33 @@ pre-registered hypotheses on \coordgrid, an environment whose
 coordination graph is itself the experimental variable. Two empirical
 findings carry the paper.
 
-\emph{First}, on the simplest pilot condition (ring graph, $N=4$, 50k
-env steps), \gnnqmix\ does not beat \qmix\ --- it is markedly worse in
-mean and dominated in stability. The prevailing positive picture of
-graph-based MARL does not survive even a sanity-check comparison in
-the regime that should be most favourable to it.
+\emph{First}, on the pilot ring at $N=4$ and across the full Phase-2
+sweep (16 cells: $N \in \{4, 8\}$ $\times$ \{ring, Erd\H{o}s--R\'enyi
+matched density\} $\times$ 4 algorithms), \gnnqmix\ does not beat
+\qmix\ in \emph{any} condition tested. It is markedly worse in mean
+return (gaps $-60$ to $-147$, one-sided $p \in [0.98, 1.00]$ for the
+``\gnnqmix\ is better'' alternative) and the gap \emph{widens} with
+$N$. In two Erd\H{o}s--R\'enyi cells \gnnqmix\ fails to learn the task
+above random-play return. The prevailing positive picture of
+graph-based MARL does not survive a controlled comparison in the
+regimes most favourable to it.
 
 \emph{Second}, the pre-registered receptive-field-alignment heuristic
-($L \approx d$) is falsified in this setting. The data show instead a
+($L \approx d$) is falsified at the family level (1 of 3 diameters
+pass the pre-registered per-row criterion). The data show instead a
 sharp over-depth cliff: $L \in \{1, 2\}$ deliver the bulk of any
 achievable return, while $L \in \{3, 4\}$ collapse to near-noise
 levels on every diameter tested. The actionable practitioner rule that
 emerges is blunter than H3 would have given us: in small-team CTDE
 settings on tasks with $d \le 3$, keep GCN depth $\le 2$.
+
+\emph{Third}, the qualitative H2 prediction --- that the
+\gnnqmix-\qmix\ gap should be \emph{less negative} on a structured
+graph than on a matched-density random graph --- is supported at
+$N=4$ ($\text{DiD} = +17.7$, $p = 0.007$) but reverses at $N=8$
+($\text{DiD} = -17.7$, $p = 0.71$). Even where directionally
+supported, the effect is a difference between two losses, not a
+positive case for the graph mixer.
 
 The broader conclusion is that ``does graph structure help in MARL?''
 is a condition-dependent question that requires controlled measurement
