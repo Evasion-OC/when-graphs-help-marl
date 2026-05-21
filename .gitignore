@@ -41,3 +41,12 @@ logs/
 # Large generated assets
 *.mp4
 *.gif
+
+# LaTeX build artifacts (keep main.pdf, references.bib, *.tex)
+paper/*.aux
+paper/*.bbl
+paper/*.blg
+paper/*.log
+paper/*.out
+paper/*.toc
+paper/*.synctex.gz

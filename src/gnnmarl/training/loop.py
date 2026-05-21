@@ -41,6 +41,11 @@ class TrainConfig:
 
     # How long.
     total_env_steps: int = 50_000
+    # Run one gradient step every ``update_every`` env steps once the buffer
+    # is warm. Standard off-policy practice; 1 = update every step.
+    update_every: int = 4
+    # Number of env steps to collect before any gradient step is taken.
+    warmup_steps: int = 200
 
     # Exploration schedule (linear).
     eps_start: float = 1.0
@@ -51,6 +56,9 @@ class TrainConfig:
     seed: int = 0
     log_dir: Path = Path("results/runs")
     run_id: str | None = None
+    # ``"auto"`` resolves to ``"cuda"`` if available, else ``"cpu"``. Phase 0
+    # ran CPU-only; Colab runs benefit from auto-detect.
+    device: str = "auto"
 
     def resolved_run_id(self) -> str:
         if self.run_id is not None:
@@ -75,6 +83,11 @@ def train(cfg: TrainConfig) -> Path:
     # initial graph (Erdős–Rényi resamples are then chained off that seed).
     result = env.reset(seed=cfg.seed)
 
+    if cfg.device == "auto":
+        resolved_device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    else:
+        resolved_device = torch.device(cfg.device)
+
     algo_kwargs: dict[str, Any] = dict(cfg.algo_kwargs)
     # The algo needs to know the env dims — never trust the YAML to repeat them.
     algo_kwargs.setdefault("n_agents", env.n_agents)
@@ -82,7 +95,7 @@ def train(cfg: TrainConfig) -> Path:
     algo_kwargs.setdefault("state_dim", env.state_dim)
     algo_kwargs.setdefault("n_actions", env.n_actions)
     algo_kwargs.setdefault("seed", cfg.seed)
-    algo_kwargs.setdefault("device", torch.device("cpu"))
+    algo_kwargs.setdefault("device", resolved_device)
     algo = make_algo(cfg.algo, **algo_kwargs)
 
     run_dir = Path(cfg.log_dir) / cfg.resolved_run_id()
@@ -128,10 +141,11 @@ def train(cfg: TrainConfig) -> Path:
                 )
             )
 
-            metrics = algo.update()
-            if metrics is not None:
-                losses.append(metrics["loss"])
-                grad_norms.append(metrics["grad_norm"])
+            if env_step >= cfg.warmup_steps and (env_step % cfg.update_every == 0):
+                metrics = algo.update()
+                if metrics is not None:
+                    losses.append(metrics["loss"])
+                    grad_norms.append(metrics["grad_norm"])
 
             ep_return += step_result.reward
             ep_len += 1

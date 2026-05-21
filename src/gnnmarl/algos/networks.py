@@ -148,16 +148,19 @@ class GCNStack(nn.Module):
 
         Returns:
             ``[B, N, hidden_dim]`` per-agent features after message passing.
+
+        Note: no residual connection. The depth-vs-diameter ablation
+        (paper Sec. 6.4 / H3) requires the only difference between an L=1
+        and an L=2 model to be one extra message-passing step; a residual
+        that kicks in at L>=2 would confound the depth effect with a
+        residual-only effect. If you need a residual variant, wrap the
+        stack — do not add it inside.
         """
         norm = self._normalize_adj(adj)
-        for layer_idx, lin in enumerate(self.layers):
-            # Aggregate neighbors then project: A_hat @ H @ W
+        for lin in self.layers:
+            # Aggregate neighbours then project: A_hat @ H @ W
             agg = torch.bmm(norm, h)        # [B, N, in/hidden]
-            new = F.relu(lin(agg))          # [B, N, hidden]
-            if layer_idx >= 1:
-                # Residual is well-defined once dims match (i.e. after layer 0).
-                new = new + h
-            h = new
+            h = F.relu(lin(agg))            # [B, N, hidden]
         return h
 
 

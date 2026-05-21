@@ -88,11 +88,14 @@ class GNNQMIX(BaseAlgo):
     name = "gnn_qmix"
 
     def _register_extra_modules(self) -> None:
-        # Replace the BaseAlgo-installed AgentQNet with the GNN-aware variant.
-        # Keeping the attribute name distinct (``gnn_agent_q``) makes it
-        # obvious in checkpoints which architecture was trained; we keep the
-        # base ``agent_q`` around but unused so the shared init code stays
-        # uniform across algos.
+        # Drop the BaseAlgo-installed AgentQNet: we replace it with the
+        # GNN-aware variant. Leaving the unused AgentQNet around would
+        # contribute parameters the optimiser sees but never updates (the
+        # forward graph never touches them, so their gradients are exactly
+        # zero — but they would still appear in parameter counts and add
+        # noise to "byte-identical" claims).
+        if hasattr(self, "agent_q"):
+            del self.agent_q
         self.gnn_agent_q = _GNNAgentNet(
             obs_dim=self.obs_dim,
             n_agents=self.n_agents,

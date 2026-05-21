@@ -66,6 +66,7 @@ class CoordGrid:
         graph: str = "ring",
         er_prob: float = 0.3,
         seed: int | None = None,
+        max_neighbors_override: int | None = None,
     ) -> None:
         if n_agents < 1:
             raise ValueError(f"n_agents must be >= 1, got {n_agents}")
@@ -109,7 +110,17 @@ class CoordGrid:
         # max_neighbors caps obs slots so obs_dim is constant across resamples.
         # For erdos_renyi we use the worst case (N - 1) rather than the
         # initial draw's max degree, otherwise resampling can change shape.
-        if graph == "erdos_renyi":
+        # ``max_neighbors_override`` lets Phase 4 force the same obs_dim
+        # across different graph kinds so the diameter sweep is not
+        # confounded with input dimension.
+        if max_neighbors_override is not None:
+            if max_neighbors_override < 1 or max_neighbors_override > self.n_agents - 1:
+                raise ValueError(
+                    f"max_neighbors_override must be in [1, n_agents-1]; "
+                    f"got {max_neighbors_override}"
+                )
+            self.max_neighbors = int(max_neighbors_override)
+        elif graph == "erdos_renyi":
             self.max_neighbors = max(1, self.n_agents - 1)
         else:
             self.max_neighbors = int(max(1, self._adj.sum(axis=1).max()))
