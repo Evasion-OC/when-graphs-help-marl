@@ -67,7 +67,7 @@ CELLS = [
     ),
     code(
         "REPO_URL = 'https://github.com/Evasion-OC/when-graphs-help-marl.git'\n"
-        "BRANCH   = 'phase-1-pilot'   # change if needed\n",
+        "BRANCH   = 'phase-1-pilot-v2'   # change if needed\n",
         "",
         "import os, subprocess, sys\n",
         "if not os.path.exists('when-graphs-help-marl'):\n",
