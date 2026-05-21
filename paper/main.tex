@@ -75,14 +75,18 @@ state-conditioned mixer, optimiser, and exploration schedule fixed across
 four algorithms (\iql, \vdn, \qmix, \gnnqmix), we test three
 pre-registered hypotheses --- on a structured graph (H1), against a
 random graph of matched edge density (H2), and across a GNN-depth $\times$
-graph-diameter grid (H3). On the pilot condition (ring graph, $N=4$),
-\gnnqmix\ \emph{underperforms} the structurally simpler \qmix\ in both
-mean and seed-level stability --- the opposite direction from the
-prevailing claim. The remainder of the paper investigates when, and
-why, that picture changes. We distill the most actionable practitioner
-finding into a depth--diameter alignment heuristic, and release the
-harness, configs, and plotting code at the URL in
-Appendix~\ref{app:repro}.
+graph-diameter grid (H3). Two findings emerge. First, on the pilot
+ring graph at $N=4$, \gnnqmix\ \emph{underperforms} structurally
+simpler \qmix\ in both mean return and seed-level stability ---
+opposite to the prevailing claim. Second, the depth--diameter
+alignment heuristic (deeper GNN for larger graph diameter) is
+\emph{not} confirmed at the family level (1 of 3 diameters pass);
+instead, the data reveal a sharp cliff above $L=2$, with $L \ge 3$
+catastrophic across every diameter tested. The practitioner rule we
+recommend is correspondingly blunter than H3 anticipated:
+do not stack more than two GCN layers in front of a QMIX-style mixer
+in small-team CTDE settings. We release the harness, configs, and
+plotting code at the URL in Appendix~\ref{app:repro}.
 \end{abstract}
 
 % =========================================================================
@@ -514,6 +518,36 @@ to prevent noisy flat curves from passing by accident.
 
 \input{results/phase4}
 
+\textbf{Findings.} Figure~\ref{fig:phase4_heatmap} reveals a cleaner ---
+and more concerning --- pattern than H3 predicted:
+
+\begin{enumerate}[leftmargin=*,itemsep=0pt,topsep=2pt]
+  \item \textbf{H3 is not confirmed at the family level} (1/3 diameters
+        pass). Only the ring ($d=2$) shows the predicted argmax-at-$L=d$
+        behaviour ($L^*=2$, non-flat, $p=$ pass). The complete graph
+        ($d=1$) is essentially flat in $L$ (relative range $10\%$, at the
+        pre-registered floor) and the line ($d=3$) shows the
+        \emph{opposite} of the prediction: $L^*=1$, with a monotone
+        decrease as $L$ grows.
+  \item Reading the heatmap column-wise rather than row-wise exposes a
+        sharp \emph{over-depth cliff}: $L=3$ and $L=4$ are catastrophic on
+        every diameter tested. Mean returns at $L \in \{3, 4\}$ are
+        $4.4$--$8.1$ across the grid, while $L \in \{1, 2\}$ deliver
+        $6.9$--$26.9$. Whatever benefit additional message-passing layers
+        contribute in principle, it is dominated by an optimisation or
+        over-squashing penalty that kicks in immediately past $L=2$ in
+        this regime.
+  \item This is a sharper, simpler, and arguably more useful finding
+        than H3 would have been if it had held. The practitioner rule
+        is not ``set $L \approx d$,'' but rather ``do not exceed
+        $L = 2$ in a setting like ours --- a small team with small
+        replay buffer and seed budget, on tasks whose diameter is
+        already small.'' Whether the receptive-field-alignment intuition
+        survives at larger $N$, larger step budgets, or in regimes where
+        $L \ge 3$ does not exhibit the optimisation cliff is left to
+        future work.
+\end{enumerate}
+
 % =========================================================================
 \section{Discussion}
 \label{sec:discussion}
@@ -529,15 +563,22 @@ naderializadeh_2020_graphmix} suggests, and is consistent with the
 broader evaluation-rigour concerns raised by
 \citet{henderson_2018_drlmatters} and \citet{agarwal_2021_precipice}.
 
-\paragraph{The depth--diameter heuristic.} Section~\ref{sec:results:ablation}
-provides the most actionable practitioner finding: GNN depth $L$ should be
-chosen near the coordination graph's diameter $d$. Layers below $d$ leave
-information stranded at the boundary of the receptive field; layers
-substantially above $d$ contribute optimisation noise without expressive
-gain. This matches over-smoothing and over-squashing observations in the
-broader GNN literature \citep{xu_2019_gin,battaglia_2018_gn} and gives a
-concrete tuning rule of thumb that does not require expensive depth
-sweeps in deployment.
+\paragraph{The depth--diameter heuristic does not survive contact with
+the data.} The pre-registered H3 prediction was that GNN depth $L$
+should be chosen near the coordination graph's diameter $d$
+(Section~\ref{sec:hypotheses}). Section~\ref{sec:results:ablation}
+falsifies the family-level version of this rule (1 of 3 diameters
+passes the per-row criterion) and replaces it with a sharper empirical
+pattern: across every diameter tested, $L \in \{1, 2\}$ outperforms
+$L \in \{3, 4\}$ by a wide margin. The decline is monotone in depth on
+the $d=3$ row and abrupt elsewhere. This is consistent with the
+over-smoothing / over-squashing observations in the broader GNN
+literature \citep{xu_2019_gin,battaglia_2018_gn}, but it surfaces in
+the cooperative-MARL value-factorisation setting more aggressively
+than the receptive-field intuition would predict. The practitioner
+rule that follows is unambiguous: in small-team CTDE settings with
+modest replay budgets, do not stack more than two GCN layers in front
+of a QMIX-style mixer.
 
 \paragraph{When \emph{not} to use a GNN mixer.} The simplest case is when
 the task does not actually have a coordination graph: the GNN's inductive
@@ -618,17 +659,31 @@ We list explicit limitations rather than burying them.
 
 We presented a controlled empirical study of graph-based value
 factorisation in cooperative MARL. Holding the per-agent encoder, mixer,
-optimiser, and exploration schedule fixed, we isolated the contribution of
-a GCN over the coordination graph to \qmix\ and tested three
-pre-registered hypotheses on \coordgrid, an environment whose coordination
-graph is itself the experimental variable. The headline finding is that
-graph structure pays for itself only under specific conditions: a sparse,
-structured coordination graph, and a GNN depth approximately matched to
-that graph's diameter. Outside those conditions, the simpler \qmix\ mixer
-is competitive or better. The depth--diameter alignment heuristic is the
-most actionable contribution for practitioners; the broader conclusion is
-that ``does graph structure help in MARL?'' is a condition-dependent
-question that requires controlled measurement to answer.
+optimiser, and exploration schedule fixed, we isolated the contribution
+of a GCN over the coordination graph to \qmix\ and tested three
+pre-registered hypotheses on \coordgrid, an environment whose
+coordination graph is itself the experimental variable. Two empirical
+findings carry the paper.
+
+\emph{First}, on the simplest pilot condition (ring graph, $N=4$, 50k
+env steps), \gnnqmix\ does not beat \qmix\ --- it is markedly worse in
+mean and dominated in stability. The prevailing positive picture of
+graph-based MARL does not survive even a sanity-check comparison in
+the regime that should be most favourable to it.
+
+\emph{Second}, the pre-registered receptive-field-alignment heuristic
+($L \approx d$) is falsified in this setting. The data show instead a
+sharp over-depth cliff: $L \in \{1, 2\}$ deliver the bulk of any
+achievable return, while $L \in \{3, 4\}$ collapse to near-noise
+levels on every diameter tested. The actionable practitioner rule that
+emerges is blunter than H3 would have given us: in small-team CTDE
+settings on tasks with $d \le 3$, keep GCN depth $\le 2$.
+
+The broader conclusion is that ``does graph structure help in MARL?''
+is a condition-dependent question that requires controlled measurement
+to answer, and that the answer in some practically-relevant regimes is
+``not by default.'' We hope the released harness makes those
+measurements cheaper to run for future architectures and tasks.
 
 % =========================================================================
 \bibliographystyle{plainnat}
