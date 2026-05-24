@@ -32,6 +32,10 @@ PAPER_FIGS = REPO_ROOT / "paper" / "figures"
 ALGO_LABEL = {"iql": "IQL", "vdn": "VDN", "qmix": "QMIX", "gnn_qmix": "GNN-QMIX"}
 
 
+def _tex_escape(s: str) -> str:
+    return s.replace("_", r"\_")
+
+
 def _fmt(x: float, digits: int = 2) -> str:
     if x is None or (isinstance(x, float) and (np.isnan(x) or np.isinf(x))):
         return "--"
@@ -176,7 +180,7 @@ def phase2() -> None:
         ci = f"[{_fmt(r['final_ci_lo'])}, {_fmt(r['final_ci_hi'])}]"
         ep80 = _fmt(r["ep80_mean"], 0) if pd.notna(r["ep80_mean"]) else "--"
         rows.append(
-            f"{r['graph']} & {int(r['n_agents'])} & "
+            f"{_tex_escape(r['graph'])} & {int(r['n_agents'])} & "
             f"{ALGO_LABEL.get(r['algo'], r['algo'])} & "
             f"{_fmt(r['final_mean'])} & {ci} & {ep80} \\\\"
         )
@@ -186,7 +190,7 @@ def phase2() -> None:
         h = pd.read_csv(h_path)
         if not h.empty:
             lines = [
-                f"{int(r['n_agents'])} & {r['graph']} & {_fmt(r['gap_mean'])} "
+                f"{int(r['n_agents'])} & {_tex_escape(r['graph'])} & {_fmt(r['gap_mean'])} "
                 f"& {_fmt(r.get('cohens_d', float('nan')))} & "
                 f"{_fmt(r['h1_p_one_sided'], 3)} \\\\"
                 for _, r in h.iterrows()
