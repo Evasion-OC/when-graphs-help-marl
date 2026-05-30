@@ -164,6 +164,44 @@ class GCNStack(nn.Module):
         return h
 
 
+class MLPStack(nn.Module):
+    """Parameter-matched no-graph control for :class:`GCNStack`.
+
+    Byte-for-byte identical to :class:`GCNStack` in parameters and output
+    shape — the same ``n_layers`` ``Linear`` modules with the same in/out
+    dims — but with the neighbour-aggregation step removed. Each layer is
+    just ``H' = ReLU(H W)``; there is no ``A_hat @ H`` mixing, so per-agent
+    features never exchange information across the coordination graph.
+
+    The ``forward`` signature accepts ``adj`` for drop-in interface parity
+    with :class:`GCNStack`, but ignores it. This makes MLP-QMIX the clean
+    control that isolates *graph structure* from *extra capacity*: at a
+    matched ``(hidden_dim, n_layers)`` it has the same parameter count as
+    the GCN stack, so any GNN-QMIX vs MLP-QMIX difference is the graph,
+    not the parameters.
+    """
+
+    def __init__(self, in_dim: int, hidden_dim: int, n_layers: int):
+        super().__init__()
+        if n_layers < 1:
+            raise ValueError(f"MLPStack requires n_layers >= 1, got {n_layers}")
+        self.in_dim = in_dim
+        self.hidden_dim = hidden_dim
+        self.n_layers = n_layers
+
+        layers: list[nn.Linear] = []
+        for layer_idx in range(n_layers):
+            din = in_dim if layer_idx == 0 else hidden_dim
+            layers.append(nn.Linear(din, hidden_dim, bias=True))
+        self.layers = nn.ModuleList(layers)
+
+    def forward(self, h: torch.Tensor, adj: torch.Tensor) -> torch.Tensor:  # noqa: ARG002
+        """Per-node MLP; ``adj`` accepted for interface parity, ignored."""
+        for lin in self.layers:
+            h = F.relu(lin(h))              # [B, N, hidden] — no aggregation
+        return h
+
+
 # ---------------------------------------------------------------------------
 # QMIX monotonic mixer (hypernetwork)
 # ---------------------------------------------------------------------------
