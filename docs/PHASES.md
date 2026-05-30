@@ -102,25 +102,52 @@ Outputs:
 - `results/phase_2_main/h1_tests.{csv,md}`
 - `results/phase_2_main/SUMMARY.md`
 
-## Phase 3 — MPE (E2, E3)
+## Phase 3 — MPE simple_spread
 
-**Branch:** `phase-3-mpe` (off `phase-2-e1-full`)
+**Branch:** `phase-3-mpe` (off `phase-2-tuning`; sibling to `phase-2-main`)
 
-External-validity replication on canonical PettingZoo benchmarks.
+External-validity replication on a canonical cooperative MARL benchmark.
+Uses Phase 2A's locked hyperparameters directly to ask: do the findings
+transfer to a benchmark the field actually publishes against?
 
-- E2: simple_spread, agents ∈ {3, 6}.
-- E3: simple_tag (3 predators, 1 prey).
-- Same algorithm set, 5 seeds, ≥ 1M env steps per run.
+- simple_spread (`mpe2.simple_spread_v3`), agents ∈ {3, 6}, max_cycles=25
+- Same 4 algorithms, 5 seeds, 30k env steps per run = 40 runs total
+- Wall-clock estimate: ~3.5 hours on M1 Pro / MPS
 
-## Phase 4 — Depth / structure ablations (H3)
+simple_tag was originally in the plan but has heterogeneous observation
+spaces (predators vs prey) that don't fit the homogeneous cooperative
+setup we use. Skipped for Phase 3; documented as future work.
 
-**Branch:** `phase-4-ablations` (off `phase-3-mpe`)
+The MPE adapter (`src/gnnmarl/envs/mpe_env.py`) wraps the PettingZoo
+parallel API into the same duck-typed interface as `CoordGridEnv` so
+the existing trainer drives it without modification.
 
-Causal probe of *why* GNN helps when it does.
+## Phase 4 — Depth / diameter ablation (H3)
 
-- Vary GNN depth L ∈ {1, 2, 3, 4, 6}.
-- Vary task graph diameter d (in CoordGrid).
-- Predict and test the inverted-U: GNN-QMIX peaks when L ≈ d.
+**Branch:** `phase-4-ablations` (off `phase-2-tuning`)
+
+Causal probe of *why* GNN helps when it does. Holds the algorithm
+fixed (GNN-QMIX with Phase 2A's locked embed_dim, mixer_lr,
+mixer_init) and varies two axes:
+
+- GNN depth L ∈ {1, 2, 3, 4}
+- Task graph diameter d, controlled via ring topology size:
+  N ∈ {4, 6, 8} → d ∈ {2, 3, 4}
+
+Sweep matrix (60 runs):
+- 4 L × 3 N × 5 seeds = 60 GNN-QMIX runs
+- Plus 3 N × 5 seeds = 15 QMIX runs as a no-GNN reference
+
+H3 prediction: GNN-QMIX final-window success is roughly an inverted-U
+in (L − d). Operationally:
+- Heatmap with the predicted L=d ridge marked
+- Inverted-U plot collapsed across N (final success vs L − d)
+
+If the prediction holds, this is direct evidence that the GNN's
+relational inductive bias is what's helping — and gives a concrete
+recipe for picking L given a task's coordination structure. If it
+doesn't hold, that's an equally publishable finding (the GNN's
+benefit is unrelated to receptive-field matching).
 
 ## Phase 5 — Paper writeup integration
 
