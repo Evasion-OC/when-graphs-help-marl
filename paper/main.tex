@@ -74,6 +74,19 @@
 \newcommand{\PEgnnSDNeight}{30.9}     % GNN-QMIX seed SD at N=8
 \newcommand{\PEmlpSDNeight}{3.3}      % MLP-QMIX (matched control) seed SD at N=8
 \newcommand{\PEqmixSDNeight}{9.2}     % QMIX seed SD at N=8
+% --- Line-topology robustness (n=10, 150k steps; App. robustness table). --
+% Same protocol as the ring cells, higher-diameter graph. Confirms the
+% graph penalty / capacity null are not specific to the ring.
+\newcommand{\PLqmixNfour}{62.4}
+\newcommand{\PLmlpNfour}{63.0}
+\newcommand{\PLgnnNfour}{52.9}
+\newcommand{\PLqmixNeight}{143.0}
+\newcommand{\PLmlpNeight}{144.2}
+\newcommand{\PLgnnNeight}{78.5}
+\newcommand{\PLgraphGapNfour}{-10.0}  % GNN-QMIX minus MLP-QMIX, N=4, line
+\newcommand{\PLgraphGapNeight}{-65.8} % GNN-QMIX minus MLP-QMIX, N=8, line
+\newcommand{\PLgnnSDNeight}{29.5}     % GNN-QMIX seed SD at N=8, line
+\newcommand{\PLmlpSDNeight}{2.7}      % MLP-QMIX seed SD at N=8, line
 
 % --- Title block. ---------------------------------------------------------
 \title{When Does Graph Structure Help in Multi-Agent\\
@@ -683,6 +696,17 @@ instability that the parameter-matched no-graph control does not,
 confirming the mechanism we had only hypothesised from the Phase 1
 pilot.
 
+\textbf{Finding 4 --- the pattern is not specific to the ring.} Repeating
+the full capacity control on the higher-diameter \texttt{line} topology
+(\PEseeds\ seeds, \PEsteps\ steps; Appendix~\ref{app:line},
+Table~\ref{tab:line}) reproduces every effect: the graph penalty is
+$\PLgraphGapNfour$ at $N=4$ and $\PLgraphGapNeight$ at $N=8$ (both
+significant under Holm and Mann--Whitney, $p=\PEmwuP$), the capacity
+contrast is again null, and \gnnqmix\ again carries by far the largest
+seed variance (SD $\PLgnnSDNeight$ vs.\ $\PLmlpSDNeight$ for \mlpqmix\ at
+$N=8$). The identified graph penalty thus holds across two distinct
+coordination-graph topologies.
+
 % =========================================================================
 \section{Discussion}
 \label{sec:discussion}
@@ -952,6 +976,45 @@ scripts under \texttt{scripts/phase\{1,2,4\}\_analysis.py}.
                     & CPU envelope; adapter shipped. \\
     4 (ablation)    & $\geq 5\cdot 10^4 \times \cdots$  & $2\cdot 10^4 \times 4 \times 3 \times 3$
                     & \emph{est.}\ ${\sim}2$ h & CPU envelope. \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+% =========================================================================
+\section{Robustness across graph topologies}
+\label{app:line}
+
+The headline capacity control (Section~\ref{sec:results:capacity},
+Table~\ref{tab:phase8}) uses the \texttt{ring} graph. To check that the
+identified graph penalty is not an artefact of that one topology, we
+repeat the entire control --- same five-vs-three algorithms, same
+\PEseeds\ seeds, same \PEsteps-step budget, same locked hyperparameters
+--- on the \texttt{line} graph, whose larger diameter is the harder case
+for a shallow ($L{=}2$) GNN to cover. Table~\ref{tab:line} reports the
+result: the capacity contrast ($\mlpqmix-\qmix$) is null at both team
+sizes, while the graph contrast ($\gnnqmix-\mlpqmix$) is sharply negative
+and grows with $N$, exactly as on the ring. Both decisive contrasts are
+significant under Holm correction over the three-contrast family and under
+the non-parametric Mann--Whitney test ($p=\PEmwuP$). As on the ring,
+\gnnqmix\ also carries the largest seed-to-seed variance.
+
+\begin{table}[h!]
+  \centering
+  \small
+  \caption{Capacity control on the \texttt{line} topology (mean
+  final-window return over \PEseeds\ seeds, 150k steps). Parallel to
+  Table~\ref{tab:phase8}: \mlpqmix\ tracks \qmix\ (capacity null) while
+  \gnnqmix\ falls far below both (graph penalty), reproducing the ring
+  result on a higher-diameter graph.}
+  \label{tab:line}
+  \begin{tabular}{lcccc}
+    \toprule
+    & \qmix & \mlpqmix & \gnnqmix & graph effect \\
+    & {\footnotesize no cap, no graph} & {\footnotesize cap, no graph}
+      & {\footnotesize cap + graph} & {\footnotesize $\gnnqmix-\mlpqmix$} \\
+    \midrule
+    $N=4$ & \PLqmixNfour & \PLmlpNfour & \PLgnnNfour & $\PLgraphGapNfour$ \\
+    $N=8$ & \PLqmixNeight & \PLmlpNeight & \PLgnnNeight & $\PLgraphGapNeight$ \\
     \bottomrule
   \end{tabular}
 \end{table}

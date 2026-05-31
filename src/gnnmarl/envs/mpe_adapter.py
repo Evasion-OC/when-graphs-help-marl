@@ -1,19 +1,22 @@
-"""PettingZoo MPE -> MultiAgentEnv adapter (Phase 3 scaffold).
+r"""PettingZoo MPE -> MultiAgentEnv adapter (Phase 3 scaffold).
 
-Wraps ``pettingzoo.mpe.simple_spread_v3`` (and ``simple_tag_v3``) in our
-``MultiAgentEnv`` protocol so the rest of the harness (algos, trainer,
-logger) works unchanged on canonical MPE benchmarks.
+Wraps ``simple_spread_v3`` (and ``simple_tag_v3``) in our ``MultiAgentEnv``
+protocol so the rest of the harness (algos, trainer, logger) works
+unchanged on canonical MPE benchmarks.
 
-This module imports ``pettingzoo`` lazily — it is in the ``[mpe]`` extra,
-not in the core dependencies, so Phase 0–2 unit tests do not break when
-PettingZoo is absent.
+This module imports the MPE package lazily — it is in the ``[mpe]`` extra,
+not in the core dependencies, so Phase 0–2 unit tests do not break when it
+is absent. The benchmarks moved from ``pettingzoo.mpe`` to the standalone
+``mpe2`` package; we import ``mpe2`` first and fall back to
+``pettingzoo.mpe`` for older installs.
 
 **Design call on the coordination graph for MPE.** MPE does not expose an
-explicit graph. We expose a *k-NN* graph over current agent positions
-(``k`` configurable, default 2), re-computed at each ``reset``. This is the
-same convention used by DGN \citep{jiang_2020_dgn}. For ``simple_tag``,
-the predator-prey distinction is encoded only through observations; the
-graph is built over all agents in the role under control.
+explicit graph. We expose a *k-NN* graph over agent positions (``k``
+configurable, default 2), recomputed at each ``reset`` and held fixed
+within the episode. This is the same convention used by DGN
+(Jiang et al., 2020). For ``simple_tag``, the predator-prey distinction is
+encoded only through observations; the graph is built over all agents in
+the role under control.
 """
 
 from __future__ import annotations
@@ -55,11 +58,17 @@ class MPEEnvAdapter(MultiAgentEnv):
         seed: int | None = None,
     ):
         try:
-            from pettingzoo.mpe import simple_spread_v3, simple_tag_v3
+            # The MPE benchmarks were split out of PettingZoo into the
+            # standalone ``mpe2`` package; prefer it, fall back to the old
+            # in-tree location for older installs.
+            try:
+                from mpe2 import simple_spread_v3, simple_tag_v3
+            except ImportError:
+                from pettingzoo.mpe import simple_spread_v3, simple_tag_v3
         except ImportError as e:
             raise ImportError(
                 "MPEEnvAdapter requires the 'mpe' extra; install with "
-                "`pip install -e .[mpe]`"
+                "`pip install mpe2` (or `pip install -e .[mpe]`)"
             ) from e
 
         self.env_name = env_name
