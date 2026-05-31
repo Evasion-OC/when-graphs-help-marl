@@ -7,28 +7,33 @@
 % \jmlrproceedings{...} per the journal's instructions; everything else here
 % is venue-agnostic standard LaTeX.
 % =========================================================================
-\documentclass[11pt,letterpaper]{article}
+% Official TMLR style. Default = anonymized submission build.
+%   - For a non-anonymous preprint:   \usepackage[preprint]{tmlr}
+%   - For the camera-ready accepted:  \usepackage[accepted]{tmlr}  (+ set month/year)
+% tmlr.sty already loads fontenc(T1), lmodern, natbib, fancyhdr and sets the
+% page geometry, so we do NOT re-load those here.
+\documentclass[10pt]{article}
+\usepackage{tmlr}
 
-\usepackage[margin=1in]{geometry}
-\usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage{amsmath, amssymb, amsthm}
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{multirow}
-\usepackage{lmodern}
 \usepackage[protrusion=true,expansion=false]{microtype}
 \usepackage{xcolor}
-\usepackage[colorlinks=true,citecolor=blue,linkcolor=black,urlcolor=blue]{hyperref}
-\usepackage[numbers,sort&compress]{natbib}
 \usepackage{caption}
 \usepackage{subcaption}
 \usepackage{algorithm}
 \usepackage{algpseudocode}
 \usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{url}
 
-\setlength{\bibsep}{4pt}
-\renewcommand{\baselinestretch}{1.05}
+% Camera-ready metadata (only used by the [accepted] option).
+\def\month{05}
+\def\year{2026}
+\def\openreview{\url{https://openreview.net/forum?id=XXXXXXXX}}
 
 % --- Notation macros (used throughout). -----------------------------------
 \newcommand{\algoname}[1]{\textsc{#1}}
@@ -73,13 +78,13 @@
 \newcommand{\PEqmixSDNeight}{9.2}     % QMIX seed SD at N=8
 
 % --- Title block. ---------------------------------------------------------
-\title{When Does Graph Structure Help in Multi-Agent Reinforcement Learning? \\
-       A Controlled Empirical Study}
+\title{When Does Graph Structure Help in Multi-Agent\\
+       Reinforcement Learning? A Controlled Empirical Study}
 
-\author{Kasra Ghanavati\thanks{Corresponding author.} \\
-        \texttt{kasraghanavati@icloud.com}}
-
-\date{} % TMLR sets dates.
+% Authors are hidden automatically in the anonymized build (\usepackage{tmlr}
+% with no option). They appear under [preprint] / [accepted].
+\author{\name Kasra Ghanavati \email kasraghanavati@icloud.com \\
+        \addr Independent Researcher}
 
 \begin{document}
 \maketitle
@@ -412,43 +417,9 @@ whether the capacity alone matters. The depth-vs-diameter ablation
 (Section~\ref{sec:results:ablation}, H3) additionally isolates depth
 effects within \gnnqmix.
 
-\begin{algorithm}[t]
-\caption{Shared training loop (CTDE, off-policy, Double-DQN). For \iql,
-the team-loss line is replaced by a per-agent Huber sum (see
-Section~\ref{sec:algos}).}
-\label{alg:train}
-\begin{algorithmic}[1]
-\Require env $\mathcal{E}$, algo $\mathcal{A}$ (online + target nets, mixer),
-  total steps $T$, batch size $B$, target-update interval $\tau$,
-  exploration schedule $\epsilon(t)$, update period $k$, warmup $t_{\text{w}}$.
-\State Initialise replay buffer $\mathcal{D}$, target net $\theta^- \leftarrow \theta$.
-\State $(o, s) \leftarrow \mathcal{E}.\textsc{reset}()$;\; $A \leftarrow \mathcal{E}.\textsc{adjacency}()$
-\For{$t = 1, \dots, T$}
-  \State $a \leftarrow \mathcal{A}.\textsc{act}(o, A, \epsilon(t))$
-        \Comment{$\epsilon$-greedy per-agent, params shared}
-  \State $(o', s', r, \text{done}) \leftarrow \mathcal{E}.\textsc{step}(a)$
-  \State $\mathcal{D}.\textsc{add}((o, s, a, r, o', s', \text{done}, A))$
-  \If{$t \ge t_{\text{w}}$ \textbf{and} $t \bmod k = 0$}
-    \State $\text{batch} \sim \mathcal{D}$ \quad (size $B$)
-    \State $\mathbf{Q} \leftarrow \mathcal{A}.Q(o, A; \theta) \in \mathbb{R}^{B \times N \times |\Aagent|}$
-            \Comment{per-agent Q over all actions}
-    \State $q_a \leftarrow \mathrm{gather}(\mathbf{Q}, a) \in \mathbb{R}^{B \times N}$;\;
-           $Q_{\text{tot}} \leftarrow f_{\text{mix}}(q_a; s)$
-    \State $a^* \leftarrow \arg\max_{a'} \mathcal{A}.Q(o', A; \theta)$
-            \Comment{Double-DQN action selection, online net}
-    \State $\bar q \leftarrow \mathrm{gather}(\mathcal{A}.Q(o', A; \theta^-), a^*)$;\;
-           $Q^{-}_{\text{tot}} \leftarrow f_{\text{mix}}^{-}(\bar q; s')$
-    \State $y \leftarrow r + \gamma (1{-}\text{done}) \cdot Q^{-}_{\text{tot}}$
-    \State $\theta \leftarrow \theta - \eta \nabla_\theta \mathrm{Huber}(Q_{\text{tot}}, y)$
-            \Comment{Adam, grad-norm clip 10}
-    \If{$t \bmod \tau = 0$} $\theta^- \leftarrow \theta$ \EndIf
-  \EndIf
-  \If{$\text{done}$} $(o, s) \leftarrow \mathcal{E}.\textsc{reset}()$;\; $A \leftarrow \mathcal{E}.\textsc{adjacency}()$
-  \Else \;$(o, s) \leftarrow (o', s')$
-  \EndIf
-\EndFor
-\end{algorithmic}
-\end{algorithm}
+The full shared training loop (CTDE, off-policy, Double-DQN; identical
+across algorithms modulo the \iql\ per-agent loss) is given as
+Algorithm~\ref{alg:train} in Appendix~\ref{app:trainloop}.
 
 \subsection{Evaluation protocol}
 \label{sec:protocol}
@@ -815,52 +786,76 @@ We list explicit limitations rather than burying them.
 \label{sec:conclusion}
 
 We presented a controlled empirical study of graph-based value
-factorisation in cooperative MARL. Holding the per-agent encoder, mixer,
-optimiser, and exploration schedule fixed, we isolated the contribution
-of a GCN over the coordination graph to \qmix\ and tested three
-pre-registered hypotheses on \coordgrid, an environment whose
-coordination graph is itself the experimental variable, plus a
-parameter-matched no-graph control. Three empirical findings carry the
-paper.
+factorisation in cooperative MARL, holding the per-agent encoder, mixer,
+optimiser, and exploration schedule fixed and adding a parameter-matched
+no-graph control (\mlpqmix). Three findings carry the paper. \emph{First},
+\gnnqmix\ does not beat \qmix; the capacity control \emph{identifies} the
+cause --- \mlpqmix\ (byte-identical parameters, no graph) matches \qmix\
+while \gnnqmix\ falls well below both ($d=\PEgraphDNeight$ at $N=8$;
+significant under Mann--Whitney and Holm-corrected Welch), so the penalty
+is the graph aggregation, not the added capacity, it survives $5\times$
+the training budget, and it grows with team size. \emph{Second}, the
+pre-registered $L \approx d$ heuristic is falsified: instead of an
+inverted-U we find a sharp over-depth cliff, with $L \ge 3$ collapsing on
+every diameter, yielding the blunt rule ``keep GCN depth $\le 2$'' in
+small-team CTDE settings. \emph{Third}, the graph also destabilises
+training, inflating across-seed variance by roughly $9\times$ relative to
+the matched control.
 
-\emph{First}, \gnnqmix\ does not beat \qmix\ --- it is markedly worse in
-mean and dominated in stability --- and the capacity control
-\emph{identifies} the cause. The no-graph \mlpqmix, with byte-identical
-parameter count, matches \qmix, while \gnnqmix\ falls well below both at
-$N\in\{4,8\}$ ($d=\PEgraphDNeight$ at $N=8$; significant under
-Mann--Whitney and Holm-corrected Welch). So the penalty is the graph
-aggregation itself, not the added capacity; it survives $5\times$ the
-training budget, ruling out undertraining; and it grows with team size.
-The prevailing positive picture of graph-based MARL does not survive a
-controlled comparison in the regime that should be most favourable to it.
-
-\emph{Second}, the pre-registered receptive-field-alignment heuristic
-($L \approx d$) is falsified in this setting. The data show instead a
-sharp over-depth cliff: $L \in \{1, 2\}$ deliver the bulk of any
-achievable return, while $L \in \{3, 4\}$ collapse to near-noise
-levels on every diameter tested. The actionable practitioner rule that
-emerges is blunter than H3 would have given us: in small-team CTDE
-settings on tasks with $d \le 3$, keep GCN depth $\le 2$.
-
-\emph{Third}, the graph does not merely fail to help on average --- it
-destabilises training, inflating the across-seed standard deviation at
-$N=8$ by roughly $9\times$ relative to the parameter-matched no-graph
-control. Reliability, not just mean return, is a casualty of the
-relational bias here.
-
-The broader conclusion is that ``does graph structure help in MARL?''
-is a question that requires controlled measurement --- including a
-capacity-matched control --- to answer, and that on the task most
-favourable to a graph-aware model the answer, at the scales we can
-test, is ``no, and it actively hurts.'' We hope the released harness
-and the \mlpqmix\ control make those measurements cheaper and cleaner
-to run for future architectures and tasks.
+The broader point is that ``does graph structure help in MARL?'' requires
+controlled measurement --- including a capacity-matched control --- to
+answer, and that on the task most favourable to a graph-aware model the
+answer, at the scales we can test, is ``no, and it actively hurts.'' We
+release the harness and the \mlpqmix\ control to make such measurements
+cheaper for future architectures and tasks.
 
 % =========================================================================
-\bibliographystyle{plainnat}
+\bibliographystyle{tmlr}
 \bibliography{references}
 
 \appendix
+
+% =========================================================================
+\section{Training loop}
+\label{app:trainloop}
+
+\begin{algorithm}[h!]
+\caption{Shared training loop (CTDE, off-policy, Double-DQN). For \iql,
+the team-loss line is replaced by a per-agent Huber sum (see
+Section~\ref{sec:algos}).}
+\label{alg:train}
+\begin{algorithmic}[1]
+\Require env $\mathcal{E}$, algo $\mathcal{A}$ (online + target nets, mixer),
+  total steps $T$, batch size $B$, target-update interval $\tau$,
+  exploration schedule $\epsilon(t)$, update period $k$, warmup $t_{\text{w}}$.
+\State Initialise replay buffer $\mathcal{D}$, target net $\theta^- \leftarrow \theta$.
+\State $(o, s) \leftarrow \mathcal{E}.\textsc{reset}()$;\; $A \leftarrow \mathcal{E}.\textsc{adjacency}()$
+\For{$t = 1, \dots, T$}
+  \State $a \leftarrow \mathcal{A}.\textsc{act}(o, A, \epsilon(t))$
+        \Comment{$\epsilon$-greedy per-agent, params shared}
+  \State $(o', s', r, \text{done}) \leftarrow \mathcal{E}.\textsc{step}(a)$
+  \State $\mathcal{D}.\textsc{add}((o, s, a, r, o', s', \text{done}, A))$
+  \If{$t \ge t_{\text{w}}$ \textbf{and} $t \bmod k = 0$}
+    \State $\text{batch} \sim \mathcal{D}$ \quad (size $B$)
+    \State $\mathbf{Q} \leftarrow \mathcal{A}.Q(o, A; \theta) \in \mathbb{R}^{B \times N \times |\Aagent|}$
+            \Comment{per-agent Q over all actions}
+    \State $q_a \leftarrow \mathrm{gather}(\mathbf{Q}, a) \in \mathbb{R}^{B \times N}$;\;
+           $Q_{\text{tot}} \leftarrow f_{\text{mix}}(q_a; s)$
+    \State $a^* \leftarrow \arg\max_{a'} \mathcal{A}.Q(o', A; \theta)$
+            \Comment{Double-DQN action selection, online net}
+    \State $\bar q \leftarrow \mathrm{gather}(\mathcal{A}.Q(o', A; \theta^-), a^*)$;\;
+           $Q^{-}_{\text{tot}} \leftarrow f_{\text{mix}}^{-}(\bar q; s')$
+    \State $y \leftarrow r + \gamma (1{-}\text{done}) \cdot Q^{-}_{\text{tot}}$
+    \State $\theta \leftarrow \theta - \eta \nabla_\theta \mathrm{Huber}(Q_{\text{tot}}, y)$
+            \Comment{Adam, grad-norm clip 10}
+    \If{$t \bmod \tau = 0$} $\theta^- \leftarrow \theta$ \EndIf
+  \EndIf
+  \If{$\text{done}$} $(o, s) \leftarrow \mathcal{E}.\textsc{reset}()$;\; $A \leftarrow \mathcal{E}.\textsc{adjacency}()$
+  \Else \;$(o, s) \leftarrow (o', s')$
+  \EndIf
+\EndFor
+\end{algorithmic}
+\end{algorithm}
 
 % =========================================================================
 \section{Hyperparameters and compute}

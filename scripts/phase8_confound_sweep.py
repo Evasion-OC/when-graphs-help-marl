@@ -74,6 +74,8 @@ def main() -> int:
                              "e.g. --seed-start 5 --seeds 5 runs seeds 5..9)")
     parser.add_argument("--algos", type=str, default=",".join(DEFAULT_ALGOS))
     parser.add_argument("--ns", type=str, default=",".join(map(str, DEFAULT_NS)))
+    parser.add_argument("--graph", type=str, default="ring",
+                        help="coordination graph topology (ring, line, complete, ...)")
     parser.add_argument("--log-dir", type=Path,
                         default=REPO_ROOT / "results" / "phase8")
     args = parser.parse_args()
@@ -94,7 +96,8 @@ def main() -> int:
         for algo in algos:
             for seed in seeds:
                 counter += 1
-                tag = f"[{counter}/{n_jobs}] {algo} N={n} graph=ring seed={seed}"
+                tag = (f"[{counter}/{n_jobs}] {algo} N={n} "
+                       f"graph={args.graph} seed={seed}")
                 run_t0 = time.monotonic()
                 cfg = TrainConfig(
                     env="coord_grid",
@@ -102,7 +105,7 @@ def main() -> int:
                         "n_agents": n,
                         "grid_size": 5,
                         "episode_steps": 25,
-                        "graph": "ring",
+                        "graph": args.graph,
                     },
                     algo=algo,
                     algo_kwargs=dict(ALGO_KWARGS),
@@ -112,7 +115,7 @@ def main() -> int:
                     eps_anneal_steps=int(args.steps * 0.8),
                     seed=seed,
                     log_dir=args.log_dir,
-                    run_id=f"{algo}__N{n}__ring__seed{seed}",
+                    run_id=f"{algo}__N{n}__{args.graph}__seed{seed}",
                 )
                 train(cfg)
                 print(f"{tag}  done in {time.monotonic() - run_t0:.1f}s "
