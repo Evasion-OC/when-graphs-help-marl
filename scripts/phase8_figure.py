@@ -16,6 +16,8 @@ from pathlib import Path
 
 import matplotlib
 matplotlib.use("Agg")
+matplotlib.rcParams["pdf.fonttype"] = 42   # embed TrueType, not Type 3
+matplotlib.rcParams["ps.fonttype"] = 42
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
@@ -23,7 +25,7 @@ from scipy import stats  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 RES = ROOT / "results" / "phase8"
-OUT = ROOT / "paper" / "figures" / "phase8_capacity_control.png"
+OUT = ROOT / "paper" / "figures" / "phase8_capacity_control.pdf"
 
 ALGOS = ["qmix", "mlp_qmix", "gnn_qmix"]
 LABELS = {"qmix": "QMIX\n(no cap, no graph)",

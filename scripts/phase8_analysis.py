@@ -8,7 +8,7 @@ Outputs:
         * QMIX vs GNN-QMIX   (does the negative ordering survive long training?)
         * GNN-QMIX vs MLP-QMIX (graph vs capacity, matched params)
         * MLP-QMIX vs QMIX     (capacity effect)
-  - results/phase8/figures/learning_curves_N<n>.png
+  - results/phase8/figures/learning_curves_N<n>.pdf
 
 Final-window metric = mean episodic return over the last `--window` fraction
 of each run's episodes (default 10%), matching the paper's "final-window
@@ -177,6 +177,8 @@ def main() -> int:
     try:
         import matplotlib
         matplotlib.use("Agg")
+        matplotlib.rcParams["pdf.fonttype"] = 42   # embed TrueType, not Type 3
+        matplotlib.rcParams["ps.fonttype"] = 42
         import matplotlib.pyplot as plt
 
         fig_dir = args.results / "figures"
@@ -210,7 +212,7 @@ def main() -> int:
             ax.legend(frameon=False, fontsize=8)
             ax.grid(alpha=0.3)
             fig.tight_layout()
-            fig.savefig(fig_dir / f"learning_curves_N{n}.png")
+            fig.savefig(fig_dir / f"learning_curves_N{n}.pdf")
             plt.close(fig)
         print(f"\n[phase8] figures -> {fig_dir}")
     except Exception as e:  # noqa: BLE001

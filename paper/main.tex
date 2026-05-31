@@ -3,9 +3,7 @@
 % A controlled empirical study.
 %
 % Target venue: Transactions on Machine Learning Research (TMLR).
-% To submit, swap \documentclass{article} for the TMLR style and set
-% \jmlrproceedings{...} per the journal's instructions; everything else here
-% is venue-agnostic standard LaTeX.
+% Uses the official TMLR style (tmlr.sty). All figures are vector PDF.
 % =========================================================================
 % Official TMLR style. Default = anonymized submission build.
 %   - For a non-anonymous preprint:   \usepackage[preprint]{tmlr}
@@ -207,7 +205,7 @@ specific gaps motivate the present study:
 
 \begin{figure}[t]
   \centering
-  \includegraphics[width=\textwidth]{figures/fig1_overview.png}
+  \includegraphics[width=\textwidth]{figures/fig1_overview.pdf}
   \caption{\textbf{Setup and controlled comparison.} (A) \coordgrid:
   agents act on a grid wired by a \emph{tunable} coordination graph
   $\Gtask$; the reward is the number of graph edges whose endpoints are
@@ -647,7 +645,7 @@ $U$, the latter robust to the variance blow-up reported below.
 
 \begin{figure}[t]
   \centering
-  \includegraphics[width=0.62\textwidth]{figures/phase8_capacity_control.png}
+  \includegraphics[width=0.62\textwidth]{figures/phase8_capacity_control.pdf}
   \caption{Phase 8 capacity control. \mlpqmix\ (same parameter count as
   \gnnqmix, no graph) tracks \qmix, while \gnnqmix\ falls far below both
   at both team sizes --- so the penalty is the graph aggregation, not the
@@ -968,11 +966,11 @@ aggregate results in the main text.
 \begin{figure}[h!]
   \centering
   \begin{subfigure}{0.49\textwidth}
-    \includegraphics[width=\linewidth]{figures/phase8_curves_N4.png}
+    \includegraphics[width=\linewidth]{figures/phase8_curves_N4.pdf}
     \caption{$N=4$ (ring).}
   \end{subfigure}\hfill
   \begin{subfigure}{0.49\textwidth}
-    \includegraphics[width=\linewidth]{figures/phase8_curves_N8.png}
+    \includegraphics[width=\linewidth]{figures/phase8_curves_N8.pdf}
     \caption{$N=8$ (ring).}
   \end{subfigure}
   \caption{Phase 8 training curves ($n{=}\PEseeds$ seeds, \PEsteps\ steps).

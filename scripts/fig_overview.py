@@ -20,11 +20,13 @@ from pathlib import Path
 
 import matplotlib
 matplotlib.use("Agg")
+matplotlib.rcParams["pdf.fonttype"] = 42   # embed TrueType, not Type 3
+matplotlib.rcParams["ps.fonttype"] = 42
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 from matplotlib.patches import FancyArrowPatch, FancyBboxPatch  # noqa: E402
 
-OUT = Path(__file__).resolve().parents[1] / "paper" / "figures" / "fig1_overview.png"
+OUT = Path(__file__).resolve().parents[1] / "paper" / "figures" / "fig1_overview.pdf"
 
 C_ENC = "#cfe8ff"      # encoder (shared)
 C_MIX = "#d9d9d9"      # mixer (shared)
