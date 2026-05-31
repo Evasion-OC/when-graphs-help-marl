@@ -171,15 +171,16 @@ specific gaps motivate the present study:
 \paragraph{Contributions.} This paper makes the following contributions.
 
 \begin{enumerate}[leftmargin=*,itemsep=0pt,topsep=2pt]
-  \item We introduce \coordgrid, a cooperative gridworld whose coordination
-        graph is a tunable knob (ring, line, complete graph, lattice,
-        Erd\H{o}s--R\'enyi). The reward is defined edge-wise over this
-        graph, so the graph is literally the coordination structure rather
-        than a heuristic over a fixed task.
+  \item We introduce \coordgrid\ (Figure~\ref{fig:overview}A), a cooperative
+        gridworld whose coordination graph is a tunable knob (ring, line,
+        complete graph, lattice, Erd\H{o}s--R\'enyi). The reward is defined
+        edge-wise over this graph, so the graph is literally the
+        coordination structure rather than a heuristic over a fixed task.
   \item We implement \iql, \vdn, \qmix, and \gnnqmix\ in a single harness
-        with shared encoder, mixer, optimiser, and exploration schedule, so
-        the only architectural difference between \gnnqmix\ and \qmix\ is
-        the GNN. To address Gap~2 directly, we add \mlpqmix: a
+        with shared encoder, mixer, optimiser, and exploration schedule
+        (Figure~\ref{fig:overview}B), so the only architectural difference
+        between \gnnqmix\ and \qmix\ is the GNN. To address Gap~2 directly,
+        we add \mlpqmix: a
         parameter-matched no-graph control with byte-identical parameter
         count to \gnnqmix\ but no neighbour aggregation, which isolates the
         contribution of the \emph{graph} from that of the extra
@@ -203,6 +204,22 @@ specific gaps motivate the present study:
         hard over-depth cliff means GCN depth should not exceed two in
         small-team CTDE settings.
 \end{enumerate}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\textwidth]{figures/fig1_overview.png}
+  \caption{\textbf{Setup and controlled comparison.} (A) \coordgrid:
+  agents act on a grid wired by a \emph{tunable} coordination graph
+  $\Gtask$; the reward is the number of graph edges whose endpoints are
+  co-located, so the graph \emph{is} the coordination structure. (B) All
+  algorithms share an identical per-agent encoder and monotonic mixer and
+  differ only in the block inserted before the Q-head. \qmix\ inserts
+  nothing; \gnnqmix\ inserts an $L$-layer GCN over $\Gtask$; \mlpqmix\
+  inserts an $L$-layer MLP of \emph{identical parameter count} but no
+  graph. \gnnqmix\ vs.\ \mlpqmix\ isolates the \emph{graph} (matched
+  parameters); \mlpqmix\ vs.\ \qmix\ isolates the \emph{capacity}.}
+  \label{fig:overview}
+\end{figure}
 
 % =========================================================================
 \section{Background and Notation}
@@ -940,5 +957,57 @@ scripts under \texttt{scripts/phase\{1,2,4\}\_analysis.py}.
     \bottomrule
   \end{tabular}
 \end{table}
+
+% =========================================================================
+\section{Supplementary figures}
+\label{app:figures}
+
+This appendix collects per-condition learning curves that support the
+aggregate results in the main text.
+
+\begin{figure}[h!]
+  \centering
+  \begin{subfigure}{0.49\textwidth}
+    \includegraphics[width=\linewidth]{figures/phase8_curves_N4.png}
+    \caption{$N=4$ (ring).}
+  \end{subfigure}\hfill
+  \begin{subfigure}{0.49\textwidth}
+    \includegraphics[width=\linewidth]{figures/phase8_curves_N8.png}
+    \caption{$N=8$ (ring).}
+  \end{subfigure}
+  \caption{Phase 8 training curves ($n{=}\PEseeds$ seeds, \PEsteps\ steps).
+  \mlpqmix\ (the parameter-matched no-graph control) tracks \qmix\ at both
+  scales, while \gnnqmix\ is both lower and visibly more variable across
+  seeds --- the destabilisation reported in Section~\ref{sec:results:capacity}.}
+  \label{fig:phase8curves}
+\end{figure}
+
+\begin{figure}[h!]
+  \centering
+  \begin{subfigure}{0.49\textwidth}
+    \includegraphics[width=\linewidth]{figures/phase2__learning_curves_N4_erdos_renyi.pdf}
+    \caption{$N=4$, Erd\H{o}s--R\'enyi (matched density).}
+  \end{subfigure}\hfill
+  \begin{subfigure}{0.49\textwidth}
+    \includegraphics[width=\linewidth]{figures/phase2__learning_curves_N8_ring.pdf}
+    \caption{$N=8$, ring.}
+  \end{subfigure}
+  \caption{Phase 2 per-condition learning curves, the two most extreme
+  cells of the scale/graph sweep (Section~\ref{sec:results:scale}).
+  \gnnqmix\ flat-lines near random-play return on the $N{=}4$
+  Erd\H{o}s--R\'enyi cell, while \qmix\ scales cleanly past 150 on the
+  $N{=}8$ ring (the highest absolute return in the study).}
+  \label{fig:phase2curves}
+\end{figure}
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.62\textwidth]{figures/phase4__depth_diameter_curves.pdf}
+  \caption{Phase 4 depth--diameter curves (companion to the heatmap in
+  Section~\ref{sec:results:ablation}). Final-window return vs.\ GCN depth
+  $L$ for each graph diameter $d$; the over-depth cliff at $L\ge 3$ is
+  visible on every diameter.}
+  \label{fig:phase4curves}
+\end{figure}
 
 \end{document}
