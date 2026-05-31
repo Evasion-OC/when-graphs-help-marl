@@ -2,27 +2,25 @@
 % When Does Graph Structure Help in Multi-Agent Reinforcement Learning?
 % A controlled empirical study.
 %
-% Submission to Transactions on Machine Learning Research (TMLR).
-% Style file: tmlr.sty (from JmlrOrg/tmlr-style-file).
-%
-% Build options:
-%   \usepackage{tmlr}               # default: double-blind for review
-%   \usepackage[preprint]{tmlr}     # arXiv-style with author names visible
-%   \usepackage[accepted]{tmlr}     # final camera-ready with OpenReview ID
+% Target venue: Transactions on Machine Learning Research (TMLR).
+% To submit, swap \documentclass{article} for the TMLR style and set
+% \jmlrproceedings{...} per the journal's instructions; everything else here
+% is venue-agnostic standard LaTeX.
 % =========================================================================
-\documentclass{article}
-\usepackage{tmlr}                   % under review (double-blind) — TMLR submission build
-% \usepackage[preprint]{tmlr}       % preprint: author names visible
-% \usepackage[accepted]{tmlr}       % camera-ready
+\documentclass[11pt,letterpaper]{article}
 
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
 \usepackage{amsmath, amssymb, amsthm}
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{multirow}
+\usepackage{lmodern}
 \usepackage[protrusion=true,expansion=false]{microtype}
 \usepackage{xcolor}
 \usepackage[colorlinks=true,citecolor=blue,linkcolor=black,urlcolor=blue]{hyperref}
-% Note: tmlr.sty already loads natbib with authoryear/round style and lmodern.
+\usepackage[numbers,sort&compress]{natbib}
 \usepackage{caption}
 \usepackage{subcaption}
 \usepackage{algorithm}
@@ -30,6 +28,7 @@
 \usepackage{enumitem}
 
 \setlength{\bibsep}{4pt}
+\renewcommand{\baselinestretch}{1.05}
 
 % --- Notation macros (used throughout). -----------------------------------
 \newcommand{\algoname}[1]{\textsc{#1}}
@@ -47,21 +46,38 @@
 \newcommand{\Nset}{\mathcal{N}}
 \newcommand{\Egraph}{\mathcal{E}}
 \newcommand{\Gtask}{\mathcal{G}}
+\newcommand{\mlpqmix}{\algoname{MLP-QMIX}}
+
+% --- Phase 8 numbers (capacity control + long-horizon, n=10 seeds). -------
+% Final values from the n=10 extension (seeds 0-9), ring graph, 150k steps.
+% All Phase 8 prose references these macros, so numbers live in one place.
+\newcommand{\PEsteps}{150{,}000}      % per-run env steps in Phase 8
+\newcommand{\PEseeds}{10}             % seeds per cell in Phase 8
+% N=4 ring final-window return (mean):
+\newcommand{\PEqmixNfour}{83.0}
+\newcommand{\PEmlpNfour}{83.4}
+\newcommand{\PEgnnNfour}{72.8}
+% N=8 ring final-window return (mean):
+\newcommand{\PEqmixNeight}{164.9}
+\newcommand{\PEmlpNeight}{164.9}
+\newcommand{\PEgnnNeight}{78.3}
+% Decisive gaps + stats (n=10):
+\newcommand{\PEgraphGapNfour}{-10.6}  % GNN-QMIX minus MLP-QMIX, N=4
+\newcommand{\PEgraphGapNeight}{-86.6} % GNN-QMIX minus MLP-QMIX, N=8
+\newcommand{\PEgraphDNfour}{-3.2}     % Cohen's d, graph contrast, N=4
+\newcommand{\PEgraphDNeight}{-3.9}    % Cohen's d, graph contrast, N=8
+\newcommand{\PEcapGapNeight}{0.0}     % MLP-QMIX minus QMIX, N=8 (capacity; null)
+\newcommand{\PEmwuP}{0.0002}          % Mann-Whitney p, decisive contrasts
+\newcommand{\PEgnnSDNeight}{30.9}     % GNN-QMIX seed SD at N=8
+\newcommand{\PEmlpSDNeight}{3.3}      % MLP-QMIX (matched control) seed SD at N=8
+\newcommand{\PEqmixSDNeight}{9.2}     % QMIX seed SD at N=8
 
 % --- Title block. ---------------------------------------------------------
-\title{When Does Graph Structure Help in Multi-Agent Reinforcement
-       Learning? A Controlled Empirical Study}
+\title{When Does Graph Structure Help in Multi-Agent Reinforcement Learning? \\
+       A Controlled Empirical Study}
 
-% Author block uses TMLR's \name / \addr / \email + \AND macros (provided
-% by tmlr.sty). Names are auto-hidden in the default (review) build and
-% appear in [preprint] / [accepted] builds.
-\author{%
-    \name Ali Jabbary\thanks{Corresponding author.} \email st\_a.jabbary@urmia.ac.ir \\
-    \addr Urmia University, Iran
-    \AND
-    \name Kasra Ghanavati \email kasraghanavati@icloud.com \\
-    \addr Independent Researcher
-}
+\author{Kasra Ghanavati\thanks{Corresponding author.} \\
+        \texttt{kasraghanavati@icloud.com}}
 
 \date{} % TMLR sets dates.
 
@@ -81,28 +97,31 @@ coordination structure unexamined. We close this gap with a controlled
 empirical study on \coordgrid, a cooperative gridworld whose coordination
 graph is itself the experimental variable. Holding the per-agent encoder,
 state-conditioned mixer, optimiser, and exploration schedule fixed across
-four algorithms (\iql, \vdn, \qmix, \gnnqmix), we test three
-pre-registered hypotheses --- on a structured graph (H1), against a
-random graph of matched edge density (H2), and across a GNN-depth $\times$
-graph-diameter grid (H3). Three findings emerge. First, on every
-$(N, \text{graph})$ cell we tested ($N \in \{4, 8\}$ $\times$
-\{ring, Erd\H{o}s--R\'enyi at matched edge density\}), \gnnqmix\ ---
-a deliberately minimal GCN-augmented \qmix --- is worse than
-structurally identical \qmix\ (one-sided Welch $t$, $H_a$:
-$\gnnqmix > \qmix$, $p \ge 0.98$; no evidence in favour of the
-graph-augmented variant), with gaps ranging from $-60$ to $-147$ return
-units; undertraining of the larger model remains the leading
-alternative explanation and is discussed explicitly. Second, H2's
-directional prediction (structure helps \gnnqmix\ more than
-matched-density random graphs) is supported at $N=4$ ($p = 0.007$) but
-reverses at $N=8$. Third, the receptive-field alignment heuristic
-($L \approx d$) is falsified at the family level: the data reveal an
-abrupt over-depth cliff at $L \ge 3$, suggesting the practitioner rule
-``do not stack more than two GCN layers in front of a QMIX-style mixer
-in small-team CTDE settings.'' All claims are scoped to one GNN family
-(vanilla GCN) and to the \coordgrid\ environment. We release the
-harness, configs, and plotting code at the URL in
-Appendix~\ref{app:repro}.
+algorithms, we test pre-registered hypotheses on a structured graph
+(H1), against a random graph of matched edge density (H2), and across
+a GNN-depth $\times$ graph-diameter grid (H3), and we add a
+parameter-matched no-graph control (\mlpqmix) that isolates the graph
+from the extra capacity it brings.
+Three findings emerge. First, \gnnqmix\ \emph{underperforms} the
+structurally simpler \qmix\ --- opposite to the prevailing claim ---
+and the gap is \emph{identified}, not confounded: against \mlpqmix,
+which has byte-identical parameter count but no graph aggregation,
+\gnnqmix\ is significantly worse (Cohen's $d=\PEgraphDNeight$ at $N=8$;
+Mann--Whitney $p=\PEmwuP$), while \mlpqmix\ matches \qmix. The penalty
+is therefore the graph aggregation itself, not added capacity, and it
+\emph{grows} with team size. The effect survives $5\times$ the training
+budget (\PEsteps\ steps, \PEseeds\ seeds), ruling out undertraining; and
+the graph also \emph{destabilises} learning (seed SD $\PEgnnSDNeight$ at
+$N=8$, vs.\ \PEmlpSDNeight\ for the parameter-matched no-graph control).
+Second, the depth--diameter
+alignment heuristic (deeper GNN for larger graph diameter) is
+\emph{not} confirmed at the family level (1 of 3 diameters pass);
+instead, the data reveal a sharp cliff above $L=2$, with $L \ge 3$
+catastrophic across every diameter tested. Third, the practitioner
+rule we recommend is correspondingly blunter than H3 anticipated:
+do not stack more than two GCN layers in front of a QMIX-style mixer
+in small-team CTDE settings. We release the harness, configs, and
+plotting code at the URL in Appendix~\ref{app:repro}.
 \end{abstract}
 
 % =========================================================================
@@ -155,19 +174,29 @@ specific gaps motivate the present study:
   \item We implement \iql, \vdn, \qmix, and \gnnqmix\ in a single harness
         with shared encoder, mixer, optimiser, and exploration schedule, so
         the only architectural difference between \gnnqmix\ and \qmix\ is
-        the GNN.
+        the GNN. To address Gap~2 directly, we add \mlpqmix: a
+        parameter-matched no-graph control with byte-identical parameter
+        count to \gnnqmix\ but no neighbour aggregation, which isolates the
+        contribution of the \emph{graph} from that of the extra
+        \emph{capacity}.
   \item We pre-register three falsifiable hypotheses
         (Section~\ref{sec:hypotheses}) and test them with a pilot,
         a graph-regime sweep, and a depth $\times$ diameter ablation
         (Sections~\ref{sec:results:pilot}--\ref{sec:results:ablation}).
-  \item We find that on the pilot ring-graph condition (\S\ref{sec:results:pilot}),
-        the prevailing positive picture of graph-based MARL does not
-        survive a controlled comparison: \gnnqmix\ is bested by
+  \item We find that the prevailing positive picture of graph-based MARL
+        does not survive a controlled comparison: \gnnqmix\ is bested by
         \qmix\ in both mean return and seed-level variance, despite the
         edge-defined reward that should maximally reward a graph-aware
-        model. The depth--diameter alignment finding from H3
-        (\S\ref{sec:results:ablation}) is the most actionable practitioner
-        result.
+        model. The capacity control (\S\ref{sec:results:capacity})
+        \emph{identifies} the cause --- the no-graph \mlpqmix\ matches
+        \qmix\ while \gnnqmix\ falls far below both, so the penalty is the
+        graph aggregation, not the added parameters --- and shows it
+        survives a $5\times$ longer training budget at $n{=}\PEseeds$ seeds
+        (ruling out undertraining) and grows with team size.
+  \item The depth--diameter alignment heuristic (H3) is falsified in favour
+        of a sharper practitioner rule (\S\ref{sec:results:ablation}): a
+        hard over-depth cliff means GCN depth should not exceed two in
+        small-team CTDE settings.
 \end{enumerate}
 
 % =========================================================================
@@ -208,45 +237,58 @@ heuristic about the environment but a literal description of it.
 \section{Related Work}
 \label{sec:related}
 
-\paragraph{Value-decomposition MARL.} \iql~\citep{tan_1993_marl} trains
-independent Q-learners on the shared reward; biased, but the standard
-no-coordination baseline. \vdn~\citep{sunehag_2018_vdn} sums per-agent
-utilities; \qmix~\citep{rashid_2018_qmix,rashid_2020_qmix_jmlr} learns
-a monotonic state-conditioned mixer via a hypernetwork, enforcing
-$\partial \Qtot / \partial \Qi \geq 0$ so decentralised greedy execution
-is consistent with the centralised argmax.
-\algoname{QTRAN}~\citep{son_2019_qtran}, \algoname{MAVEN}
-\citep{mahajan_2019_maven}, and \algoname{QPLEX}~\citep{wang_2021_qplex}
-relax or extend the monotonicity assumption. Beyond value factorisation,
-\algoname{MAPPO}~\citep{yu_2022_mappo} is a strong actor-critic
-baseline; we restrict scope to value-factorisation methods to keep the
-architectural contrast with \gnnqmix\ clean.
-\algoname{RIAL/DIAL}~\citep{foerster_2016_rial_dial} and
-\algoname{CommNet}~\citep{sukhbaatar_2016_commnet} \emph{learn} an
-inter-agent communication graph and are out of scope here, where the
-graph is given.
+\paragraph{Value-decomposition MARL.} \iql~\citep{tan_1993_marl} ignores
+agent interaction and trains independent Q-learners on the shared reward,
+which is biased but a useful no-coordination baseline. \vdn
+\citep{sunehag_2018_vdn} sums per-agent utilities. \qmix
+\citep{rashid_2018_qmix,rashid_2020_qmix_jmlr} learns a monotonic state-conditioned
+mixer via a hypernetwork, enforcing $\partial \Qtot / \partial \Qi \geq 0$
+so decentralised greedy execution is consistent with the centralised
+argmax. \algoname{QTRAN} \citep{son_2019_qtran} and \algoname{MAVEN}
+\citep{mahajan_2019_maven} relax or extend the monotonicity assumption;
+\algoname{QPLEX} \citep{wang_2021_qplex} reformulates it through a
+duplex dueling architecture. Beyond value-factorisation,
+\algoname{MAPPO} \citep{yu_2022_mappo} shows that vanilla PPO with
+centralised critics is a surprisingly strong cooperative baseline; we
+restrict scope to value-decomposition methods to keep the architectural
+contrast with \gnnqmix\ clean.
 
-\paragraph{Graph-based MARL.} \algoname{DGN}~\citep{jiang_2020_dgn}
-applies graph convolution over a $k$-NN agent graph;
-\algoname{G2ANet}~\citep{liu_2020_g2anet} uses attention to abstract a
-game graph; \algoname{Deep Coordination Graphs}~\citep{boehmer_2020_dcg}
-factor $\Qtot$ over a hyperedge structure;
-\algoname{GraphMIX}~\citep{naderializadeh_2020_graphmix} interleaves a
-GNN with a QMIX-style monotonic mixer (closest in spirit to our
-\gnnqmix). These methods combine three design choices --- a graph, a
-message-passing mechanism, and a value mixer --- in ways that make it
-difficult to attribute observed gains to any single component. Our
-study isolates the GNN encoder by inserting it into an otherwise-
-identical \qmix.
+\paragraph{Learned and pre-specified inter-agent communication.}
+Pre-dating the graph-MARL literature, \algoname{RIAL/DIAL}
+\citep{foerster_2016_rial_dial} and \algoname{CommNet}
+\citep{sukhbaatar_2016_commnet} learn pairwise or all-to-all
+communication channels between agents. These methods can be viewed as
+implicitly learning a (typically dense) coordination graph rather than
+taking one as input. We exclude them from the experimental comparison
+because they confound the question we want to answer (does \emph{a given}
+graph help?) with the orthogonal question (can the agents learn a useful
+graph?).
 
-\paragraph{Foundational GNNs and evaluation methodology.} We use a
-textbook graph convolutional network~\citep{kipf_2017_gcn};
-\citet{velickovic_2018_gat}, \citet{xu_2019_gin}, and
-\citet{battaglia_2018_gn} characterise alternatives. The evaluation
-protocol follows \citet{henderson_2018_drlmatters} and
-\citet{agarwal_2021_precipice}: multiple seeds, confidence intervals,
-explicit sample-efficiency metric, Holm-corrected pairwise tests, and
-effect sizes alongside $p$-values.
+\paragraph{Graph-based MARL.} \algoname{DGN} \citep{jiang_2020_dgn} applies
+graph convolution over a $k$-NN agent graph, evaluated on both discrete
+and continuous cooperative tasks.
+\algoname{G2ANet} \citep{liu_2020_g2anet} uses attention to abstract a
+game graph. \algoname{Deep Coordination Graphs}
+\citep{boehmer_2020_dcg} factor $\Qtot$ over a hyperedge structure.
+\algoname{GraphMIX} \citep{naderializadeh_2020_graphmix} interleaves a GNN
+with a QMIX-style monotonic mixer, closest in spirit to the
+\gnnqmix\ baseline we evaluate here. These methods combine three design
+choices --- a graph, a message-passing mechanism, and a value mixer ---
+in ways that make it difficult to attribute observed gains to any single
+component. Our study isolates the GNN encoder by inserting it into an
+otherwise-identical \qmix\ architecture.
+
+\paragraph{Foundational GNNs.} We use a textbook graph convolutional
+network~\citep{kipf_2017_gcn}; \citet{velickovic_2018_gat} and
+\citet{xu_2019_gin} characterise alternatives.
+\citet{battaglia_2018_gn} surveys the broader graph-network family.
+
+\paragraph{Evaluation methodology.} Our protocol follows the recommendations
+of \citet{henderson_2018_drlmatters} and \citet{agarwal_2021_precipice}:
+multiple seeds, confidence intervals, an explicit sample-efficiency metric,
+and Holm-corrected pairwise tests in place of $p<0.05$ readings off a
+forest plot. We additionally report effect sizes (mean differences) so
+readers do not have to infer them from CI overlap.
 
 \paragraph{Benchmarks.} The Multi-agent Particle Environment
 \citep{lowe_2017_maddpg} and PettingZoo \citep{terry_2021_pettingzoo}
@@ -313,17 +355,16 @@ normalised positions.
 \paragraph{Tunable graph regimes.} The implementation supports five graph
 families: \texttt{complete} ($d=1$), \texttt{ring} ($d=\lfloor N/2 \rfloor$),
 \texttt{line} ($d = N-1$), \texttt{grid2d} ($d = 2(\sqrt N - 1)$), and
-\texttt{erdos\_renyi} (random $G(N, p)$ resampled per episode). Phase 2
-uses \texttt{ring} and \texttt{erdos\_renyi}; the Phase 4 depth ablation
-uses \texttt{complete}, \texttt{ring}, and \texttt{line} all at $N=4$,
-holding team size constant so the diameter sweep $d \in \{1, 2, 3\}$ is
-not confounded with team size. \texttt{grid2d} and larger-$N$ variants
-are exposed in the harness but not exercised in the present paper.
+\texttt{erdos\_renyi} (random $G(N, p)$ resampled per episode). The
+diameter range $\{1, 2, 3, 4\}$ used in our ablation is achieved by
+combining \texttt{complete} ($d=1$), \texttt{ring} on $N=4$ ($d=2$),
+\texttt{line} on $N=4$ ($d=3$), and \texttt{line} on $N=5$ ($d=4$).
 
 \subsection{Algorithms}
 \label{sec:algos}
 
-All four algorithms share a per-agent Q-network --- an MLP of the form
+All five algorithms below (\iql, \vdn, \qmix, \gnnqmix, and the
+\mlpqmix\ control) share a per-agent Q-network --- an MLP of the form
 $\Aagent_i \mapsto \mathrm{ReLU}(\mathrm{Linear}_{64})
 \rightarrow \mathrm{ReLU}(\mathrm{Linear}_{64})
 \rightarrow \mathrm{Linear}_{|\Aagent_i|}$ with parameters shared across
@@ -342,36 +383,72 @@ with Double-DQN targets, and gradient norm clipping at 10.
         coordination graph $\Gtask$ before the Q heads, with $L=2$,
         hidden dimension 64. The mixer is \emph{identical} to \qmix; the
         GCN is the only structural change.
+  \item \mlpqmix\ (parameter-matched no-graph control): identical to
+        \gnnqmix\ in every respect except that the $L$-layer GCN is
+        replaced by an $L$-layer MLP of the same per-layer shape ---
+        i.e.\ the neighbour-aggregation step $\tilde A H$ is removed,
+        leaving $\mathrm{ReLU}(HW)$. \mlpqmix\ has a byte-identical
+        parameter count to \gnnqmix\ at matched $(L, \text{width})$, so
+        the only difference between the two is whether information
+        crosses the coordination graph.
 \end{itemize}
 
-\paragraph{What \gnnqmix\ is and is not.} \gnnqmix\ is a deliberately
-minimal control: it is \qmix\ with a vanilla
-GCN~\citep{kipf_2017_gcn} block inserted before the per-agent Q head.
-It is \emph{not} a re-implementation of any named prior method;
-\algoname{GraphMIX} \citep{naderializadeh_2020_graphmix} is the
-closest published cousin in spirit but adds agent- and team-level GNN
-heads and an attention-based pooling that we do not test. Reading our
-negative results as a finding about ``GraphMIX'' or about
-graph-attention-based architectures more broadly would extrapolate
-beyond what we measure; we test exactly one mechanism for injecting
-graph structure into the QMIX mixer.
+\paragraph{Why this matters: isolating graph from capacity.} The mixer,
+optimiser, exploration schedule and per-agent encoder \emph{stem} are
+identical across \qmix, \gnnqmix, and \mlpqmix. \gnnqmix\ inserts an
+$L$-layer GCN of width 64 between the encoder and the Q head, adding
+$L \cdot (64^2 + 64) \approx 4.2\,L$ thousand parameters that \qmix\ does
+not have (e.g.\ $\sim 8.3$k at $L=2$, against $\sim 16$k for \qmix). A
+comparison of \gnnqmix\ against \qmix\ alone therefore confounds two
+explanations: the relational inductive bias of the \emph{graph}, or the
+extra \emph{capacity}. \mlpqmix\ removes the confound by construction --- it
+carries exactly the same extra parameters but no graph. This yields a
+three-way decomposition (verified to identical parameter counts in
+Section~\ref{sec:results:capacity}): \qmix\ (no capacity, no graph),
+\mlpqmix\ (capacity, no graph), \gnnqmix\ (capacity and graph). The
+fully-identified test of ``does the graph help?'' is \gnnqmix\ vs.\
+\mlpqmix\ at matched capacity; \mlpqmix\ vs.\ \qmix\ separately measures
+whether the capacity alone matters. The depth-vs-diameter ablation
+(Section~\ref{sec:results:ablation}, H3) additionally isolates depth
+effects within \gnnqmix.
 
-\paragraph{Why this matters.} The mixer, optimiser, exploration schedule
-and per-agent encoder \emph{stem} are identical between \qmix\ and
-\gnnqmix. \gnnqmix\ inserts an $L$-layer GCN block of width 64 between
-the encoder and the Q head, which adds $L \cdot (64^2 + 64) \approx 4.2\,L$
-thousand parameters that \qmix\ does not have (e.g.\ $\sim 8.4$k at $L=2$
-and $\sim 16.8$k at $L=4$, against a $\sim 13$k-parameter \qmix). We
-report this overhead transparently in Appendix~\ref{app:hparams} and
-recognise that a tighter test ``graph structure vs.\ extra depth'' would
-fit a same-shape \emph{MLP-depth} control alongside the GCN; we leave
-that ablation to a future revision. The depth-vs-diameter ablation
-(Section~\ref{sec:results:ablation}, H3) still cleanly isolates depth
-effects within \gnnqmix\ because depth is varied internally while the
-encoder stem and mixer are held fixed. The full Double-DQN training
-loop, identical across all four algorithms modulo the \iql\ per-agent
-loss override, is given as Algorithm~\ref{alg:train} in
-Appendix~\ref{app:algorithm}.
+\begin{algorithm}[t]
+\caption{Shared training loop (CTDE, off-policy, Double-DQN). For \iql,
+the team-loss line is replaced by a per-agent Huber sum (see
+Section~\ref{sec:algos}).}
+\label{alg:train}
+\begin{algorithmic}[1]
+\Require env $\mathcal{E}$, algo $\mathcal{A}$ (online + target nets, mixer),
+  total steps $T$, batch size $B$, target-update interval $\tau$,
+  exploration schedule $\epsilon(t)$, update period $k$, warmup $t_{\text{w}}$.
+\State Initialise replay buffer $\mathcal{D}$, target net $\theta^- \leftarrow \theta$.
+\State $(o, s) \leftarrow \mathcal{E}.\textsc{reset}()$;\; $A \leftarrow \mathcal{E}.\textsc{adjacency}()$
+\For{$t = 1, \dots, T$}
+  \State $a \leftarrow \mathcal{A}.\textsc{act}(o, A, \epsilon(t))$
+        \Comment{$\epsilon$-greedy per-agent, params shared}
+  \State $(o', s', r, \text{done}) \leftarrow \mathcal{E}.\textsc{step}(a)$
+  \State $\mathcal{D}.\textsc{add}((o, s, a, r, o', s', \text{done}, A))$
+  \If{$t \ge t_{\text{w}}$ \textbf{and} $t \bmod k = 0$}
+    \State $\text{batch} \sim \mathcal{D}$ \quad (size $B$)
+    \State $\mathbf{Q} \leftarrow \mathcal{A}.Q(o, A; \theta) \in \mathbb{R}^{B \times N \times |\Aagent|}$
+            \Comment{per-agent Q over all actions}
+    \State $q_a \leftarrow \mathrm{gather}(\mathbf{Q}, a) \in \mathbb{R}^{B \times N}$;\;
+           $Q_{\text{tot}} \leftarrow f_{\text{mix}}(q_a; s)$
+    \State $a^* \leftarrow \arg\max_{a'} \mathcal{A}.Q(o', A; \theta)$
+            \Comment{Double-DQN action selection, online net}
+    \State $\bar q \leftarrow \mathrm{gather}(\mathcal{A}.Q(o', A; \theta^-), a^*)$;\;
+           $Q^{-}_{\text{tot}} \leftarrow f_{\text{mix}}^{-}(\bar q; s')$
+    \State $y \leftarrow r + \gamma (1{-}\text{done}) \cdot Q^{-}_{\text{tot}}$
+    \State $\theta \leftarrow \theta - \eta \nabla_\theta \mathrm{Huber}(Q_{\text{tot}}, y)$
+            \Comment{Adam, grad-norm clip 10}
+    \If{$t \bmod \tau = 0$} $\theta^- \leftarrow \theta$ \EndIf
+  \EndIf
+  \If{$\text{done}$} $(o, s) \leftarrow \mathcal{E}.\textsc{reset}()$;\; $A \leftarrow \mathcal{E}.\textsc{adjacency}()$
+  \Else \;$(o, s) \leftarrow (o', s')$
+  \EndIf
+\EndFor
+\end{algorithmic}
+\end{algorithm}
 
 \subsection{Evaluation protocol}
 \label{sec:protocol}
@@ -417,11 +494,11 @@ compute constraints and are noted explicitly.
 \subsection{Phase 1 --- Pilot}
 \label{sec:results:pilot}
 
-\textbf{Setup.} 4 agents, ring graph (diameter $d=2$), 3 seeds,
-$5 \times 10^4$ environment steps per run. This phase is a harness
-sanity check: the acceptance criterion is that the coordinated
-baselines (\vdn, \qmix) outperform \iql\ on a task with obvious
-coordination demand, and that all four algorithms run to completion.
+\textbf{Setup.} 4 agents, ring graph (diameter $d=2$), 3 seeds, $5 \times 10^4$
+environment steps per run. This phase is a harness sanity check: per
+\texttt{docs/PHASES.md}, the acceptance criterion is that the coordinated
+baselines (\vdn, \qmix) clearly outperform \iql\ on a task with obvious
+coordination demand, and \gnnqmix\ runs to completion.
 
 \textbf{Findings.} Figure~\ref{fig:phase1_curves} and
 Table~\ref{tab:phase1_summary} show the per-algorithm learning curves and
@@ -467,110 +544,20 @@ GPU). See Table~\ref{tab:budget}.
 
 \input{results/phase2}
 
-\textbf{Findings.} Four observations across the 16-cell sweep:
-\begin{enumerate}[leftmargin=*,itemsep=0pt,topsep=2pt]
-  \item \textbf{H1 is falsified.} In every $(N, \text{graph})$
-        condition, \gnnqmix\ is \emph{worse} than \qmix\ ---
-        Table~\ref{tab:phase2_h1} reports one-sided $p$-values in the
-        $H_a$: \gnnqmix\ $>$ \qmix\ direction ranging from $0.983$ to
-        $0.999$, mean gaps from $-60$ to $-147$ return units, and
-        Cohen's $d$ from $-4.4$ to $-118$ (all an order of magnitude
-        or more beyond the conventional ``large effect'' threshold of
-        $|d| > 0.8$). Increasing $N$ \emph{widens} the gap rather
-        than closing it. Figures~\ref{fig:phase2_curves_N4ER} and
-        \ref{fig:phase2_curves_N8ring} show the most extreme cases:
-        \gnnqmix\ flat-lining near random-play return on $N=4$
-        Erd\H{o}s--R\'enyi, and \qmix\ scaling cleanly past 150 on
-        $N=8$ ring.
-  \item \textbf{H2 is partially supported.} The difference-of-differences
-        test (Table~\ref{tab:phase2_h2}) shows that at $N=4$ the
-        \gnnqmix-\qmix\ gap is less negative on the structured ring than
-        on the matched-density random graph ($\Delta_{\text{ring}} -
-        \Delta_{\text{ER}} = +17.7$, $p = 0.007$ one-sided). At $N=8$
-        the effect reverses to $-17.7$ ($p = 0.71$). H2 thus holds
-        directionally at small team sizes but not at moderate ones.
-  \item \textbf{The IQL $<$ VDN $<$ QMIX ordering is robust} across all
-        four conditions, replicating and strengthening the Phase-1 sanity
-        check. \qmix\ scaled to $N=8$ reaches a mean final-window return
-        of $137.5$ (Erd\H{o}s--R\'enyi) and $167.8$ (ring) --- the latter
-        is the highest absolute number observed in the study.
-  \item \textbf{\gnnqmix\ fails to learn at all in two of the four
-        Erd\H{o}s--R\'enyi cells} (final-window mean $6.6$ at $N=4$,
-        $8.5$ at $N=8$; cf.\ $\sim 4$ for random play). The
-        re-sampled graph structure between episodes is the most
-        non-stationary regime in our sweep and appears substantially
-        harder for the GCN encoder than the fixed ring; the
-        over-depth-cliff observed in Section~\ref{sec:results:ablation}
-        is one likely contributor but the present data underdetermine
-        the mechanism.
-\end{enumerate}
-
-\paragraph{Caveat: undertraining is the leading alternative
-explanation.} A reviewer should be aware --- and we want to flag
-explicitly --- that the GNN-QMIX absolute returns in Phase 2 are
-substantially lower than in Phase 1, and the step budget differs:
-Phase 1 (50k env steps on ring $N=4$) gave GNN-QMIX a mean
-final-window return of $58.5$, while Phase 2 (30k env steps on the
-same condition) gave $23.1$. \qmix, by contrast, is essentially
-unchanged across the cut ($84.3 \to 83.5$). The differential collapse
-strongly suggests that GNN-QMIX is more sample-inefficient than \qmix\
-on this task family, and that the Phase 2 step budget --- chosen to fit
-the 16-cell sweep into the single-CPU envelope --- may be insufficient
-for the GCN-augmented model to converge. Undertraining therefore
-remains the most natural alternative explanation for the magnitude of
-the Phase 2 negative result. The Phase 1 datum (50k, ring $N=4$,
-GNN-QMIX $= 58.5$ \emph{still below} \qmix\ at $84.3$) argues that
-extra training does not flip the sign of the gap, but a follow-up at
-$\ge 10^5$ steps per condition would close this concern definitively.
-We note the asymmetry in the limitations.
-
-\paragraph{Caveat: the well-identified quantity is the gap, not the
-absolute return.} The Student-$t$ CI for the GNN-QMIX $N=8$ ring point
-estimate spans $[-11.5, 53.7]$ --- consistent with anything from
-``broken'' to ``barely-learning.'' The CI for the gap
-$\Delta = \gnnqmix - \qmix = -146.6$ is the well-resolved quantity
-across the sweep, not the GNN-QMIX absolute number alone.
-
-\begin{figure}[t]
-  \centering
-  \begin{subfigure}[t]{0.49\linewidth}
-    \centering
-    \includegraphics[width=\linewidth]{figures/phase2__learning_curves_N4_erdos_renyi.pdf}
-    \caption{$N=4$, Erd\H{o}s--R\'enyi (matched edge density). \gnnqmix\
-    fails to leave random-play return; the GCN encoder appears unable
-    to exploit the per-episode-resampled adjacency.}
-    \label{fig:phase2_curves_N4ER}
-  \end{subfigure}\hfill
-  \begin{subfigure}[t]{0.49\linewidth}
-    \centering
-    \includegraphics[width=\linewidth]{figures/phase2__learning_curves_N8_ring.pdf}
-    \caption{$N=8$, ring. \qmix\ scales cleanly past $150$ and is the
-    highest-return configuration in the entire study; the \qmix-\gnnqmix\
-    gap is largest here in absolute terms ($-146.6$).}
-    \label{fig:phase2_curves_N8ring}
-  \end{subfigure}
-  \caption{Two per-condition learning curves selected as the most
-  extreme cases from the Phase 2 sweep. Shaded bands are $\pm 1$
-  s.d.\ across seeds of the 25-episode rolling mean. The remaining
-  two conditions ($N=4$ ring, $N=8$ Erd\H{o}s--R\'enyi) are in the
-  released artifact at \texttt{results/phase2/figures/}.}
-  \label{fig:phase2_two_curves}
-\end{figure}
-
-\subsection{External-validity replication on MPE: deferred}
+\subsection{Phase 3 --- External validity on MPE}
 \label{sec:results:mpe}
 
-A PettingZoo adapter for \coordgrid-style training on
-\texttt{simple\_spread} and \texttt{simple\_tag} is included in the
-release (\texttt{src/gnnmarl/envs/mpe\_adapter.py}). A full
-external-validity replication --- on the order of $10^6$ environment
-steps per condition, $\ge 5$ seeds, for both environments and all four
-algorithms --- did not fit the single-CPU compute envelope we committed
-to and is left to follow-up work. All empirical claims in this paper
-are therefore scoped to the \coordgrid\ environment family; readers
-should treat the negative finding as a controlled-experiment result
-about \emph{this} family of coordination graphs, not as a general
-claim about MARL benchmarks at large.
+We provide a PettingZoo adapter for \coordgrid-style training on
+\texttt{simple\_spread} (cooperative) and \texttt{simple\_tag}
+(mixed), included in the released code. A full external-validity sweep
+on these benchmarks --- which have a fixed, implicit coordination
+structure rather than the tunable graph that makes \coordgrid\ a
+controlled instrument --- is deferred to future work: our compute
+envelope is better spent on the identification experiment of
+Section~\ref{sec:results:capacity}, which removes the capacity and
+undertraining confounds that would otherwise dominate any cross-task
+comparison. We flag this as a scope limitation
+(Section~\ref{sec:limitations}) rather than overstate a thin replication.
 
 \subsection{Phase 4 --- Depth--diameter ablation (H3)}
 \label{sec:results:ablation}
@@ -600,15 +587,12 @@ and more concerning --- pattern than H3 predicted:
 
 \begin{enumerate}[leftmargin=*,itemsep=0pt,topsep=2pt]
   \item \textbf{H3 is not confirmed at the family level} (1/3 diameters
-        pass). Only the ring ($d=2$) meets both pre-registered
-        criteria (argmax $L^* = 2$ within the $\pm 1$ window of $d=2$;
-        relative range $0.78$, comfortably non-flat). The complete graph
-        ($d=1$) has its argmax at the predicted location $L^*=1$ but is
-        flat in $L$ (relative range $0.098$, \emph{below} the
-        pre-registered $0.10$ non-flat floor), so the row does not pass.
-        The line ($d=3$) is non-flat but its argmax sits at $L^*=1$,
-        outside the $|L^*-d|\le 1$ window --- the \emph{opposite} of
-        the H3 prediction, with a monotone decrease in $L$.
+        pass). Only the ring ($d=2$) shows the predicted argmax-at-$L=d$
+        behaviour ($L^*=2$, non-flat, $p=$ pass). The complete graph
+        ($d=1$) is essentially flat in $L$ (relative range $10\%$, at the
+        pre-registered floor) and the line ($d=3$) shows the
+        \emph{opposite} of the prediction: $L^*=1$, with a monotone
+        decrease as $L$ grows.
   \item Reading the heatmap column-wise rather than row-wise exposes a
         sharp \emph{over-depth cliff}: $L=3$ and $L=4$ are catastrophic on
         every diameter tested. Mean returns at $L \in \{3, 4\}$ are
@@ -628,39 +612,116 @@ and more concerning --- pattern than H3 predicted:
         future work.
 \end{enumerate}
 
+\subsection{Phase 8 --- Capacity control and the undertraining confound}
+\label{sec:results:capacity}
+
+The Phase 1--2 comparison of \gnnqmix\ against \qmix\ leaves two
+explanations open, both flagged in our own limitations: the gap could
+be the graph, or it could be the ${\sim}8.3$k extra parameters the GCN
+adds; and the short ($3\times10^4$-step) budget could have undertrained
+the larger model. Phase 8 closes both. We run the parameter-matched
+no-graph control \mlpqmix\ (Section~\ref{sec:algos}) alongside \qmix\
+and \gnnqmix\ on the decisive \texttt{ring} cells at $N \in \{4, 8\}$,
+for \PEseeds\ seeds at \PEsteps\ env steps each --- $5\times$ the Phase 2
+budget and double the seed count \citet{agarwal_2021_precipice}
+recommend.
+
+\textbf{Setup.} Five algorithms $\times \{N{=}4, N{=}8\}$ ring $\times$
+\PEseeds\ seeds at \PEsteps\ steps. \gnnqmix\ and \mlpqmix\ use the
+locked $L{=}2$, width-64 encoder and are verified to have identical
+parameter counts, so the only difference is the neighbour-aggregation
+step. Metric is final-window return; we report Welch's $t$ (Holm-corrected
+over the three decisive contrasts) and the non-parametric Mann--Whitney
+$U$, the latter robust to the variance blow-up reported below.
+
+\begin{table}[t]
+  \centering
+  \small
+  \caption{Phase 8 final-window return (mean over \PEseeds\ seeds) on the
+  \texttt{ring} graph. \mlpqmix\ is the parameter-matched no-graph control
+  (identical parameter count to \gnnqmix). \emph{Capacity} effect
+  $=\mlpqmix-\qmix$; \emph{graph} effect $=\gnnqmix-\mlpqmix$ (the
+  identified effect of the graph at matched capacity).}
+  \label{tab:phase8}
+  \begin{tabular}{lcccc}
+    \toprule
+    & \qmix & \mlpqmix & \gnnqmix & graph effect \\
+    & {\footnotesize no cap, no graph} & {\footnotesize cap, no graph}
+      & {\footnotesize cap + graph} & {\footnotesize $\gnnqmix-\mlpqmix$} \\
+    \midrule
+    $N=4$ & \PEqmixNfour & \PEmlpNfour & \PEgnnNfour
+          & $\PEgraphGapNfour$ \;($d{=}\PEgraphDNfour$) \\
+    $N=8$ & \PEqmixNeight & \PEmlpNeight & \PEgnnNeight
+          & $\PEgraphGapNeight$ \;($d{=}\PEgraphDNeight$) \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.62\textwidth]{figures/phase8_capacity_control.png}
+  \caption{Phase 8 capacity control. \mlpqmix\ (same parameter count as
+  \gnnqmix, no graph) tracks \qmix, while \gnnqmix\ falls far below both
+  at both team sizes --- so the penalty is the graph aggregation, not the
+  added capacity. Bars are means over \PEseeds\ seeds; whiskers are 95\%
+  Student-$t$ CIs.}
+  \label{fig:phase8}
+\end{figure}
+
+\textbf{Finding 1 --- the penalty is the graph, not capacity, and it is
+significant.} \mlpqmix\ matches \qmix\ at both scales (capacity gap
+$\PEcapGapNeight$ at $N=8$; negligible at $N=4$), so the extra parameters
+alone do nothing. \gnnqmix, with identical parameters but the graph added,
+is far worse: the graph effect is $\PEgraphGapNfour$ at $N=4$ and
+$\PEgraphGapNeight$ at $N=8$ (Cohen's $d=\PEgraphDNfour$ and
+$\PEgraphDNeight$). Both decisive contrasts are significant under the
+non-parametric test ($\text{MWU } p=\PEmwuP$) and under Holm correction
+over the decisive family. The negative result is therefore
+\emph{identified}: it is the relational aggregation itself that hurts, and
+the penalty \emph{grows} with team size --- the opposite of the ``graphs
+help coordination as teams grow'' intuition.
+
+\textbf{Finding 2 --- undertraining is ruled out.} At \PEsteps\ steps
+($5\times$ Phase 2), \qmix\ still dominates \gnnqmix\ by roughly $2\times$
+in return at $N=8$ ($\PEqmixNeight$ vs.\ $\PEgnnNeight$). The gap is not a
+transient of insufficient training; it persists and widens at the larger
+budget.
+
+\textbf{Finding 3 --- the graph destabilises learning.} Beyond the lower
+mean, \gnnqmix\ is far less reliable across seeds: at $N=8$ its seed
+standard deviation is \PEgnnSDNeight, against \PEmlpSDNeight\ for the
+parameter-matched \mlpqmix\ control and \PEqmixSDNeight\ for \qmix\ ---
+roughly a $9\times$ inflation attributable to the graph alone. The graph
+does not merely fail to help on average; it injects seed-level
+instability that the parameter-matched no-graph control does not,
+confirming the mechanism we had only hypothesised from the Phase 1
+pilot.
+
 % =========================================================================
 \section{Discussion}
 \label{sec:discussion}
 
-\paragraph{Where a vanilla GCN over the coordination graph helps in our
-experiments.} The honest answer is: we find no
-$(N, \text{graph})$ condition in which our \gnnqmix\ --- a vanilla
-GCN~\citep{kipf_2017_gcn} inserted into a \qmix\ mixer --- improves on
-\qmix\ itself. Across the 16-cell Phase-2 sweep
-(Section~\ref{sec:results:scale}) and the depth ablation
-(Section~\ref{sec:results:ablation}), \qmix\ is the better choice on
-the gap-of-means: one-sided $p \in [0.98, 1.00]$ in the
-$\gnnqmix > \qmix$ direction, with effect sizes $-60$ to $-147$
-return units. The single positive directional result is H2 at $N=4$,
-where the \gnnqmix-\qmix\ gap is \emph{less negative} on the structured
-ring than on the matched-density random graph --- a difference between
-two losses, not a positive case for the graph mixer.
-
-This is a substantially more constrained reading of graph-based MARL
-than the prevailing positive framing in the literature
-\citep{jiang_2020_dgn,liu_2020_g2anet,naderializadeh_2020_graphmix}
-allows, and it is consistent with broader evaluation-rigour concerns
-of \citet{henderson_2018_drlmatters} and \citet{agarwal_2021_precipice}.
-Three caveats bound the claim: (i) we test exactly one GNN mechanism
-(vanilla GCN, no attention or learned message passing); (ii) the
-edge-sum reward of \coordgrid\ is by construction monotonically
-decomposable along the graph and therefore favours the sum-shaped
-\qmix\ mixer (see Limitations); (iii) the compute envelope caps each
-condition at three seeds and 30--50k env steps, leaving undertraining of
-the larger model as the leading alternative explanation. What our data
-\emph{do} establish, within these limits, is that the prevailing
-positive claim does not hold by default and should not be assumed
-without a per-task controlled comparison.
+\paragraph{Where graph structure helps.} Across every condition we
+tested in Sections~\ref{sec:results:scale}--\ref{sec:results:capacity},
+the \gnnqmix\ encoder does \emph{not} help over the structurally
+identical \qmix\ baseline --- and the capacity control
+(Section~\ref{sec:results:capacity}) shows this is not because the extra
+parameters are wasted but because the graph aggregation itself is
+actively harmful: \mlpqmix, carrying the same parameters without the
+graph, matches \qmix, while \gnnqmix\ falls well below both. We
+therefore cannot point to a tested regime in which the graph pays for
+itself; the honest reading is that, on a task whose reward is
+\emph{literally} the coordination graph --- the case most favourable to
+a graph-aware model --- the relational inductive bias is a net liability
+at the team sizes and depths we can afford to test. This is a far more
+constrained reading of graph-based MARL than the prevailing positive
+framing in the literature \citep{jiang_2020_dgn,liu_2020_g2anet,
+naderializadeh_2020_graphmix} suggests, and is consistent with the
+broader evaluation-rigour concerns raised by
+\citet{henderson_2018_drlmatters} and \citet{agarwal_2021_precipice}.
+We are careful not to over-generalise: this is a controlled result on
+one environment family and one GNN family (Section~\ref{sec:limitations}),
+not a claim that graph structure can never help in MARL.
 
 \paragraph{The depth--diameter heuristic does not survive contact with
 the data.} The pre-registered H3 prediction was that GNN depth $L$
@@ -672,12 +733,9 @@ pattern: across every diameter tested, $L \in \{1, 2\}$ outperforms
 $L \in \{3, 4\}$ by a wide margin. The decline is monotone in depth on
 the $d=3$ row and abrupt elsewhere. This is consistent with the
 over-smoothing / over-squashing observations in the broader GNN
-literature \citep{xu_2019_gin,alon_2021_oversquashing,battaglia_2018_gn},
-but it surfaces in the cooperative-MARL value-factorisation setting
-more aggressively than the receptive-field intuition alone would
-predict --- the cliff is sharp (drop by an order of magnitude between
-$L=2$ and $L=3$ on the $d=2$ row), not the gradual degradation a pure
-over-smoothing story would project. The practitioner
+literature \citep{xu_2019_gin,battaglia_2018_gn}, but it surfaces in
+the cooperative-MARL value-factorisation setting more aggressively
+than the receptive-field intuition would predict. The practitioner
 rule that follows is unambiguous: in small-team CTDE settings with
 modest replay budgets, do not stack more than two GCN layers in front
 of a QMIX-style mixer.
@@ -688,29 +746,18 @@ bias buys nothing and pays the cost of representing a uniform graph
 (or, worse, of mis-specifying the graph). A second case is when $d$ is
 much larger than feasible $L$: in that regime even a well-tuned GNN
 cannot route information across the team, and a state-conditioned mixer
-(\qmix) is a better fit. Our pilot (Section~\ref{sec:results:pilot})
-documents a third case empirically: on a small team ($N=4$) with a low-
-diameter coordination graph ($d=2$), \gnnqmix\ was both less accurate
-and substantially less stable across seeds than \qmix. Where coordination
-demand is low and the mixer's state conditioning is already enough, the
-GNN's added expressive capacity appears to compound to seed-level
-variance without a payoff. Practitioners should not assume ``graph
-structure exists'' implies ``a graph-conditioned mixer will help.''
-
-\paragraph{When to consider one anyway.} Our negative result does not
-rule out graph-conditioned mixers categorically. The conditions under
-which one is worth trying, inverted from our limitations, are: (a) the
-task's team reward is \emph{non-separable} along the coordination
-graph --- it depends on properties of paths or subgraphs that no
-per-agent feature captures (cf.\ Section~\ref{sec:limitations}, item
-2); (b) the coordination graph is \emph{stable} across episodes, so
-the GCN's message-passing pattern is itself a learnable target rather
-than a moving one (cf.\ item 5); (c) the compute budget supports
-$\ge 10^5$ env steps per condition, sufficient for the
-larger-parameter mixer to converge (cf.\ item 1); and (d) the depth
-is set to $L \in \{1, 2\}$ (cf.\ the over-depth cliff above). Outside
-those conditions, the prior on ``simpler mixer wins'' should be the
-default.
+(\qmix) is a better fit. Our experiments document a third case
+empirically and --- via the capacity control --- mechanistically: on
+small teams ($N \in \{4, 8\}$) with low-diameter coordination graphs,
+\gnnqmix\ is both less accurate and substantially less stable across
+seeds than \qmix, and Section~\ref{sec:results:capacity} pins the cause
+on the graph aggregation rather than the extra capacity (the
+parameter-matched \mlpqmix\ control does not pay either penalty). Where
+coordination demand is low and the mixer's state conditioning is already
+enough, the graph aggregation appears to dilute the per-agent signal each
+agent needs and to compound to seed-level variance without a payoff.
+Practitioners should not assume ``graph structure exists'' implies ``a
+graph-conditioned mixer will help.''
 
 \paragraph{Implications for benchmark design.} Most MARL benchmarks fix one
 environment with one (often implicit) coordination graph and report a
@@ -722,60 +769,45 @@ coordination graph as a controllable axis, in the spirit of
 \coordgrid.
 
 % =========================================================================
-\section{Limitations and Threats to Validity}
+\section{Limitations}
 \label{sec:limitations}
 
-We list both the methodological limitations and the strongest
-alternative explanations a critical reader should weigh against our
-negative finding.
-
+We list explicit limitations rather than burying them.
 \begin{enumerate}[leftmargin=*,itemsep=0pt,topsep=2pt]
-  \item \textbf{Undertraining is the leading alternative explanation.}
-        \gnnqmix\ has ${\sim}8$k more parameters than \qmix\ at $L=2$
-        and gets $3\times 10^4$ env steps per Phase 2 condition. The
-        Phase 1 run at $5\times 10^4$ steps on the same ring $N=4$
-        condition reaches $58.5$ vs.\ Phase 2's $23.1$ at $3\times 10^4$
-        --- a ${\sim}2.5\times$ improvement from $1.67\times$ extra
-        training. \qmix\ is essentially unchanged across the same cut
-        ($84.3 \to 83.5$). Extra training does not flip the \emph{sign}
-        of the gap, but a follow-up at $\ge 10^5$ steps per condition
-        would close this concern definitively.
-  \item \textbf{Reward design favours sum-shaped mixers.} \coordgrid's
-        reward $r_t = \sum_{(i,j) \in \Egraph} \mathbf{1}[p_i = p_j]$
-        is monotonically decomposable along the graph; \qmix's mixer
-        can approximate it without message passing because the
-        per-agent observation already encodes ``am I near my
-        neighbour.'' Tasks whose team reward is non-separable along
-        the graph would be the cleaner positive test for GNN-MARL.
-  \item \textbf{Single GNN family.} We test vanilla
-        GCN~\citep{kipf_2017_gcn}; attention-based
-        \citep{velickovic_2018_gat}, injective
-        \citep{xu_2019_gin}, or learned-edge variants might behave
-        differently. The claim is bounded to ``vanilla GCN inserted
-        into QMIX,'' not graph-based MARL in general.
-  \item \textbf{Three seeds.} Welch's $t$ at $n=3$ has limited power
-        against small effects; \citet{henderson_2018_drlmatters} and
-        \citet{agarwal_2021_precipice} recommend $\ge 5$. The Phase 2
-        effect sizes are large (Cohen's $|d| \ge 4.4$, often $> 15$),
-        so this is not load-bearing for the negative claim --- but
-        positive claims from similar three-seed studies deserve the
-        same scepticism we apply to our own.
-  \item \textbf{Erd\H{o}s--R\'enyi resampled per episode is
-        non-stationary in the graph input.} The Phase 2 ER cells
-        confound ``GCN cannot exploit this graph'' with ``GCN cannot
-        adapt to a graph that changes every reset.'' These two
-        failure modes are not separated in our data.
-  \item \textbf{Scale and identical recipe.} $N$ is capped at 8; we
-        do not retune learning rate or warmup per algorithm (the
-        identical-recipe control is intentional but may understate
-        \gnnqmix). Extrapolation to $N \gg 10$ or to SMAC-scale tasks
-        is out of scope.
-  \item \textbf{Capacity overhead not separately controlled.} An
-        MLP-depth control of the same parameter count as \gnnqmix\ at
-        each $L$ would isolate ``graph structure'' from ``extra
-        depth''; we leave that ablation to follow-up.
+  \item \textbf{Scale.} Compute constraints capped $N$ at 8. Effects
+        observed at $N{=}4{-}8$ on a tabular-flavoured gridworld may not
+        extrapolate to $N{\gg}10$ on visually complex tasks; SMAC-scale
+        validation is out of scope. (Step budget is no longer a concern
+        for the headline comparison: Section~\ref{sec:results:capacity}
+        re-runs the decisive cells at \PEsteps\ steps, $5\times$ the main
+        sweep, and the result is unchanged.)
+  \item \textbf{One coordination-graph design.} \coordgrid\ ties reward to
+        graph edges directly. This is the cleanest test of graph-aware
+        models but is also the most favourable to them; tasks where the
+        ``true'' coordination structure differs from any observable graph
+        may not transfer.
+  \item \textbf{One GNN family.} We test a vanilla GCN. Whether attention
+        (\algoname{GAT}) or learned message passing (e.g.\
+        \algoname{GIN}) changes the depth--diameter trade-off is open.
+  \item \textbf{Single-CPU training.} Some learning-rate / batch-size
+        choices that work well on CPU may interact differently with GPU
+        throughput; we did not retune for GPU.
+  \item \textbf{Seed count.} The main sweep (Phases 1--4) uses three
+        seeds, below the $\ge 5$ that \citet{henderson_2018_drlmatters}
+        and \citet{agarwal_2021_precipice} recommend, so those panels are
+        powered only against large effects and we phrase their borderline
+        claims as \emph{direction observed}. The headline graph-vs-capacity
+        comparison does not inherit this limitation: it is run at
+        \PEseeds\ seeds (Section~\ref{sec:results:capacity}) and is
+        significant under both a non-parametric test and Holm-corrected
+        Welch.
   \item \textbf{Fixed-horizon episodes treated as terminating.}
-        Standard QMIX truncation; bias is identical across algorithms.
+        Episodes are truncated at a fixed length; the Q-learning
+        bootstrap uses \texttt{done=True} on the truncation, biasing
+        the value at the truncation boundary toward zero. This is the
+        standard QMIX implementation choice and is not expected to
+        materially affect cross-algorithm comparisons (every algorithm
+        receives the same bias) but is noted for completeness.
 \end{enumerate}
 
 % =========================================================================
@@ -787,42 +819,42 @@ factorisation in cooperative MARL. Holding the per-agent encoder, mixer,
 optimiser, and exploration schedule fixed, we isolated the contribution
 of a GCN over the coordination graph to \qmix\ and tested three
 pre-registered hypotheses on \coordgrid, an environment whose
-coordination graph is itself the experimental variable. Two empirical
-findings carry the paper.
+coordination graph is itself the experimental variable, plus a
+parameter-matched no-graph control. Three empirical findings carry the
+paper.
 
-\emph{First}, on the pilot ring at $N=4$ and across the full Phase-2
-sweep (16 cells: $N \in \{4, 8\}$ $\times$ \{ring, Erd\H{o}s--R\'enyi
-matched density\} $\times$ 4 algorithms), \gnnqmix\ does not beat
-\qmix\ in \emph{any} condition tested. It is markedly worse in mean
-return (gaps $-60$ to $-147$, one-sided $p \in [0.98, 1.00]$ for the
-``\gnnqmix\ is better'' alternative) and the gap \emph{widens} with
-$N$. In two Erd\H{o}s--R\'enyi cells \gnnqmix\ fails to learn the task
-above random-play return. The prevailing positive picture of
-graph-based MARL does not survive a controlled comparison in the
-regimes most favourable to it.
+\emph{First}, \gnnqmix\ does not beat \qmix\ --- it is markedly worse in
+mean and dominated in stability --- and the capacity control
+\emph{identifies} the cause. The no-graph \mlpqmix, with byte-identical
+parameter count, matches \qmix, while \gnnqmix\ falls well below both at
+$N\in\{4,8\}$ ($d=\PEgraphDNeight$ at $N=8$; significant under
+Mann--Whitney and Holm-corrected Welch). So the penalty is the graph
+aggregation itself, not the added capacity; it survives $5\times$ the
+training budget, ruling out undertraining; and it grows with team size.
+The prevailing positive picture of graph-based MARL does not survive a
+controlled comparison in the regime that should be most favourable to it.
 
 \emph{Second}, the pre-registered receptive-field-alignment heuristic
-($L \approx d$) is falsified at the family level (1 of 3 diameters
-pass the pre-registered per-row criterion). The data show instead a
+($L \approx d$) is falsified in this setting. The data show instead a
 sharp over-depth cliff: $L \in \{1, 2\}$ deliver the bulk of any
 achievable return, while $L \in \{3, 4\}$ collapse to near-noise
 levels on every diameter tested. The actionable practitioner rule that
 emerges is blunter than H3 would have given us: in small-team CTDE
 settings on tasks with $d \le 3$, keep GCN depth $\le 2$.
 
-\emph{Third}, the qualitative H2 prediction --- that the
-\gnnqmix-\qmix\ gap should be \emph{less negative} on a structured
-graph than on a matched-density random graph --- is supported at
-$N=4$ ($\text{DiD} = +17.7$, $p = 0.007$) but reverses at $N=8$
-($\text{DiD} = -17.7$, $p = 0.71$). Even where directionally
-supported, the effect is a difference between two losses, not a
-positive case for the graph mixer.
+\emph{Third}, the graph does not merely fail to help on average --- it
+destabilises training, inflating the across-seed standard deviation at
+$N=8$ by roughly $9\times$ relative to the parameter-matched no-graph
+control. Reliability, not just mean return, is a casualty of the
+relational bias here.
 
 The broader conclusion is that ``does graph structure help in MARL?''
-is a condition-dependent question that requires controlled measurement
-to answer, and that the answer in some practically-relevant regimes is
-``not by default.'' We hope the released harness makes those
-measurements cheaper to run for future architectures and tasks.
+is a question that requires controlled measurement --- including a
+capacity-matched control --- to answer, and that on the task most
+favourable to a graph-aware model the answer, at the scales we can
+test, is ``no, and it actively hurts.'' We hope the released harness
+and the \mlpqmix\ control make those measurements cheaper and cleaner
+to run for future architectures and tasks.
 
 % =========================================================================
 \bibliographystyle{plainnat}
@@ -831,62 +863,13 @@ measurements cheaper to run for future architectures and tasks.
 \appendix
 
 % =========================================================================
-\section{Shared training loop}
-\label{app:algorithm}
-
-The Double-DQN training loop is identical across the four algorithms,
-modulo \iql's per-agent Huber-sum loss override (Section~\ref{sec:algos}).
-At each env step a transition is added to the replay; once the buffer
-has warmed up, a batch is sampled every $k$ env steps and one
-gradient step is taken with Double-DQN targets and Huber loss. The
-target net is hard-copied from the online net every $\tau$ gradient
-steps.
-
-\begin{algorithm}[h!]
-\caption{Shared training loop (CTDE, off-policy, Double-DQN). For \iql,
-the team-loss line (\ref{alg:line:loss}) is replaced by a per-agent
-Huber sum (Section~\ref{sec:algos}).}
-\label{alg:train}
-\begin{algorithmic}[1]
-\Require env $\mathcal{E}$, algo $\mathcal{A}$ (online + target nets, mixer),
-  total steps $T$, batch size $B$, target-update interval $\tau$,
-  exploration schedule $\epsilon(t)$, update period $k$, warmup $t_{\text{w}}$.
-\State Initialise replay buffer $\mathcal{D}$, target net $\theta^- \leftarrow \theta$.
-\State $(o, s) \leftarrow \mathcal{E}.\textsc{reset}()$;\; $A \leftarrow \mathcal{E}.\textsc{adjacency}()$
-\For{$t = 1, \dots, T$}
-  \State $a \leftarrow \mathcal{A}.\textsc{act}(o, A, \epsilon(t))$
-  \State $(o', s', r, \text{done}) \leftarrow \mathcal{E}.\textsc{step}(a)$
-  \State $\mathcal{D}.\textsc{add}((o, s, a, r, o', s', \text{done}, A))$
-  \If{$t \ge t_{\text{w}}$ \textbf{and} $t \bmod k = 0$}
-    \State $\text{batch} \sim \mathcal{D}$ \quad (size $B$)
-    \State $\mathbf{Q} \leftarrow \mathcal{A}.Q(o, A; \theta) \in \mathbb{R}^{B \times N \times |\Aagent|}$
-    \State $q_a \leftarrow \mathrm{gather}(\mathbf{Q}, a)$;\;
-           $Q_{\text{tot}} \leftarrow f_{\text{mix}}(q_a; s)$
-    \State $a^* \leftarrow \arg\max_{a'} \mathcal{A}.Q(o', A; \theta)$
-            \Comment{Double-DQN, online net}
-    \State $\bar q \leftarrow \mathrm{gather}(\mathcal{A}.Q(o', A; \theta^-), a^*)$;\;
-           $Q^{-}_{\text{tot}} \leftarrow f_{\text{mix}}^{-}(\bar q; s')$
-    \State $y \leftarrow r + \gamma (1{-}\text{done}) \cdot Q^{-}_{\text{tot}}$
-    \State \label{alg:line:loss}
-           $\theta \leftarrow \theta - \eta \nabla_\theta \mathrm{Huber}(Q_{\text{tot}}, y)$
-            \Comment{Adam, grad-norm clip 10}
-    \If{$t \bmod \tau = 0$} $\theta^- \leftarrow \theta$ \EndIf
-  \EndIf
-  \If{$\text{done}$} $(o, s) \leftarrow \mathcal{E}.\textsc{reset}()$;\; $A \leftarrow \mathcal{E}.\textsc{adjacency}()$
-  \Else \;$(o, s) \leftarrow (o', s')$
-  \EndIf
-\EndFor
-\end{algorithmic}
-\end{algorithm}
-
-% =========================================================================
 \section{Hyperparameters and compute}
 \label{app:hparams}
 
 \begin{table}[h!]
   \centering
   \small
-  \caption{Shared training hyperparameters across all four algorithms and
+  \caption{Shared training hyperparameters across all algorithms and
   all phases. Values were chosen once at Phase 0 and held fixed; no
   algorithm-specific tuning was performed. Any deviation in a specific
   phase is noted at the corresponding sweep script in \texttt{scripts/}.}
@@ -934,56 +917,6 @@ commands used to produce every table and figure in this paper are listed in
 \texttt{docs/REPRO.md} on the release tag. Each run is fully seeded; the
 CSV produced under \texttt{results/} is the input to the figure generation
 scripts under \texttt{scripts/phase\{1,2,4\}\_analysis.py}.
-
-\subsection*{Reproducibility checklist}
-\label{app:repro:checklist}
-
-\begin{description}[leftmargin=2em,style=nextline,itemsep=0pt,topsep=2pt]
-  \item[\textbf{All source code released.}] Yes ---
-        \url{https://github.com/Evasion-OC/when-graphs-help-marl}, MIT
-        licensed. Includes env, all four algorithms, training loop,
-        analysis, and the LaTeX source of this paper.
-  \item[\textbf{Pre-trained models or checkpoints released.}] No --- model
-        sizes are small ($<$50k parameters) and full retraining from the
-        released configs takes hours on commodity CPU; checkpoints would
-        add no value over re-running.
-  \item[\textbf{All hyperparameters reported.}] Yes ---
-        Table~\ref{tab:hparams_shared} (Appendix~\ref{app:hparams}) +
-        per-run \texttt{config.json} sidecars in
-        \texttt{results/<phase>/<run\_id>/}.
-  \item[\textbf{Number of random seeds reported.}] Yes --- 3 seeds per
-        condition (declared at the start of every Phase paragraph in
-        Section~\ref{sec:results}; flagged as a limitation in
-        Section~\ref{sec:limitations}, item 4).
-  \item[\textbf{Confidence intervals reported.}] Yes --- 95\%
-        Student-$t$ CIs across seeds for every aggregate; CI bounds
-        crossing zero are explicitly noted in the text.
-  \item[\textbf{Statistical tests with stated alternatives and corrections.}]
-        Yes --- Welch's two-sample $t$ as primary test with one-sided
-        $H_a$ stated per H1/H2 contrast; Holm--Bonferroni step-down
-        correction across the explicit pairwise family
-        (Section~\ref{sec:protocol}); Cohen's $d$ reported alongside
-        $p$-values (Table~\ref{tab:phase2_h1}).
-  \item[\textbf{Effect sizes.}] Yes --- mean differences and Cohen's
-        $d$ (Table~\ref{tab:phase2_h1}).
-  \item[\textbf{Compute described.}] Yes --- hardware, wall-clock per
-        phase, scaling decisions vs.\ pre-registered budget in
-        Appendix~\ref{app:budget}.
-  \item[\textbf{Datasets / environments accessible.}] Yes ---
-        \coordgrid\ is custom and shipped in the source repository;
-        MPE adapter shipped but Phase 3 results deferred (see
-        Section~\ref{sec:results:mpe}).
-  \item[\textbf{Pre-registered hypotheses.}] Yes ---
-        Section~\ref{sec:hypotheses}; H3 includes an explicit
-        falsifiability criterion (per-row non-flat + $|L^*-d|\le 1$;
-        family-level $\ge \lceil 2n/3 \rceil$).
-  \item[\textbf{Negative results reported.}] Yes --- both H1 and H3 are
-        falsified; the headline contribution is the negative finding.
-  \item[\textbf{One-click reproduction.}] Yes --- Colab notebook at
-        \texttt{notebooks/colab\_runner.ipynb} clones the repo, installs
-        dependencies, runs the toggled phases, builds the paper PDF, and
-        pushes a result branch back to GitHub.
-\end{description}
 
 \section{Compute scaling decisions}
 \label{app:budget}

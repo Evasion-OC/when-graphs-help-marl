@@ -67,7 +67,11 @@ ALGO_KWARGS = {
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--steps", type=int, default=150_000)
-    parser.add_argument("--seeds", type=int, default=5)
+    parser.add_argument("--seeds", type=int, default=5,
+                        help="number of seeds to run")
+    parser.add_argument("--seed-start", type=int, default=0,
+                        help="first seed index (use to extend an existing run, "
+                             "e.g. --seed-start 5 --seeds 5 runs seeds 5..9)")
     parser.add_argument("--algos", type=str, default=",".join(DEFAULT_ALGOS))
     parser.add_argument("--ns", type=str, default=",".join(map(str, DEFAULT_NS)))
     parser.add_argument("--log-dir", type=Path,
@@ -76,7 +80,7 @@ def main() -> int:
 
     algos = [a.strip() for a in args.algos.split(",") if a.strip()]
     ns = [int(x) for x in args.ns.split(",") if x.strip()]
-    seeds = list(range(args.seeds))
+    seeds = list(range(args.seed_start, args.seed_start + args.seeds))
     args.log_dir.mkdir(parents=True, exist_ok=True)
 
     n_jobs = len(algos) * len(ns) * len(seeds)

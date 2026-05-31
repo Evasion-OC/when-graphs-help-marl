@@ -23,6 +23,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from scipy import stats
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT / "src"))
@@ -107,36 +108,70 @@ def main() -> int:
         pd.DataFrame([r.__dict__ for r in results]).to_csv(
             args.results / f"pairwise_N{n}.csv", index=False)
 
-        def gap(a, b):
+        def gap_allpairs(a, b):
+            """delta + Holm-p where Holm corrects over ALL pairs in the cell."""
             for r in results:
                 if {r.a, r.b} == {a, b}:
-                    # orient as a - b
                     if r.a == a:
                         return r.metric_a - r.metric_b, r.p_holm
                     return r.metric_b - r.metric_a, r.p_holm
             return float("nan"), float("nan")
 
-        for label, a, b in [
+        # The three decisive contrasts. We report significance THREE ways so
+        # no single (possibly contestable) choice carries the claim:
+        #   (i)  Welch raw p
+        #   (ii) Welch Holm-corrected over just these 3 decisive contrasts
+        #        (the family we actually test) AND over all 10 cell-pairs
+        #   (iii) Mann-Whitney U (non-parametric; robust to the GNN-QMIX
+        #         variance blow-up that widens the parametric CI)
+        decisive = [
             ("convergence: QMIX - GNN-QMIX", "qmix", "gnn_qmix"),
             ("graph: GNN-QMIX - MLP-QMIX", "gnn_qmix", "mlp_qmix"),
             ("capacity: MLP-QMIX - QMIX", "mlp_qmix", "qmix"),
-        ]:
+        ]
+        raw_ps = []
+        recs = []
+        for label, a, b in decisive:
             if a in scores and b in scores:
-                d, p = gap(a, b)
-                verdict_rows.append({
-                    "n_agents": n, "comparison": label,
-                    "delta": d, "p_holm": p,
-                    "sig_0.05": (p < 0.05) if np.isfinite(p) else False,
-                })
+                xa, xb = scores[a], scores[b]
+                delta = float(np.mean(xa) - np.mean(xb))
+                raw_p = float(stats.ttest_ind(xa, xb, equal_var=False).pvalue)
+                mwu_p = float(stats.mannwhitneyu(xa, xb, alternative="two-sided").pvalue)
+                _, allpairs_p = gap_allpairs(a, b)
+                recs.append([n, label, delta, raw_p, mwu_p, allpairs_p])
+                raw_ps.append(raw_p)
+        # Holm over the 3 decisive contrasts only.
+        order = np.argsort(raw_ps)
+        holm3 = [0.0] * len(raw_ps)
+        run = 0.0
+        for rank, idx in enumerate(order):
+            run = max(run, min(raw_ps[idx] * (len(raw_ps) - rank), 1.0))
+            holm3[idx] = run
+        for rec, h3 in zip(recs, holm3):
+            n_, label, delta, raw_p, mwu_p, allpairs_p = rec
+            verdict_rows.append({
+                "n_agents": n_, "comparison": label, "delta": delta,
+                "welch_raw_p": raw_p,
+                "welch_holm3_p": h3,        # corrected over the 3 decisive tests
+                "welch_holm_allpairs_p": allpairs_p,  # corrected over all 10 cell-pairs
+                "mannwhitney_p": mwu_p,
+                "sig_holm3": h3 < 0.05,
+                "sig_mwu": mwu_p < 0.05,
+            })
 
     if verdict_rows:
         verdict = pd.DataFrame(verdict_rows)
         verdict.to_csv(args.results / "confound_verdict.csv", index=False)
-        print("\n=== decisive comparisons (delta, Holm p) ===")
+        print("\n=== decisive comparisons ===")
+        print("  (Holm3 = corrected over the 3 decisive tests; MWU = "
+              "non-parametric)")
         for _, r in verdict.iterrows():
-            sig = "*" if r["sig_0.05"] else " "
-            print(f"  N={r['n_agents']}  {r['comparison']:<32} "
-                  f"delta={r['delta']:+8.2f}  p_holm={r['p_holm']:.3f} {sig}")
+            flags = ("Holm3*" if r["sig_holm3"] else "      ") + \
+                    (" MWU*" if r["sig_mwu"] else "     ")
+            print(f"  N={r['n_agents']}  {r['comparison']:<30} "
+                  f"delta={r['delta']:+8.2f}  raw={r['welch_raw_p']:.3f}  "
+                  f"holm3={r['welch_holm3_p']:.3f}  mwu={r['mannwhitney_p']:.3f}  "
+                  f"{flags}")
 
     # ---- Learning curves (optional, best-effort) -------------------------
     try:
