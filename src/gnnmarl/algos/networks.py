@@ -202,6 +202,94 @@ class MLPStack(nn.Module):
         return h
 
 
+class GATStack(nn.Module):
+    r"""Graph-attention stack: :class:`GCNStack` with *learned* aggregation.
+
+    Mirrors :class:`GCNStack` one-for-one --- the same ``n_layers``
+    ``Linear(din, hidden)`` modules, the same ReLU activation, the same
+    self-loop convention (attend over :math:`A+I`) --- but replaces the
+    *fixed* symmetric-normalized aggregation weights with single-head graph
+    attention (Veličković et al., 2018): for projected features
+    :math:`z_i = W h_i`, the edge weight is
+    :math:`\alpha_{ij} = \mathrm{softmax}_j\big(\mathrm{LeakyReLU}
+    (a_{\mathrm{src}}^\top z_i + a_{\mathrm{dst}}^\top z_j)\big)` over the
+    neighbourhood (including self), and :math:`h_i' = \mathrm{ReLU}
+    (\sum_j \alpha_{ij} z_j)`.
+
+    This is the attention mechanism used by the graph-MARL methods the
+    paper actually critiques (DGN, G2ANet), so GAT-QMIX tests whether a
+    *learned* relational weighting rescues the graph where the fixed GCN
+    aggregation does not. Per layer it adds two attention vectors
+    ``a_src, a_dst`` of size ``hidden`` (``2*hidden`` params/layer; ~1%
+    over GCN at ``hidden=64``). GAT therefore has marginally *more*
+    capacity than the parameter-matched MLP control, so any GAT-vs-MLP
+    deficit is a conservative estimate of the graph penalty.
+
+    As with :class:`GCNStack`, there is no residual connection, so the
+    only difference between an ``L=1`` and ``L=2`` model is one extra
+    attention-aggregation step (keeping the depth ablation clean).
+    """
+
+    def __init__(self, in_dim: int, hidden_dim: int, n_layers: int,
+                 leaky_slope: float = 0.2):
+        super().__init__()
+        if n_layers < 1:
+            raise ValueError(f"GATStack requires n_layers >= 1, got {n_layers}")
+        self.in_dim = in_dim
+        self.hidden_dim = hidden_dim
+        self.n_layers = n_layers
+        self.leaky_slope = leaky_slope
+
+        layers: list[nn.Linear] = []
+        for layer_idx in range(n_layers):
+            din = in_dim if layer_idx == 0 else hidden_dim
+            layers.append(nn.Linear(din, hidden_dim, bias=True))
+        self.layers = nn.ModuleList(layers)
+
+        # Single-head additive attention: one source + one target vector per
+        # layer, scoring the projected features.
+        self.att_src = nn.ParameterList(
+            [nn.Parameter(torch.empty(hidden_dim)) for _ in range(n_layers)]
+        )
+        self.att_dst = nn.ParameterList(
+            [nn.Parameter(torch.empty(hidden_dim)) for _ in range(n_layers)]
+        )
+        # Xavier-uniform bound for an effectively [hidden, 1] attention vector.
+        bound = (6.0 / (hidden_dim + 1)) ** 0.5
+        for p in list(self.att_src) + list(self.att_dst):
+            nn.init.uniform_(p, -bound, bound)
+
+    def forward(self, h: torch.Tensor, adj: torch.Tensor) -> torch.Tensor:
+        """Run the GAT stack.
+
+        Args:
+            h: ``[B, N, in_dim]`` per-agent features.
+            adj: ``[B, N, N]`` adjacency (0/1, symmetric, no self-loops).
+
+        Returns:
+            ``[B, N, hidden_dim]`` per-agent features after attention.
+        """
+        if adj.dim() != 3:
+            raise ValueError(f"GATStack expects adj[B,N,N]; got {adj.shape}")
+        b, n, m = adj.shape
+        if n != m:
+            raise ValueError(f"GATStack expects square adjacency; got {adj.shape}")
+
+        eye = torch.eye(n, device=adj.device, dtype=adj.dtype).unsqueeze(0)
+        edge = (adj + eye) > 0                                 # [B, N, N] incl. self
+        neg_inf = torch.finfo(h.dtype).min
+        for layer_idx, lin in enumerate(self.layers):
+            z = lin(h)                                          # [B, N, hidden]
+            s = (z * self.att_src[layer_idx]).sum(-1, keepdim=True)   # [B, N, 1]
+            t = (z * self.att_dst[layer_idx]).sum(-1, keepdim=True)   # [B, N, 1]
+            # scores[b,i,j] = LeakyReLU(a_src . z_i + a_dst . z_j)
+            scores = F.leaky_relu(s + t.transpose(1, 2), self.leaky_slope)
+            scores = scores.masked_fill(~edge, neg_inf)
+            alpha = torch.softmax(scores, dim=-1)               # [B, N, N]
+            h = F.relu(torch.bmm(alpha, z))                     # [B, N, hidden]
+        return h
+
+
 # ---------------------------------------------------------------------------
 # QMIX monotonic mixer (hypernetwork)
 # ---------------------------------------------------------------------------

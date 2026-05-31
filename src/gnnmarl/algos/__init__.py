@@ -10,6 +10,7 @@ from __future__ import annotations
 from typing import Any
 
 from .base import Algo, BaseAlgo
+from .gat_qmix import GATQMIX
 from .gnn_qmix import GNNQMIX
 from .iql import IQL
 from .mlp_qmix import MLPQMIX
@@ -24,6 +25,7 @@ __all__ = [
     "QMIX",
     "GNNQMIX",
     "MLPQMIX",
+    "GATQMIX",
     "make_algo",
 ]
 
@@ -34,6 +36,7 @@ _REGISTRY: dict[str, type[BaseAlgo]] = {
     "qmix": QMIX,
     "gnn_qmix": GNNQMIX,
     "mlp_qmix": MLPQMIX,
+    "gat_qmix": GATQMIX,
 }
 
 
