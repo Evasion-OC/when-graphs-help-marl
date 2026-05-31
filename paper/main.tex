@@ -87,6 +87,27 @@
 \newcommand{\PLgraphGapNeight}{-65.8} % GNN-QMIX minus MLP-QMIX, N=8, line
 \newcommand{\PLgnnSDNeight}{29.5}     % GNN-QMIX seed SD at N=8, line
 \newcommand{\PLmlpSDNeight}{2.7}      % MLP-QMIX seed SD at N=8, line
+% --- Phase 3: MPE simple_spread external validity (n=10, 150k steps). ------
+% Final-window return (mean; less negative is better). Same 5 algos, same
+% locked config / protocol as Phase 8 -- only the environment changes.
+% k-NN coordination graph (k=2): at N=3 this is necessarily complete (each
+% agent links to both others); N=6 is the genuinely sparse / larger case.
+\newcommand{\PMqmixNthree}{-44.9}
+\newcommand{\PMmlpNthree}{-44.3}
+\newcommand{\PMgnnNthree}{-42.4}
+\newcommand{\PMqmixNsix}{-74.3}
+\newcommand{\PMmlpNsix}{-59.6}
+\newcommand{\PMgnnNsix}{-80.4}
+\newcommand{\PMgraphGapNthree}{+2.0}  % GNN-QMIX minus MLP-QMIX, N=3 (NS)
+\newcommand{\PMgraphGapNsix}{-20.8}   % GNN-QMIX minus MLP-QMIX, N=6 (sig)
+\newcommand{\PMcapGapNthree}{+0.6}    % MLP-QMIX minus QMIX, N=3 (NS)
+\newcommand{\PMcapGapNsix}{+14.6}     % MLP-QMIX minus QMIX, N=6 (sig under MWU)
+\newcommand{\PMgraphDNsix}{-1.46}     % Cohen's d, graph contrast, N=6
+\newcommand{\PMcapDNsix}{+1.03}       % Cohen's d, capacity contrast, N=6
+\newcommand{\PMgraphHolmNsix}{0.014}  % graph contrast, Holm over 3 decisive
+\newcommand{\PMgraphMwuNsix}{0.009}   % graph contrast, Mann-Whitney
+\newcommand{\PMcapMwuNsix}{0.045}     % capacity contrast, Mann-Whitney
+\newcommand{\PMnetNsix}{-6.2}         % net GNN-QMIX minus QMIX, N=6 (NS, p=0.41)
 
 % --- Title block. ---------------------------------------------------------
 \title{When Does Graph Structure Help in Multi-Agent\\
@@ -136,7 +157,13 @@ instead, the data reveal a sharp cliff above $L=2$, with $L \ge 3$
 catastrophic across every diameter tested. Third, the practitioner
 rule we recommend is correspondingly blunter than H3 anticipated:
 do not stack more than two GCN layers in front of a QMIX-style mixer
-in small-team CTDE settings. We release the harness, configs, and
+in small-team CTDE settings. Crucially, the identified graph penalty is
+not an artefact of our instrument: on the standard MPE
+\texttt{simple\_spread} benchmark it reappears at the larger team size
+(Cohen's $d=\PMgraphDNsix$), where --- as on \coordgrid\ --- only a
+parameter-matched control separates the graph penalty from a partially
+cancelling capacity gain that leaves the naive comparison looking null.
+We release the harness, configs, and
 plotting code at the URL in Appendix~\ref{app:repro}.
 \end{abstract}
 
@@ -543,20 +570,75 @@ GPU). See Table~\ref{tab:budget}.
 
 \input{results/phase2}
 
-\subsection{Phase 3 --- External validity on MPE}
+\subsection{Phase 3 --- External validity on MPE \texttt{simple\_spread}}
 \label{sec:results:mpe}
 
-We provide a PettingZoo adapter for \coordgrid-style training on
-\texttt{simple\_spread} (cooperative) and \texttt{simple\_tag}
-(mixed), included in the released code. A full external-validity sweep
-on these benchmarks --- which have a fixed, implicit coordination
-structure rather than the tunable graph that makes \coordgrid\ a
-controlled instrument --- is deferred to future work: our compute
-envelope is better spent on the identification experiment of
-Section~\ref{sec:results:capacity}, which removes the capacity and
-undertraining confounds that would otherwise dominate any cross-task
-comparison. We flag this as a scope limitation
-(Section~\ref{sec:limitations}) rather than overstate a thin replication.
+Every number so far comes from \coordgrid, where the coordination graph is
+the experimental instrument. To test whether the identified graph penalty
+is an artefact of that one synthetic environment, we replicate the entire
+capacity control on a canonical cooperative benchmark: PettingZoo
+\texttt{simple\_spread}, where $N$ agents cover $N$ landmarks while
+avoiding collisions. We change \emph{only} the environment --- the five
+algorithms, the locked hyperparameters, the \PEsteps-step / \PEseeds-seed
+budget, and the Welch\,/\,Holm\,/\,Mann--Whitney protocol are identical to
+Phase~8. \texttt{simple\_spread} exposes no graph, so \gnnqmix\ runs on a
+$k$-nearest-neighbour graph over agent positions ($k{=}2$, the DGN
+convention). At $N{=}3$ this graph is necessarily complete (each agent
+links to both others); $N{=}6$ is the genuinely sparse, larger-team test.
+
+\begin{table}[t]
+  \centering
+  \small
+  \caption{Phase 3 external validity on MPE \texttt{simple\_spread} (mean
+  final-window return over \PEseeds\ seeds; less negative is better). The
+  decomposition is the point: at $N{=}6$ the \emph{capacity} effect
+  ($\mlpqmix-\qmix$) is positive and the \emph{graph} effect
+  ($\gnnqmix-\mlpqmix$) is sharply negative, so they cancel and the naive
+  $\gnnqmix$-vs-$\qmix$ comparison looks null --- only the matched control
+  exposes the graph penalty. $d$ is Cohen's $d$; ${}^\ast$ significant
+  under Holm and Mann--Whitney.}
+  \label{tab:mpe}
+  \begin{tabular}{lccccc}
+    \toprule
+    & \qmix & \mlpqmix & \gnnqmix & capacity effect & graph effect \\
+    & & & & {\footnotesize $\mlpqmix-\qmix$} & {\footnotesize $\gnnqmix-\mlpqmix$} \\
+    \midrule
+    $N=3$ & \PMqmixNthree & \PMmlpNthree & \PMgnnNthree
+          & $\PMcapGapNthree$ (ns) & $\PMgraphGapNthree$ (ns) \\
+    $N=6$ & \PMqmixNsix & \PMmlpNsix & \PMgnnNsix
+          & $\PMcapGapNsix$ ($d{=}\PMcapDNsix$) & $\PMgraphGapNsix^\ast$ ($d{=}\PMgraphDNsix$) \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\textbf{The graph penalty replicates --- and the control is what reveals
+it.} At $N{=}3$ all three decisive contrasts are null (graph effect
+$\PMgraphGapNthree$, capacity $\PMcapGapNthree$; both $p>0.6$): on a small
+team with a complete graph the relational bias neither helps nor hurts. At
+$N{=}6$ the \coordgrid\ pattern reappears --- the graph effect is
+$\PMgraphGapNsix$ (Cohen's $d=\PMgraphDNsix$), significant under both Holm
+($p=\PMgraphHolmNsix$) and Mann--Whitney ($p=\PMgraphMwuNsix$). Crucially,
+the naive $\gnnqmix$-vs-$\qmix$ comparison is \emph{not} significant here
+(net $\PMnetNsix$, $p=0.41$): a single-comparison study would call the
+graph harmless. The control explains why. The extra parameters \emph{help}
+on this task (capacity effect $\PMcapGapNsix$, $d=\PMcapDNsix$;
+Mann--Whitney $p=\PMcapMwuNsix$, marginal after Holm at $p{=}0.07$), and
+that gain nearly cancels the graph penalty
+($\PMcapGapNsix\!+\!\PMgraphGapNsix\approx\PMnetNsix$). Only the
+parameter-matched \mlpqmix\ separates the two, exposing a large graph
+liability that the headline comparison masks --- on a standard benchmark,
+precisely the confound this paper warns about.
+
+\textbf{What transfers, and what does not.} The graph penalty is real and
+\emph{grows with team size} (null at $N{=}3$, $d=\PMgraphDNsix$ at
+$N{=}6$), mirroring \coordgrid. One effect is environment-specific:
+capacity is inert on \coordgrid\ but helpful on \texttt{simple\_spread} ---
+itself evidence that the controlled decomposition is necessary, not
+decorative, since ``GNN vs.\ no-GNN'' means different things on different
+tasks. The seed-level destabilisation is milder here ($\gnnqmix$/\mlpqmix\
+SD ratio ${\sim}1.3$--$2.2\times$ vs.\ ${\sim}9\times$ on \coordgrid), so we
+do not claim it as a general property. Per-condition curves and the full
+five-algorithm table are in Appendix~\ref{app:mpe}.
 
 \subsection{Phase 4 --- Depth--diameter ablation (H3)}
 \label{sec:results:ablation}
@@ -791,11 +873,16 @@ We list explicit limitations rather than burying them.
         for the headline comparison: Section~\ref{sec:results:capacity}
         re-runs the decisive cells at \PEsteps\ steps, $5\times$ the main
         sweep, and the result is unchanged.)
-  \item \textbf{One coordination-graph design.} \coordgrid\ ties reward to
-        graph edges directly. This is the cleanest test of graph-aware
-        models but is also the most favourable to them; tasks where the
-        ``true'' coordination structure differs from any observable graph
-        may not transfer.
+  \item \textbf{Coordination-graph design.} \coordgrid\ ties reward to
+        graph edges directly --- the cleanest test of graph-aware models,
+        but also the most favourable to them. We mitigate this with the
+        MPE \texttt{simple\_spread} replication
+        (Section~\ref{sec:results:mpe}), where the graph is an
+        unprivileged $k$-NN proximity graph the task never references and
+        the penalty still reappears at $N{=}6$. We have thus tested two
+        graph \emph{families}, not the full space; tasks whose true
+        coordination structure differs from any observable graph may still
+        behave differently.
   \item \textbf{One GNN family.} We test a vanilla GCN. Whether attention
         (\algoname{GAT}) or learned message passing (e.g.\
         \algoname{GIN}) changes the depth--diameter trade-off is open.
@@ -972,10 +1059,62 @@ scripts under \texttt{scripts/phase\{1,2,4\}\_analysis.py}.
                       none. \\
     2 (E1 sweep)    & $2\cdot 10^5 \times 5 \times 4 \times 3 \times 2$ & $3\cdot 10^4 \times 3 \times 4 \times 2 \times 2$
                     & \emph{est.}\ ${\sim}3$ h & CPU envelope. \\
-    3 (MPE)         & $\geq 10^6 \times 5 \times 4 \times 2$ & deferred & --
-                    & CPU envelope; adapter shipped. \\
+    3 (MPE)         & $\geq 10^6 \times 5 \times 4 \times 2$ & $1.5{\cdot}10^5 \times 5 \times 10 \times 2$
+                    & ${\sim}4.1$ h & \texttt{simple\_spread}, $N\in\{3,6\}$. \\
     4 (ablation)    & $\geq 5\cdot 10^4 \times \cdots$  & $2\cdot 10^4 \times 4 \times 3 \times 3$
                     & \emph{est.}\ ${\sim}2$ h & CPU envelope. \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+% =========================================================================
+\section{MPE external validity: full results}
+\label{app:mpe}
+
+This appendix supports the external-validity replication of
+Section~\ref{sec:results:mpe}. Figure~\ref{fig:mpe} is the MPE analogue of
+the \coordgrid\ capacity-control figure (Figure~\ref{fig:phase8}): at
+$N{=}3$ the three algorithms are indistinguishable, while at $N{=}6$
+\mlpqmix\ pulls above \qmix\ (capacity helps) and \gnnqmix\ drops below
+both (the graph penalty). The coordination graph is the $k{=}2$
+nearest-neighbour graph over agent positions, recomputed each episode and
+held fixed within it (Section~\ref{sec:results:mpe}); the trainer reads it
+once per episode exactly as for \coordgrid.
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.72\textwidth]{figures/phase9_mpe_capacity.pdf}
+  \caption{Capacity control on MPE \texttt{simple\_spread} (\PEseeds\
+  seeds, 95\% Student-$t$ CIs; less negative is better). At $N{=}6$,
+  \mlpqmix\ (matched parameters, no graph) sits above \qmix\ while
+  \gnnqmix\ falls below both --- the positive capacity effect and the
+  negative graph effect that the main-text decomposition
+  (Table~\ref{tab:mpe}) separates.}
+  \label{fig:mpe}
+\end{figure}
+
+\begin{table}[h!]
+  \centering
+  \small
+  \caption{Full Phase 3 results: final-window return (mean [95\% CI] over
+  \PEseeds\ seeds) for all five algorithms on MPE \texttt{simple\_spread}.
+  The graph-vs-capacity decomposition (Table~\ref{tab:mpe}) concerns the
+  QMIX family (\qmix/\mlpqmix/\gnnqmix), which share the monotonic mixer.
+  The graph-free \iql\ and \vdn\ baselines are reported for completeness;
+  as is sometimes seen on \texttt{simple\_spread}, they lead on this
+  particular task --- an observation about mixer choice that is orthogonal
+  to whether the GCN helps \emph{within} the QMIX family, which is the
+  question this paper asks.}
+  \label{tab:mpe-full}
+  \begin{tabular}{lcc}
+    \toprule
+    Algorithm & $N=3$ & $N=6$ \\
+    \midrule
+    \iql     & $-19.4$ {\footnotesize $[-19.8,-19.0]$} & $-33.2$ {\footnotesize $[-33.5,-32.8]$} \\
+    \vdn     & $-21.5$ {\footnotesize $[-22.9,-20.1]$} & $-34.9$ {\footnotesize $[-36.0,-33.9]$} \\
+    \qmix    & $-44.9$ {\footnotesize $[-49.4,-40.5]$} & $-74.3$ {\footnotesize $[-85.9,-62.7]$} \\
+    \mlpqmix & $-44.3$ {\footnotesize $[-48.2,-40.4]$} & $-59.6$ {\footnotesize $[-68.2,-51.0]$} \\
+    \gnnqmix & $-42.4$ {\footnotesize $[-50.9,-33.9]$} & $-80.4$ {\footnotesize $[-92.0,-68.9]$} \\
     \bottomrule
   \end{tabular}
 \end{table}
