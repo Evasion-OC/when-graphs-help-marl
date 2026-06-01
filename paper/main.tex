@@ -831,18 +831,20 @@ parameters are wasted but because the graph aggregation itself is
 actively harmful: \mlpqmix, carrying the same parameters without the
 graph, matches \qmix, while \gnnqmix\ falls well below both. We
 therefore cannot point to a tested regime in which the graph pays for
-itself; the honest reading is that, even on a task whose reward is
-\emph{literally} the coordination graph --- the case most favourable to
-a graph-aware model --- the relational inductive bias is a net liability,
-and it remains one under graph attention, on a standard MPE benchmark, and
-out to $N{=}16$. This is a far more constrained reading of graph-based MARL
-than the prevailing positive framing
+itself; even on a task whose reward is \emph{literally} the coordination
+graph --- the case most favourable to a graph-aware model --- the
+relational inductive bias is a net liability, and it remains one under
+graph attention, on a standard MPE benchmark, and out to $N{=}16$.
+\emph{This is a claim about a mechanism, not a verdict on any system}: we
+test the relational operators these methods rely on --- a fixed GCN and
+learned graph attention --- inside one controlled QMIX-style harness on
+small-team cooperative tasks, not the full published systems at SMAC scale.
+Within that scope it is a far more constrained reading of graph-based value
+factorisation than the prevailing positive framing
 \citep{jiang_2020_dgn,liu_2020_g2anet,naderializadeh_2020_graphmix}
-suggests, and is consistent with the evaluation-rigour concerns of
-\citet{henderson_2018_drlmatters} and \citet{agarwal_2021_precipice}.
-We do not over-generalise: across the two environment families and two GNN
-families we could afford to test (Section~\ref{sec:limitations}), this is
-not a claim that graph structure can \emph{never} help in MARL.
+suggests --- consistent with the evaluation-rigour concerns of
+\citet{henderson_2018_drlmatters} and \citet{agarwal_2021_precipice}, and
+not a claim that graph structure can \emph{never} help.
 
 \paragraph{The depth--diameter heuristic does not survive the data.} The
 pre-registered H3 prediction --- choose GNN depth $L$ near the graph

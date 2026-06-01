@@ -290,6 +290,83 @@ class GATStack(nn.Module):
         return h
 
 
+class DGNStack(nn.Module):
+    r"""Multi-head dot-product graph attention --- the DGN/G2ANet mechanism.
+
+    A faithful realisation, within the shared harness, of the multi-head
+    scaled-dot-product graph attention that serves as the relational
+    "convolution" in the attention-based graph-MARL methods this paper
+    discusses (DGN, Jiang et al. 2020; G2ANet, Liu et al. 2020) --- as
+    opposed to the fixed Kipf--Welling aggregation (:class:`GCNStack`) or
+    single-head additive attention (:class:`GATStack`). Each layer runs
+    ``n_heads`` attention heads over the neighbourhood (including self),
+    concatenates them, and projects back to ``hidden_dim``:
+
+        Q, K, V = W_q h, W_k h, W_v h   (per head, dim hidden/n_heads)
+        alpha_{ij} = softmax_j( Q_i . K_j / sqrt(d_head) )   over A+I
+        h_i' = ReLU( W_o [ concat_heads ( sum_j alpha_{ij} V_j ) ] )
+
+    This is the most expressive graph mechanism we test, and --- with its
+    Q/K/V/output projections --- the one with by far the *most* parameters,
+    so a DGN-QMIX-below-MLP-QMIX result is the most conservative possible
+    form of the graph-penalty claim (more capacity *and* the strongest
+    relational bias, yet still a net liability). No residual connection,
+    matching the other stacks, so the depth ablation stays clean.
+    """
+
+    def __init__(self, in_dim: int, hidden_dim: int, n_layers: int,
+                 n_heads: int = 4):
+        super().__init__()
+        if n_layers < 1:
+            raise ValueError(f"DGNStack requires n_layers >= 1, got {n_layers}")
+        if hidden_dim % n_heads != 0:
+            raise ValueError(
+                f"hidden_dim ({hidden_dim}) must be divisible by n_heads ({n_heads})"
+            )
+        self.in_dim = in_dim
+        self.hidden_dim = hidden_dim
+        self.n_layers = n_layers
+        self.n_heads = n_heads
+        self.head_dim = hidden_dim // n_heads
+
+        self.q = nn.ModuleList()
+        self.k = nn.ModuleList()
+        self.v = nn.ModuleList()
+        self.o = nn.ModuleList()
+        for layer_idx in range(n_layers):
+            din = in_dim if layer_idx == 0 else hidden_dim
+            self.q.append(nn.Linear(din, hidden_dim, bias=True))
+            self.k.append(nn.Linear(din, hidden_dim, bias=True))
+            self.v.append(nn.Linear(din, hidden_dim, bias=True))
+            self.o.append(nn.Linear(hidden_dim, hidden_dim, bias=True))
+
+    def forward(self, h: torch.Tensor, adj: torch.Tensor) -> torch.Tensor:
+        """Map ``h[B,N,in_dim]`` -> ``[B,N,hidden_dim]`` via multi-head
+        graph attention over ``adj`` (self-loops added)."""
+        if adj.dim() != 3:
+            raise ValueError(f"DGNStack expects adj[B,N,N]; got {adj.shape}")
+        b, n, m = adj.shape
+        if n != m:
+            raise ValueError(f"DGNStack expects square adjacency; got {adj.shape}")
+
+        heads, d = self.n_heads, self.head_dim
+        eye = torch.eye(n, device=adj.device, dtype=adj.dtype).unsqueeze(0)
+        mask = ((adj + eye) > 0).unsqueeze(1)                 # [B, 1, N, N] incl. self
+        neg_inf = torch.finfo(h.dtype).min
+        scale = d ** -0.5
+        for layer_idx in range(self.n_layers):
+            q = self.q[layer_idx](h).view(b, n, heads, d).transpose(1, 2)  # [B,H,N,d]
+            k = self.k[layer_idx](h).view(b, n, heads, d).transpose(1, 2)
+            v = self.v[layer_idx](h).view(b, n, heads, d).transpose(1, 2)
+            scores = torch.matmul(q, k.transpose(-1, -2)) * scale          # [B,H,N,N]
+            scores = scores.masked_fill(~mask, neg_inf)
+            alpha = torch.softmax(scores, dim=-1)                          # [B,H,N,N]
+            ctx = torch.matmul(alpha, v)                                   # [B,H,N,d]
+            ctx = ctx.transpose(1, 2).reshape(b, n, heads * d)             # [B,N,hidden]
+            h = F.relu(self.o[layer_idx](ctx))                             # [B,N,hidden]
+        return h
+
+
 # ---------------------------------------------------------------------------
 # QMIX monotonic mixer (hypernetwork)
 # ---------------------------------------------------------------------------
