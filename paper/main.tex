@@ -821,6 +821,18 @@ team grows'' intuition is exactly inverted.
 
 \begin{figure}[t]
   \centering
+  \includegraphics[width=0.72\textwidth]{figures/phase10_gat.pdf}
+  \caption{Second GNN family. Single-head (\gatqmix) and multi-head
+  (\dgnqmix, the DGN/G2ANet operator) graph attention both sit above
+  \gnnqmix\ (the fixed GCN) --- more expressive attention helps
+  \emph{within} graph methods --- but still below the parameter-matched
+  no-graph control \mlpqmix\ at both team sizes on CoordGrid: the graph in
+  its strongest form remains a net liability.}
+  \label{fig:gat}
+\end{figure}
+
+\begin{figure}[t]
+  \centering
   \includegraphics[width=0.62\textwidth]{figures/phase11_scaling.pdf}
   \caption{Scaling the graph penalty. \emph{Left:} final-window return
   vs.\ team size --- the graph-free curves (\qmix, \mlpqmix) climb together
@@ -1200,16 +1212,6 @@ attention-below-\mlpqmix\ result is conservative. We run both on the
 decisive cells under the identical protocol (\PEseeds\ seeds, \PEsteps\
 steps).
 
-\begin{figure}[h!]
-  \centering
-  \includegraphics[width=0.8\textwidth]{figures/phase10_gat.pdf}
-  \caption{Single-head (\gatqmix) and multi-head (\dgnqmix) graph attention
-  both sit above \gnnqmix\ (the fixed GCN) --- more expressive attention
-  helps \emph{within} graph methods --- but still below the
-  parameter-matched no-graph control \mlpqmix\ at both team sizes on
-  CoordGrid: the graph in its strongest form remains a net liability.}
-  \label{fig:gat}
-\end{figure}
 
 \begin{table}[h!]
   \centering
@@ -1277,11 +1279,22 @@ Table~\ref{tab:scaling} give the result.
 \section{Full per-condition tables}
 \label{app:fulltables}
 
-The main text reports Phase 1--2 results via the learning-curve figures
-(Figures~\ref{fig:phase1_curves}, \ref{fig:phase2curves}), the forest plot
-(Figure~\ref{fig:phase2_forest}), and the hypothesis-test tables. The
-per-algorithm Phase 1 summary, full Phase 2 per-condition returns, and the
-Phase 1 pairwise sanity check are collected here.
+The main text reports Phase 2 via the forest plot and per-condition curves
+(Figures~\ref{fig:phase2_forest}, \ref{fig:phase2curves}) and the
+hypothesis tests. The Phase 1 pilot curves, the per-algorithm Phase 1
+summary, the full Phase 2 per-condition returns, and the Phase 1 pairwise
+sanity check are collected here.
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.5\linewidth]{figures/phase1__learning_curves.pdf}
+  \caption{Phase 1 pilot learning curves on \coordgrid\ ($N=4$, ring),
+  three seeds. Shaded bands are $\pm 1$ s.d.\ across seeds of the
+  25-episode rolling mean. The coordinated baselines (\vdn, \qmix) clearly
+  separate from \iql, and \gnnqmix\ runs to completion --- the Phase-0
+  harness sanity check (Section~\ref{sec:results:pilot}).}
+  \label{fig:phase1_curves}
+\end{figure}
 
 \begin{table}[h!]
   \centering
