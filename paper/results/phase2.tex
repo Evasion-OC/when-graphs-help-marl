@@ -1,38 +1,9 @@
 \begin{figure}[t]
   \centering
-  \includegraphics[width=0.78\linewidth]{figures/phase2__forest_ep80.pdf}
-  \caption{Phase 2 forest plot: episodes to 80\% of best final-window return per algorithm $\times$ condition. Lower is better. Bars are 95\% Student-$t$ CIs across seeds.}
+  \includegraphics[width=0.54\linewidth]{figures/phase2__forest_ep80.pdf}
+  \caption{Phase 2 forest plot: episodes to 80\% of best final-window return per algorithm $\times$ condition. Lower is better. Bars are 95\% Student-$t$ CIs across seeds. Full per-condition returns are in Table~\ref{tab:phase2_summary} (Appendix~\ref{app:fulltables}).}
   \label{fig:phase2_forest}
 \end{figure}
-
-\begin{table}[t]
-  \centering
-  \small
-  \caption{Phase 2 final-window mean return by condition. Edge density is matched between \texttt{ring} and \texttt{erdos\_renyi} by construction.}
-  \label{tab:phase2_summary}
-  \begin{tabular}{llrrrr}
-    \toprule
-    graph & $N$ & algorithm & Final mean & 95\% CI & Episodes to 80\% \\
-    \midrule
-    erdos\_renyi & 4 & GNN-QMIX & 6.57 & [5.95, 7.19] & 307 \\
-erdos\_renyi & 4 & IQL & 31.92 & [23.39, 40.45] & 688 \\
-erdos\_renyi & 4 & QMIX & 84.65 & [82.41, 86.88] & 912 \\
-erdos\_renyi & 4 & VDN & 61.40 & [58.00, 64.81] & 909 \\
-erdos\_renyi & 8 & GNN-QMIX & 8.53 & [7.49, 9.56] & 24 \\
-erdos\_renyi & 8 & IQL & 48.07 & [21.10, 75.04] & 840 \\
-erdos\_renyi & 8 & QMIX & 137.51 & [33.50, 241.51] & 979 \\
-erdos\_renyi & 8 & VDN & 69.56 & [29.12, 109.99] & 983 \\
-ring & 4 & GNN-QMIX & 23.13 & [11.87, 34.39] & 949 \\
-ring & 4 & IQL & 30.51 & [25.65, 35.37] & 754 \\
-ring & 4 & QMIX & 83.50 & [82.43, 84.57] & 890 \\
-ring & 4 & VDN & 51.21 & [34.61, 67.80] & 921 \\
-ring & 8 & GNN-QMIX & 21.12 & [-11.50, 53.74] & 650 \\
-ring & 8 & IQL & 46.01 & [35.47, 56.54] & 767 \\
-ring & 8 & QMIX & 167.76 & [166.29, 169.23] & 908 \\
-ring & 8 & VDN & 83.08 & [25.94, 140.22] & 948 \\
-    \bottomrule
-  \end{tabular}
-\end{table}
 
 \begin{table}[t]
   \centering

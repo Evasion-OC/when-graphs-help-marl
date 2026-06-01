@@ -1,6 +1,6 @@
 \begin{figure}[t]
   \centering
-  \includegraphics[width=0.85\linewidth]{figures/phase1__learning_curves.pdf}
+  \includegraphics[width=0.52\linewidth]{figures/phase1__learning_curves.pdf}
   \caption{Phase 1 learning curves on \coordgrid\ ($N=4$, ring), three seeds. Shaded bands are $\pm 1$ s.d.\ across seeds of the 25-episode rolling mean.}
   \label{fig:phase1_curves}
 \end{figure}
@@ -8,7 +8,7 @@
 \begin{table}[t]
   \centering
   \small
-  \caption{Phase 1 final-window mean return ($N=4$, ring, 3 seeds). Confidence intervals are Student-$t$ 95\% across seeds; episodes-to-80\% is reported only for seeds that crossed the threshold within $5\times 10^4$ steps.}
+  \caption{Phase 1 final-window mean return ($N=4$, ring, 3 seeds). Confidence intervals are Student-$t$ 95\% across seeds; episodes-to-80\% is reported only for seeds that crossed the threshold within $5\times 10^4$ steps. Pairwise sanity-check tests are in Table~\ref{tab:phase1_pairwise} (Appendix~\ref{app:fulltables}).}
   \label{tab:phase1_summary}
   \begin{tabular}{lrrrr}
     \toprule
@@ -18,22 +18,6 @@
 VDN & 3 & 65.04 & [53.38, 76.70] & 1526 \\
 QMIX & 3 & 84.27 & [83.80, 84.75] & 1422 \\
 GNN-QMIX & 3 & 58.47 & [0.88, 116.06] & 1553 \\
-    \bottomrule
-  \end{tabular}
-\end{table}
-
-\begin{table}[t]
-  \centering
-  \small
-  \caption{Phase 1 sanity check: IQL vs.\ each coordinated baseline on final-window mean return ($N=4$, ring, 3 seeds). Welch's $t$, Holm-corrected over the 6-pair family.}
-  \label{tab:phase1_pairwise}
-  \begin{tabular}{lrrr}
-    \toprule
-    Comparison & $\Delta$ mean return & $p_{\text{raw}}$ & $p_{\text{Holm}}$ \\
-    \midrule
-    IQL vs.\ VDN & 29.50 & 0.005 & 0.026 \\
-IQL vs.\ QMIX & 48.73 & 0.000 & 0.001 \\
-IQL vs.\ GNN-QMIX & 22.93 & 0.229 & 0.581 \\
     \bottomrule
   \end{tabular}
 \end{table}

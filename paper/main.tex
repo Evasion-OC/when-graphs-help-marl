@@ -606,6 +606,17 @@ convention). At $N{=}3$ this graph is necessarily complete (each agent
 links to both others); $N{=}6$ is the genuinely sparse, larger-team test.
 The decomposition table (Table~\ref{tab:mpe}) is in Appendix~\ref{app:mpe}.
 
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.54\textwidth]{figures/phase9_mpe_capacity.pdf}
+  \caption{External validity on MPE \texttt{simple\_spread} (\PEseeds\
+  seeds, 95\% CIs; less negative is better). At $N{=}6$, \mlpqmix\ (matched
+  parameters, no graph) sits above \qmix\ while \gnnqmix\ falls below both
+  --- the positive capacity effect and the negative graph effect the
+  decomposition (Table~\ref{tab:mpe}) separates.}
+  \label{fig:mpe}
+\end{figure}
+
 \textbf{The graph penalty replicates --- and the control is what reveals
 it.} At $N{=}3$ all three decisive contrasts are null (graph effect
 $\PMgraphGapNthree$, capacity $\PMcapGapNthree$; both $p>0.6$): on a small
@@ -707,9 +718,21 @@ locked $L{=}2$, width-64 encoder and are verified to have identical
 parameter counts, so the only difference is the neighbour-aggregation
 step. Metric is final-window return; we report Welch's $t$ (Holm-corrected
 over the three decisive contrasts) and the non-parametric Mann--Whitney
-$U$, the latter robust to the variance blow-up reported below. Full
-per-cell numbers are in Table~\ref{tab:phase8} (Appendix~\ref{app:figures});
-the findings below state the decisive values inline.
+$U$, the latter robust to the variance blow-up reported below.
+Figure~\ref{fig:phase8} summarises the result (full per-cell numbers in
+Table~\ref{tab:phase8}, Appendix~\ref{app:figures}); the findings below
+state the decisive values inline.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.52\textwidth]{figures/phase8_capacity_control.pdf}
+  \caption{Capacity control on \coordgrid\ \texttt{ring}. \mlpqmix\ (same
+  parameter count as \gnnqmix, no graph) tracks \qmix, while \gnnqmix\
+  falls far below both at both team sizes --- the penalty is the graph
+  aggregation, not the added capacity. Means over \PEseeds\ seeds; 95\%
+  Student-$t$ CIs.}
+  \label{fig:phase8}
+\end{figure}
 
 \textbf{Finding 1 --- the penalty is the graph, not capacity, and it is
 significant.} \mlpqmix\ matches \qmix\ at both scales (capacity gap
@@ -767,6 +790,17 @@ $\PSgapNsixteen$; at $N=16$ \gnnqmix\ reaches only
 ${\sim}\PSgnnFracNsixteen\%$ of \qmix's return. The ``graphs help as the
 team grows'' intuition is exactly inverted.
 
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.62\textwidth]{figures/phase11_scaling.pdf}
+  \caption{Scaling the graph penalty. \emph{Left:} final-window return
+  vs.\ team size --- the graph-free curves (\qmix, \mlpqmix) climb together
+  while \gnnqmix\ flatlines. \emph{Right:} the graph penalty
+  ($\mlpqmix-\gnnqmix$) grows monotonically with $N$, to
+  ${\sim}\PSgnnFracNsixteen\%$ of \qmix's return at $N{=}16$.}
+  \label{fig:scaling}
+\end{figure}
+
 % =========================================================================
 \section{Discussion}
 \label{sec:discussion}
@@ -816,13 +850,11 @@ graph aggregation, not the parameters. Practitioners should not assume ``a
 coordination graph exists'' implies ``a graph-conditioned mixer will
 help.''
 
-\paragraph{Implications for benchmark design.} Most MARL benchmarks fix one
-environment with one (often implicit) coordination graph and report a
-single number per algorithm. Our results suggest such comparisons are
-heavily condition-dependent --- which algorithm wins is a function of the
-graph regime, not the algorithm --- and that future cooperative-MARL
-benchmarks should expose the coordination graph as a controllable axis, in
-the spirit of \coordgrid.
+\paragraph{Implications for benchmark design.} Because which algorithm wins
+is a function of the graph regime rather than of the algorithm, single
+environment / single-graph comparisons are condition-dependent; future
+cooperative-MARL benchmarks should expose the coordination graph as a
+controllable axis, in the spirit of \coordgrid.
 
 % =========================================================================
 \section{Limitations}
@@ -876,11 +908,10 @@ on MPE \texttt{simple\_spread}, persists under graph attention, grows
 monotonically to $N{=}16$, and inflates across-seed variance ${\sim}9\times$.
 The pre-registered $L\approx d$ heuristic is falsified in favour of a sharp
 over-depth cliff and the blunt rule ``keep GCN depth $\le 2$.'' The broader
-point: ``does graph structure help in MARL?'' demands controlled,
-capacity-matched measurement, and on the task most favourable to a
-graph-aware model the answer, at the scales we can test, is ``no, and it
-actively hurts.'' We release the harness and the \mlpqmix\ control to make
-such measurements cheaper for future architectures and tasks.
+point: ``does graph structure help in MARL?'' demands a capacity-matched
+control, and on the task most favourable to a graph-aware model the answer,
+at the scales we test, is ``no, and it actively hurts.'' We release the
+harness and the \mlpqmix\ control to make such measurements cheaper.
 
 % =========================================================================
 \bibliographystyle{tmlr}
@@ -1028,17 +1059,6 @@ nearest-neighbour graph over agent positions, recomputed each episode and
 held fixed within it (Section~\ref{sec:results:mpe}); the trainer reads it
 once per episode exactly as for \coordgrid.
 
-\begin{figure}[h!]
-  \centering
-  \includegraphics[width=0.72\textwidth]{figures/phase9_mpe_capacity.pdf}
-  \caption{Capacity control on MPE \texttt{simple\_spread} (\PEseeds\
-  seeds, 95\% Student-$t$ CIs; less negative is better). At $N{=}6$,
-  \mlpqmix\ (matched parameters, no graph) sits above \qmix\ while
-  \gnnqmix\ falls below both --- the positive capacity effect and the
-  negative graph effect that the main-text decomposition
-  (Table~\ref{tab:mpe}) separates.}
-  \label{fig:mpe}
-\end{figure}
 
 \begin{table}[h!]
   \centering
@@ -1147,10 +1167,10 @@ protocol (\PEseeds\ seeds, \PEsteps\ steps).
 
 \begin{figure}[h!]
   \centering
-  \includegraphics[width=0.86\textwidth]{figures/phase10_gat.pdf}
-  \caption{GAT-QMIX on CoordGrid \texttt{ring}. \gatqmix\ (attention) sits
-  above \gnnqmix\ (the fixed GCN) but still well below the parameter-matched
-  no-graph control \mlpqmix\ at both team sizes --- the graph's strongest
+  \includegraphics[width=0.6\textwidth]{figures/phase10_gat.pdf}
+  \caption{\gatqmix\ (graph attention) sits above \gnnqmix\ (the fixed GCN)
+  --- attention helps --- but still well below the parameter-matched
+  no-graph control \mlpqmix\ at both team sizes: the graph in its strongest
   form is still a net liability.}
   \label{fig:gat}
 \end{figure}
@@ -1187,14 +1207,6 @@ effect grows with team size. The full scaling sweep adds CoordGrid
 from Table~\ref{tab:phase8}. Figure~\ref{fig:scaling} and
 Table~\ref{tab:scaling} give the result.
 
-\begin{figure}[h!]
-  \centering
-  \includegraphics[width=0.92\textwidth]{figures/phase11_scaling.pdf}
-  \caption{Left: final-window return vs.\ team size --- the graph-free
-  curves (\qmix, \mlpqmix) climb together while \gnnqmix\ flatlines. Right:
-  the graph penalty ($\mlpqmix-\gnnqmix$) grows monotonically with $N$.}
-  \label{fig:scaling}
-\end{figure}
 
 \begin{table}[h!]
   \centering
@@ -1213,6 +1225,64 @@ Table~\ref{tab:scaling} give the result.
     $N=8$  & 164.9 & 164.9 & 78.3 & $\PSgapNeight$ \\
     $N=12$ & 252.6 & 245.5 & 92.1 & $\PSgapNtwelve$ \\
     $N=16$ & 336.6 & 328.0 & \PSgnnNsixteen & $\PSgapNsixteen$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+% =========================================================================
+\section{Full per-condition tables}
+\label{app:fulltables}
+
+The main text reports Phase 1--2 results via the learning-curve figure
+(Figure~\ref{fig:phase1_curves}) and the forest plot
+(Figure~\ref{fig:phase2_forest}) plus the hypothesis-test tables. The
+full per-condition returns and the Phase 1 pairwise sanity check are
+collected here.
+
+\begin{table}[h!]
+  \centering
+  \small
+  \caption{Phase 2 final-window mean return by condition. Edge density is
+  matched between \texttt{ring} and \texttt{erdos\_renyi} by construction.}
+  \label{tab:phase2_summary}
+  \begin{tabular}{llrrrr}
+    \toprule
+    graph & $N$ & algorithm & Final mean & 95\% CI & Episodes to 80\% \\
+    \midrule
+    erdos\_renyi & 4 & GNN-QMIX & 6.57 & [5.95, 7.19] & 307 \\
+erdos\_renyi & 4 & IQL & 31.92 & [23.39, 40.45] & 688 \\
+erdos\_renyi & 4 & QMIX & 84.65 & [82.41, 86.88] & 912 \\
+erdos\_renyi & 4 & VDN & 61.40 & [58.00, 64.81] & 909 \\
+erdos\_renyi & 8 & GNN-QMIX & 8.53 & [7.49, 9.56] & 24 \\
+erdos\_renyi & 8 & IQL & 48.07 & [21.10, 75.04] & 840 \\
+erdos\_renyi & 8 & QMIX & 137.51 & [33.50, 241.51] & 979 \\
+erdos\_renyi & 8 & VDN & 69.56 & [29.12, 109.99] & 983 \\
+ring & 4 & GNN-QMIX & 23.13 & [11.87, 34.39] & 949 \\
+ring & 4 & IQL & 30.51 & [25.65, 35.37] & 754 \\
+ring & 4 & QMIX & 83.50 & [82.43, 84.57] & 890 \\
+ring & 4 & VDN & 51.21 & [34.61, 67.80] & 921 \\
+ring & 8 & GNN-QMIX & 21.12 & [-11.50, 53.74] & 650 \\
+ring & 8 & IQL & 46.01 & [35.47, 56.54] & 767 \\
+ring & 8 & QMIX & 167.76 & [166.29, 169.23] & 908 \\
+ring & 8 & VDN & 83.08 & [25.94, 140.22] & 948 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{table}[h!]
+  \centering
+  \small
+  \caption{Phase 1 sanity check: IQL vs.\ each coordinated baseline on
+  final-window mean return ($N=4$, ring, 3 seeds). Welch's $t$,
+  Holm-corrected over the 6-pair family.}
+  \label{tab:phase1_pairwise}
+  \begin{tabular}{lrrr}
+    \toprule
+    Comparison & $\Delta$ mean return & $p_{\text{raw}}$ & $p_{\text{Holm}}$ \\
+    \midrule
+    IQL vs.\ VDN & 29.50 & 0.005 & 0.026 \\
+IQL vs.\ QMIX & 48.73 & 0.000 & 0.001 \\
+IQL vs.\ GNN-QMIX & 22.93 & 0.229 & 0.581 \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -1263,18 +1333,6 @@ aggregate results in the main text.
     \bottomrule
   \end{tabular}
 \end{table}
-
-\begin{figure}[h!]
-  \centering
-  \includegraphics[width=0.62\textwidth]{figures/phase8_capacity_control.pdf}
-  \caption{Phase 8 capacity control (the bar-chart view of
-  Table~\ref{tab:phase8}). \mlpqmix\ (same parameter count as \gnnqmix, no
-  graph) tracks \qmix, while \gnnqmix\ falls far below both at both team
-  sizes --- so the penalty is the graph aggregation, not the added
-  capacity. Bars are means over \PEseeds\ seeds; whiskers are 95\%
-  Student-$t$ CIs.}
-  \label{fig:phase8}
-\end{figure}
 
 \begin{figure}[h!]
   \centering
