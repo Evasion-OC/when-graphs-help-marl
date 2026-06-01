@@ -162,32 +162,22 @@ a GNN-depth $\times$ graph-diameter grid (H3), and we add a
 parameter-matched no-graph control (\mlpqmix) that isolates the graph
 from the extra capacity it brings.
 Three findings emerge. First, \gnnqmix\ \emph{underperforms} the
-structurally simpler \qmix\ --- opposite to the prevailing claim ---
-and the gap is \emph{identified}, not confounded: against \mlpqmix,
-which has byte-identical parameter count but no graph aggregation,
-\gnnqmix\ is significantly worse (Cohen's $d=\PEgraphDNeight$ at $N=8$;
-Mann--Whitney $p=\PEmwuP$), while \mlpqmix\ matches \qmix. The penalty
-is therefore the graph aggregation itself, not added capacity, and it
-\emph{grows} with team size. The effect survives $5\times$ the training
-budget (\PEsteps\ steps, \PEseeds\ seeds), ruling out undertraining; and
-the graph also \emph{destabilises} learning (seed SD $\PEgnnSDNeight$ at
-$N=8$, vs.\ \PEmlpSDNeight\ for the parameter-matched no-graph control).
-Second, the depth--diameter
-alignment heuristic (deeper GNN for larger graph diameter) is
-\emph{not} confirmed at the family level (1 of 3 diameters pass);
-instead, the data reveal a sharp cliff above $L=2$, with $L \ge 3$
-catastrophic across every diameter tested. Third, the practitioner
-rule we recommend is correspondingly blunter than H3 anticipated:
-do not stack more than two GCN layers in front of a QMIX-style mixer
-in small-team CTDE settings. Crucially, the identified graph penalty is
-not an artefact of our instrument: on the standard MPE
-\texttt{simple\_spread} benchmark it reappears at the larger team size
-(Cohen's $d=\PMgraphDNsix$), where --- as on \coordgrid\ --- only a
-parameter-matched control separates the graph penalty from a partially
-cancelling capacity gain that leaves the naive comparison looking null.
-The penalty is moreover not specific to the GCN --- it persists when the
-graph uses learned attention (the mechanism of the methods we critique) ---
-and it \emph{grows} monotonically with team size, out to $N{=}16$.
+structurally simpler \qmix\ --- opposite to the prevailing claim --- and
+the gap is \emph{identified}: against \mlpqmix, which has byte-identical
+parameters but no graph aggregation, \gnnqmix\ is significantly worse
+(Cohen's $d=\PEgraphDNeight$ at $N=8$; Mann--Whitney $p=\PEmwuP$) while
+\mlpqmix\ matches \qmix, so the penalty is the graph aggregation, not added
+capacity. It survives $5\times$ the training budget (\PEsteps\ steps,
+\PEseeds\ seeds), \emph{destabilises} learning (seed SD $\PEgnnSDNeight$
+vs.\ \PEmlpSDNeight\ for the matched control), and \emph{grows} with team
+size out to $N{=}16$. The result is not an artefact of our instrument: it
+replicates on the standard MPE \texttt{simple\_spread} benchmark and
+persists when the graph uses learned attention (the mechanism of the
+methods we critique). Second, the depth--diameter alignment heuristic (H3)
+is not confirmed (1 of 3 diameters pass); the data instead reveal a sharp
+cliff above $L{=}2$. Third, the practitioner rule is blunter than H3
+anticipated: do not stack more than two GCN layers before a QMIX-style
+mixer in small-team CTDE settings.
 We release the harness, configs, and
 plotting code at the URL in Appendix~\ref{app:repro}.
 \end{abstract}
@@ -614,31 +604,7 @@ Phase~8. \texttt{simple\_spread} exposes no graph, so \gnnqmix\ runs on a
 $k$-nearest-neighbour graph over agent positions ($k{=}2$, the DGN
 convention). At $N{=}3$ this graph is necessarily complete (each agent
 links to both others); $N{=}6$ is the genuinely sparse, larger-team test.
-
-\begin{table}[t]
-  \centering
-  \small
-  \caption{Phase 3 external validity on MPE \texttt{simple\_spread} (mean
-  final-window return over \PEseeds\ seeds; less negative is better). The
-  decomposition is the point: at $N{=}6$ the \emph{capacity} effect
-  ($\mlpqmix-\qmix$) is positive and the \emph{graph} effect
-  ($\gnnqmix-\mlpqmix$) is sharply negative, so they cancel and the naive
-  $\gnnqmix$-vs-$\qmix$ comparison looks null --- only the matched control
-  exposes the graph penalty. $d$ is Cohen's $d$; ${}^\ast$ significant
-  under Holm and Mann--Whitney.}
-  \label{tab:mpe}
-  \begin{tabular}{lccccc}
-    \toprule
-    & \qmix & \mlpqmix & \gnnqmix & capacity effect & graph effect \\
-    & & & & {\footnotesize $\mlpqmix-\qmix$} & {\footnotesize $\gnnqmix-\mlpqmix$} \\
-    \midrule
-    $N=3$ & \PMqmixNthree & \PMmlpNthree & \PMgnnNthree
-          & $\PMcapGapNthree$ (ns) & $\PMgraphGapNthree$ (ns) \\
-    $N=6$ & \PMqmixNsix & \PMmlpNsix & \PMgnnNsix
-          & $\PMcapGapNsix$ ($d{=}\PMcapDNsix$) & $\PMgraphGapNsix^\ast$ ($d{=}\PMgraphDNsix$) \\
-    \bottomrule
-  \end{tabular}
-\end{table}
+The decomposition table (Table~\ref{tab:mpe}) is in Appendix~\ref{app:mpe}.
 
 \textbf{The graph penalty replicates --- and the control is what reveals
 it.} At $N{=}3$ all three decisive contrasts are null (graph effect
@@ -649,14 +615,13 @@ $\PMgraphGapNsix$ (Cohen's $d=\PMgraphDNsix$), significant under both Holm
 ($p=\PMgraphHolmNsix$) and Mann--Whitney ($p=\PMgraphMwuNsix$). Crucially,
 the naive $\gnnqmix$-vs-$\qmix$ comparison is \emph{not} significant here
 (net $\PMnetNsix$, $p=0.41$): a single-comparison study would call the
-graph harmless. The control explains why. The extra parameters \emph{help}
-on this task (capacity effect $\PMcapGapNsix$, $d=\PMcapDNsix$;
-Mann--Whitney $p=\PMcapMwuNsix$, marginal after Holm at $p{=}0.07$), and
-that gain nearly cancels the graph penalty
-($\PMcapGapNsix\!+\!\PMgraphGapNsix\approx\PMnetNsix$). Only the
-parameter-matched \mlpqmix\ separates the two, exposing a large graph
-liability that the headline comparison masks --- on a standard benchmark,
-precisely the confound this paper warns about.
+graph harmless. The control explains why: the extra parameters \emph{help}
+here (capacity $\PMcapGapNsix$, $d=\PMcapDNsix$; Mann--Whitney
+$p=\PMcapMwuNsix$, marginal after Holm), nearly cancelling the graph
+penalty ($\PMcapGapNsix\!+\!\PMgraphGapNsix\approx\PMnetNsix$). Only
+\mlpqmix\ separates the two, exposing a graph liability the headline
+comparison masks --- on a standard benchmark, the confound this paper
+warns about.
 
 \textbf{What transfers, and what does not.} The graph penalty grows with
 team size (null at $N{=}3$, $d=\PMgraphDNsix$ at $N{=}6$), mirroring
@@ -742,30 +707,9 @@ locked $L{=}2$, width-64 encoder and are verified to have identical
 parameter counts, so the only difference is the neighbour-aggregation
 step. Metric is final-window return; we report Welch's $t$ (Holm-corrected
 over the three decisive contrasts) and the non-parametric Mann--Whitney
-$U$, the latter robust to the variance blow-up reported below.
-
-\begin{table}[t]
-  \centering
-  \small
-  \caption{Phase 8 final-window return (mean over \PEseeds\ seeds) on the
-  \texttt{ring} graph. \mlpqmix\ is the parameter-matched no-graph control
-  (identical parameter count to \gnnqmix). \emph{Capacity} effect
-  $=\mlpqmix-\qmix$; \emph{graph} effect $=\gnnqmix-\mlpqmix$ (the
-  identified effect of the graph at matched capacity).}
-  \label{tab:phase8}
-  \begin{tabular}{lcccc}
-    \toprule
-    & \qmix & \mlpqmix & \gnnqmix & graph effect \\
-    & {\footnotesize no cap, no graph} & {\footnotesize cap, no graph}
-      & {\footnotesize cap + graph} & {\footnotesize $\gnnqmix-\mlpqmix$} \\
-    \midrule
-    $N=4$ & \PEqmixNfour & \PEmlpNfour & \PEgnnNfour
-          & $\PEgraphGapNfour$ \;($d{=}\PEgraphDNfour$) \\
-    $N=8$ & \PEqmixNeight & \PEmlpNeight & \PEgnnNeight
-          & $\PEgraphGapNeight$ \;($d{=}\PEgraphDNeight$) \\
-    \bottomrule
-  \end{tabular}
-\end{table}
+$U$, the latter robust to the variance blow-up reported below. Full
+per-cell numbers are in Table~\ref{tab:phase8} (Appendix~\ref{app:figures});
+the findings below state the decisive values inline.
 
 \textbf{Finding 1 --- the penalty is the graph, not capacity, and it is
 significant.} \mlpqmix\ matches \qmix\ at both scales (capacity gap
@@ -808,20 +752,18 @@ $N=8$). The identified graph penalty thus holds across two distinct
 coordination-graph topologies.
 
 \textbf{Finding 5 --- the penalty survives a stronger GNN and grows with
-scale.} Two robustness checks close the most natural escape routes
-(Appendices~\ref{app:gat}--\ref{app:scaling}). \emph{(i) GNN family.} The
-obvious objection is that the learned attention used by the methods we
-critique \citep{jiang_2020_dgn,liu_2020_g2anet} would rescue the graph. It
-does not: replacing the GCN with single-head graph attention (\gatqmix,
-carrying marginally \emph{more} parameters than \mlpqmix) still loses to
-the no-graph control by $\PGgatMlpNfour$ ($d=\PGgatMlpDNfour$) at $N=4$ and
-$\PGgatMlpNeight$ ($d=\PGgatMlpDNeight$) at $N=8$ (Holm and Mann--Whitney
-significant). Attention \emph{does} beat the fixed GCN ($+\PGgatGnnNeight$
-at $N=8$) --- the graph in its strongest form --- yet stays a net
-liability, and the same direction holds on MPE. \emph{(ii) Scale.}
-Extending to $N\in\{12,16\}$, the graph effect grows \emph{monotonically}:
-$\PSgapNfour$, $\PSgapNeight$, $\PSgapNtwelve$, $\PSgapNsixteen$ at
-$N=4,8,12,16$; at $N=16$ \gnnqmix\ reaches only
+scale.} Two robustness checks (Appendices~\ref{app:gat}--\ref{app:scaling}).
+\emph{(i) GNN family.} The learned attention used by the methods we critique
+\citep{jiang_2020_dgn,liu_2020_g2anet} does not rescue the graph: \gatqmix\
+(single-head graph attention, marginally \emph{more} parameters than
+\mlpqmix) still loses to the no-graph control by $\PGgatMlpNfour$
+($d=\PGgatMlpDNfour$) at $N=4$ and $\PGgatMlpNeight$ ($d=\PGgatMlpDNeight$)
+at $N=8$ (Holm and Mann--Whitney significant). Attention \emph{does} beat
+the fixed GCN ($+\PGgatGnnNeight$ at $N=8$) --- the graph in its strongest
+form --- yet stays a net liability, and the same holds on MPE.
+\emph{(ii) Scale.} Extending to $N\in\{12,16\}$, the graph effect grows
+\emph{monotonically}: $\PSgapNfour$, $\PSgapNeight$, $\PSgapNtwelve$,
+$\PSgapNsixteen$; at $N=16$ \gnnqmix\ reaches only
 ${\sim}\PSgnnFracNsixteen\%$ of \qmix's return. The ``graphs help as the
 team grows'' intuition is exactly inverted.
 
@@ -851,22 +793,16 @@ We do not over-generalise: across the two environment families and two GNN
 families we could afford to test (Section~\ref{sec:limitations}), this is
 not a claim that graph structure can \emph{never} help in MARL.
 
-\paragraph{The depth--diameter heuristic does not survive contact with
-the data.} The pre-registered H3 prediction was that GNN depth $L$
-should be chosen near the coordination graph's diameter $d$
-(Section~\ref{sec:hypotheses}). Section~\ref{sec:results:ablation}
-falsifies the family-level version of this rule (1 of 3 diameters
-passes the per-row criterion) and replaces it with a sharper empirical
-pattern: across every diameter tested, $L \in \{1, 2\}$ outperforms
-$L \in \{3, 4\}$ by a wide margin. The decline is monotone in depth on
-the $d=3$ row and abrupt elsewhere. This is consistent with the
-over-smoothing / over-squashing observations in the broader GNN
-literature \citep{xu_2019_gin,battaglia_2018_gn}, but it surfaces in
-the cooperative-MARL value-factorisation setting more aggressively
-than the receptive-field intuition would predict. The practitioner
-rule that follows is unambiguous: in small-team CTDE settings with
-modest replay budgets, do not stack more than two GCN layers in front
-of a QMIX-style mixer.
+\paragraph{The depth--diameter heuristic does not survive the data.} The
+pre-registered H3 prediction --- choose GNN depth $L$ near the graph
+diameter $d$ --- is falsified at the family level (1 of 3 diameters passes;
+Section~\ref{sec:results:ablation}) and replaced by a sharper pattern:
+$L\in\{1,2\}$ beats $L\in\{3,4\}$ by a wide margin across every diameter,
+consistent with over-smoothing / over-squashing
+\citep{xu_2019_gin,battaglia_2018_gn} but more aggressive here than the
+receptive-field intuition predicts. The rule: in small-team CTDE with
+modest replay budgets, do not stack more than two GCN layers before a
+QMIX-style mixer.
 
 \paragraph{When \emph{not} to use a GNN mixer.} Three cases. (i) The task
 has no real coordination graph, so the bias buys nothing and pays the cost
@@ -882,12 +818,11 @@ help.''
 
 \paragraph{Implications for benchmark design.} Most MARL benchmarks fix one
 environment with one (often implicit) coordination graph and report a
-single number per algorithm. Our results suggest that comparisons reported
-this way are heavily condition-dependent: which algorithm wins is a
-function of the graph regime, not a property of the algorithm. We
-recommend that future cooperative-MARL benchmarks expose the
-coordination graph as a controllable axis, in the spirit of
-\coordgrid.
+single number per algorithm. Our results suggest such comparisons are
+heavily condition-dependent --- which algorithm wins is a function of the
+graph regime, not the algorithm --- and that future cooperative-MARL
+benchmarks should expose the coordination graph as a controllable axis, in
+the spirit of \coordgrid.
 
 % =========================================================================
 \section{Limitations}
@@ -895,78 +830,57 @@ coordination graph as a controllable axis, in the spirit of
 
 We list explicit limitations rather than burying them.
 \begin{enumerate}[leftmargin=*,itemsep=0pt,topsep=2pt]
-  \item \textbf{Scale.} Our largest team is $N{=}16$ on a
-        tabular-flavoured gridworld; behaviour on $N{\gg}16$ and on
-        visually complex tasks (SMAC-scale) is out of scope. We note the
-        graph penalty \emph{grows} monotonically out to $N{=}16$
-        (Finding 5, Appendix~\ref{app:scaling}), so the negative result is
-        if anything strengthened, not threatened, by scale within the range
-        we can afford. (Step budget is likewise not a concern: the decisive
-        cells run at \PEsteps\ steps, $5\times$ the main sweep, unchanged.)
+  \item \textbf{Scale.} Our largest team is $N{=}16$ on a tabular-flavoured
+        gridworld; $N{\gg}16$ and visually complex tasks (SMAC-scale) are
+        out of scope. The penalty \emph{grows} out to $N{=}16$
+        (Appendix~\ref{app:scaling}), so scale within our range strengthens
+        rather than threatens the result. (Step budget is also moot:
+        decisive cells run at \PEsteps\ steps, $5\times$ the main sweep.)
   \item \textbf{Coordination-graph design.} \coordgrid\ ties reward to
-        graph edges directly --- the cleanest test of graph-aware models,
-        but also the most favourable to them. We mitigate this with the
-        MPE \texttt{simple\_spread} replication
-        (Section~\ref{sec:results:mpe}), where the graph is an
-        unprivileged $k$-NN proximity graph the task never references and
-        the penalty still reappears at $N{=}6$. We have thus tested two
-        graph \emph{families}, not the full space; tasks whose true
-        coordination structure differs from any observable graph may still
-        behave differently.
-  \item \textbf{GNN family.} We test two families --- a fixed Kipf--Welling
-        GCN and single-head graph attention (\gatqmix, Finding 5,
-        Appendix~\ref{app:gat}). Attention narrows the gap but does not
-        close it, so the penalty is not GCN-specific. Whether multi-head
-        attention, learned message passing (e.g.\ \algoname{GIN}), or
-        edge-feature GNNs behave differently remains open.
-  \item \textbf{Single-CPU training.} Some learning-rate / batch-size
-        choices that work well on CPU may interact differently with GPU
-        throughput; we did not retune for GPU.
-  \item \textbf{Seed count.} The main sweep (Phases 1--4) uses three
-        seeds, below the $\ge 5$ that \citet{henderson_2018_drlmatters}
-        and \citet{agarwal_2021_precipice} recommend, so those panels are
-        powered only against large effects and we phrase their borderline
-        claims as \emph{direction observed}. The headline graph-vs-capacity
-        comparison does not inherit this limitation: it is run at
-        \PEseeds\ seeds (Section~\ref{sec:results:capacity}) and is
-        significant under both a non-parametric test and Holm-corrected
-        Welch.
-  \item \textbf{Fixed-horizon episodes treated as terminating.}
-        Episodes are truncated at a fixed length; the Q-learning
-        bootstrap uses \texttt{done=True} on the truncation, biasing
-        the value at the truncation boundary toward zero. This is the
-        standard QMIX implementation choice and is not expected to
-        materially affect cross-algorithm comparisons (every algorithm
-        receives the same bias) but is noted for completeness.
+        graph edges directly --- the cleanest but most graph-favourable
+        test. The MPE \texttt{simple\_spread} replication
+        (Section~\ref{sec:results:mpe}), where the graph is an unprivileged
+        $k$-NN proximity graph, mitigates this; but tasks whose true
+        coordination structure matches no observable graph may differ.
+  \item \textbf{GNN family.} We test a fixed GCN and single-head attention
+        (\gatqmix, Appendix~\ref{app:gat}); attention narrows but does not
+        close the gap. Multi-head attention, learned message passing
+        (\algoname{GIN}), and edge-feature GNNs remain open.
+  \item \textbf{Single-CPU training.} We did not retune learning-rate /
+        batch-size choices for GPU throughput.
+  \item \textbf{Seed count.} The main sweep (Phases 1--4) uses three seeds,
+        below the $\ge 5$ recommended
+        \citep{henderson_2018_drlmatters,agarwal_2021_precipice}, so those
+        panels are powered only against large effects and we phrase
+        borderline claims as \emph{direction observed}. The headline
+        graph-vs-capacity comparison runs at \PEseeds\ seeds and is
+        significant under both tests.
+  \item \textbf{Fixed-horizon bootstrap.} Episodes are truncated with
+        \texttt{done=True}, biasing the boundary value toward zero --- the
+        standard QMIX choice, applied identically to every algorithm, so
+        cross-algorithm comparisons are unaffected.
 \end{enumerate}
 
 % =========================================================================
 \section{Conclusion}
 \label{sec:conclusion}
 
-We presented a controlled empirical study of graph-based value
-factorisation in cooperative MARL, holding the per-agent encoder, mixer,
-optimiser, and exploration schedule fixed and adding a parameter-matched
-no-graph control (\mlpqmix). Three findings carry the paper. \emph{First},
-\gnnqmix\ does not beat \qmix; the capacity control \emph{identifies} the
-cause --- \mlpqmix\ (byte-identical parameters, no graph) matches \qmix\
-while \gnnqmix\ falls well below both ($d=\PEgraphDNeight$ at $N=8$;
-significant under Mann--Whitney and Holm-corrected Welch), so the penalty
-is the graph aggregation, not the added capacity, it survives $5\times$
-the training budget, and it grows with team size. \emph{Second}, the
-pre-registered $L \approx d$ heuristic is falsified: instead of an
-inverted-U we find a sharp over-depth cliff, with $L \ge 3$ collapsing on
-every diameter, yielding the blunt rule ``keep GCN depth $\le 2$'' in
-small-team CTDE settings. \emph{Third}, the graph also destabilises
-training, inflating across-seed variance by roughly $9\times$ relative to
-the matched control.
-
-The broader point is that ``does graph structure help in MARL?'' requires
-controlled measurement --- including a capacity-matched control --- to
-answer, and that on the task most favourable to a graph-aware model the
-answer, at the scales we can test, is ``no, and it actively hurts.'' We
-release the harness and the \mlpqmix\ control to make such measurements
-cheaper for future architectures and tasks.
+We presented a controlled study of graph-based value factorisation in
+cooperative MARL, holding the per-agent encoder, mixer, optimiser, and
+exploration schedule fixed and adding a parameter-matched no-graph control
+(\mlpqmix). \gnnqmix\ does not beat \qmix, and the control \emph{identifies}
+the cause as the graph aggregation rather than the added capacity
+($d=\PEgraphDNeight$ at $N{=}8$; significant under Mann--Whitney and
+Holm-corrected Welch): the penalty survives $5\times$ training, replicates
+on MPE \texttt{simple\_spread}, persists under graph attention, grows
+monotonically to $N{=}16$, and inflates across-seed variance ${\sim}9\times$.
+The pre-registered $L\approx d$ heuristic is falsified in favour of a sharp
+over-depth cliff and the blunt rule ``keep GCN depth $\le 2$.'' The broader
+point: ``does graph structure help in MARL?'' demands controlled,
+capacity-matched measurement, and on the task most favourable to a
+graph-aware model the answer, at the scales we can test, is ``no, and it
+actively hurts.'' We release the harness and the \mlpqmix\ control to make
+such measurements cheaper for future architectures and tasks.
 
 % =========================================================================
 \bibliographystyle{tmlr}
@@ -1125,6 +1039,31 @@ once per episode exactly as for \coordgrid.
   (Table~\ref{tab:mpe}) separates.}
   \label{fig:mpe}
 \end{figure}
+
+\begin{table}[h!]
+  \centering
+  \small
+  \caption{Phase 3 graph-vs-capacity decomposition on MPE
+  \texttt{simple\_spread} (mean final-window return over \PEseeds\ seeds;
+  less negative is better). At $N{=}6$ the \emph{capacity} effect
+  ($\mlpqmix-\qmix$) is positive and the \emph{graph} effect
+  ($\gnnqmix-\mlpqmix$) is sharply negative, so they cancel and the naive
+  $\gnnqmix$-vs-$\qmix$ comparison looks null --- only the matched control
+  exposes the graph penalty. $d$ is Cohen's $d$; ${}^\ast$ significant
+  under Holm and Mann--Whitney.}
+  \label{tab:mpe}
+  \begin{tabular}{lccccc}
+    \toprule
+    & \qmix & \mlpqmix & \gnnqmix & capacity effect & graph effect \\
+    & & & & {\footnotesize $\mlpqmix-\qmix$} & {\footnotesize $\gnnqmix-\mlpqmix$} \\
+    \midrule
+    $N=3$ & \PMqmixNthree & \PMmlpNthree & \PMgnnNthree
+          & $\PMcapGapNthree$ (ns) & $\PMgraphGapNthree$ (ns) \\
+    $N=6$ & \PMqmixNsix & \PMmlpNsix & \PMgnnNsix
+          & $\PMcapGapNsix$ ($d{=}\PMcapDNsix$) & $\PMgraphGapNsix^\ast$ ($d{=}\PMgraphDNsix$) \\
+    \bottomrule
+  \end{tabular}
+\end{table}
 
 \begin{table}[h!]
   \centering
@@ -1301,6 +1240,29 @@ aggregate results in the main text.
   seeds --- the destabilisation reported in Section~\ref{sec:results:capacity}.}
   \label{fig:phase8curves}
 \end{figure}
+
+\begin{table}[h!]
+  \centering
+  \small
+  \caption{Phase 8 final-window return (mean over \PEseeds\ seeds) on the
+  \texttt{ring} graph (the numbers behind Finding 1,
+  Section~\ref{sec:results:capacity}). \mlpqmix\ is the parameter-matched
+  no-graph control (identical parameter count to \gnnqmix). \emph{Capacity}
+  effect $=\mlpqmix-\qmix$; \emph{graph} effect $=\gnnqmix-\mlpqmix$.}
+  \label{tab:phase8}
+  \begin{tabular}{lcccc}
+    \toprule
+    & \qmix & \mlpqmix & \gnnqmix & graph effect \\
+    & {\footnotesize no cap, no graph} & {\footnotesize cap, no graph}
+      & {\footnotesize cap + graph} & {\footnotesize $\gnnqmix-\mlpqmix$} \\
+    \midrule
+    $N=4$ & \PEqmixNfour & \PEmlpNfour & \PEgnnNfour
+          & $\PEgraphGapNfour$ \;($d{=}\PEgraphDNfour$) \\
+    $N=8$ & \PEqmixNeight & \PEmlpNeight & \PEgnnNeight
+          & $\PEgraphGapNeight$ \;($d{=}\PEgraphDNeight$) \\
+    \bottomrule
+  \end{tabular}
+\end{table}
 
 \begin{figure}[h!]
   \centering
