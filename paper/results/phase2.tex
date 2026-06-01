@@ -1,38 +1,23 @@
 \begin{figure}[t]
   \centering
   \includegraphics[width=0.54\linewidth]{figures/phase2__forest_ep80.pdf}
-  \caption{Phase 2 forest plot: episodes to 80\% of best final-window return per algorithm $\times$ condition. Lower is better. Bars are 95\% Student-$t$ CIs across seeds. Full per-condition returns are in Table~\ref{tab:phase2_summary} (Appendix~\ref{app:fulltables}).}
+  \caption{Phase 2 forest plot: episodes to 80\% of best final-window return per algorithm $\times$ condition. Lower is better. Bars are 95\% Student-$t$ CIs across seeds. Per-condition returns and the H1/H2 hypothesis tests are in Appendix~\ref{app:fulltables} (Tables~\ref{tab:phase2_summary}, \ref{tab:phase2_h1}, \ref{tab:phase2_h2}).}
   \label{fig:phase2_forest}
 \end{figure}
 
-\begin{table}[t]
+\begin{figure}[t]
   \centering
-  \small
-  \caption{H1 (within-condition): GNN-QMIX minus QMIX in mean final-window return. $p$-values are one-sided Welch $t$ ($H_a$: \gnnqmix\ $>$ \qmix), not corrected (single test per condition).}
-  \label{tab:phase2_h1}
-  \begin{tabular}{rlrr}
-    \toprule
-    $N$ & graph & $\Delta = $ GNN-QMIX $-$ QMIX & $p$ (1-sided) \\
-    \midrule
-    4 & erdos\_renyi & -78.08 & 1.000 \\
-4 & ring & -60.37 & 0.999 \\
-8 & erdos\_renyi & -128.98 & 0.983 \\
-8 & ring & -146.64 & 0.999 \\
-    \bottomrule
-  \end{tabular}
-\end{table}
-
-\begin{table}[t]
-  \centering
-  \small
-  \caption{H2 (difference-of-differences): the GNN-QMIX vs.\ QMIX gap on ring minus the same gap on Erd\H{o}s--R\'enyi at matched edge density. One-sample $t$ on per-seed DiD against 0 ($H_a$: DiD $> 0$).}
-  \label{tab:phase2_h2}
-  \begin{tabular}{rrrrr}
-    \toprule
-    $N$ & $\Delta_{\text{ring}}$ & $\Delta_{\text{ER}}$ & DiD & $p$ (1-sided) \\
-    \midrule
-    4 & -60.37 & -78.08 & 17.71 & 0.007 \\
-8 & -146.64 & -128.98 & -17.66 & 0.706 \\
-    \bottomrule
-  \end{tabular}
-\end{table}
+  \begin{subfigure}{0.4\textwidth}
+    \includegraphics[width=\linewidth]{figures/phase2__learning_curves_N4_erdos_renyi.pdf}
+    \caption{$N=4$, Erd\H{o}s--R\'enyi (matched density).}
+  \end{subfigure}\hfill
+  \begin{subfigure}{0.4\textwidth}
+    \includegraphics[width=\linewidth]{figures/phase2__learning_curves_N8_ring.pdf}
+    \caption{$N=8$, ring.}
+  \end{subfigure}
+  \caption{Phase 2 per-condition learning curves, the two most extreme
+  cells of the scale/graph sweep. \gnnqmix\ flat-lines near random-play
+  return on the $N{=}4$ Erd\H{o}s--R\'enyi cell, while \qmix\ scales cleanly
+  past 150 on the $N{=}8$ ring (the highest absolute return in the study).}
+  \label{fig:phase2curves}
+\end{figure}

@@ -759,9 +759,26 @@ standard deviation is \PEgnnSDNeight, against \PEmlpSDNeight\ for the
 parameter-matched \mlpqmix\ control and \PEqmixSDNeight\ for \qmix\ ---
 roughly a $9\times$ inflation attributable to the graph alone. The graph
 does not merely fail to help on average; it injects seed-level
-instability that the parameter-matched no-graph control does not,
-confirming the mechanism we had only hypothesised from the Phase 1
-pilot.
+instability that the parameter-matched no-graph control does not
+(Figure~\ref{fig:phase8curves}), confirming the mechanism we had only
+hypothesised from the Phase 1 pilot.
+
+\begin{figure}[t]
+  \centering
+  \begin{subfigure}{0.4\textwidth}
+    \includegraphics[width=\linewidth]{figures/phase8_curves_N4.pdf}
+    \caption{$N=4$ (ring).}
+  \end{subfigure}\hfill
+  \begin{subfigure}{0.4\textwidth}
+    \includegraphics[width=\linewidth]{figures/phase8_curves_N8.pdf}
+    \caption{$N=8$ (ring).}
+  \end{subfigure}
+  \caption{Phase 8 training curves ($n{=}\PEseeds$ seeds, \PEsteps\ steps).
+  \mlpqmix\ (the parameter-matched no-graph control) tracks \qmix\ at both
+  scales, while \gnnqmix\ is both lower and visibly more variable across
+  seeds --- the destabilisation of Finding 3.}
+  \label{fig:phase8curves}
+\end{figure}
 
 \textbf{Finding 4 --- the pattern is not specific to the ring.} Repeating
 the full capacity control on the higher-diameter \texttt{line} topology
@@ -1233,11 +1250,31 @@ Table~\ref{tab:scaling} give the result.
 \section{Full per-condition tables}
 \label{app:fulltables}
 
-The main text reports Phase 1--2 results via the learning-curve figure
-(Figure~\ref{fig:phase1_curves}) and the forest plot
-(Figure~\ref{fig:phase2_forest}) plus the hypothesis-test tables. The
-full per-condition returns and the Phase 1 pairwise sanity check are
-collected here.
+The main text reports Phase 1--2 results via the learning-curve figures
+(Figures~\ref{fig:phase1_curves}, \ref{fig:phase2curves}), the forest plot
+(Figure~\ref{fig:phase2_forest}), and the hypothesis-test tables. The
+per-algorithm Phase 1 summary, full Phase 2 per-condition returns, and the
+Phase 1 pairwise sanity check are collected here.
+
+\begin{table}[h!]
+  \centering
+  \small
+  \caption{Phase 1 final-window mean return ($N=4$, ring, 3 seeds).
+  Confidence intervals are Student-$t$ 95\% across seeds; episodes-to-80\%
+  is reported only for seeds that crossed the threshold within
+  $5\times 10^4$ steps.}
+  \label{tab:phase1_summary}
+  \begin{tabular}{lrrrr}
+    \toprule
+    Algorithm & $n_{\text{seeds}}$ & Final mean & 95\% CI & Episodes to 80\% \\
+    \midrule
+    IQL & 3 & 35.54 & [32.16, 38.93] & 1372 \\
+VDN & 3 & 65.04 & [53.38, 76.70] & 1526 \\
+QMIX & 3 & 84.27 & [83.80, 84.75] & 1422 \\
+GNN-QMIX & 3 & 58.47 & [0.88, 116.06] & 1553 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
 
 \begin{table}[h!]
   \centering
@@ -1287,29 +1324,50 @@ IQL vs.\ GNN-QMIX & 22.93 & 0.229 & 0.581 \\
   \end{tabular}
 \end{table}
 
+\begin{table}[h!]
+  \centering
+  \small
+  \caption{H1 (within-condition): GNN-QMIX minus QMIX in mean final-window
+  return. $p$-values are one-sided Welch $t$ ($H_a$: \gnnqmix\ $>$ \qmix),
+  not corrected (single test per condition). The ordering is negative in
+  every cell.}
+  \label{tab:phase2_h1}
+  \begin{tabular}{rlrr}
+    \toprule
+    $N$ & graph & $\Delta = $ GNN-QMIX $-$ QMIX & $p$ (1-sided) \\
+    \midrule
+    4 & erdos\_renyi & -78.08 & 1.000 \\
+4 & ring & -60.37 & 0.999 \\
+8 & erdos\_renyi & -128.98 & 0.983 \\
+8 & ring & -146.64 & 0.999 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{table}[h!]
+  \centering
+  \small
+  \caption{H2 (difference-of-differences): the GNN-QMIX vs.\ QMIX gap on
+  ring minus the same gap on Erd\H{o}s--R\'enyi at matched edge density.
+  One-sample $t$ on per-seed DiD against 0 ($H_a$: DiD $> 0$).}
+  \label{tab:phase2_h2}
+  \begin{tabular}{rrrrr}
+    \toprule
+    $N$ & $\Delta_{\text{ring}}$ & $\Delta_{\text{ER}}$ & DiD & $p$ (1-sided) \\
+    \midrule
+    4 & -60.37 & -78.08 & 17.71 & 0.007 \\
+8 & -146.64 & -128.98 & -17.66 & 0.706 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
 % =========================================================================
 \section{Supplementary figures}
 \label{app:figures}
 
-This appendix collects per-condition learning curves that support the
-aggregate results in the main text.
-
-\begin{figure}[h!]
-  \centering
-  \begin{subfigure}{0.49\textwidth}
-    \includegraphics[width=\linewidth]{figures/phase8_curves_N4.pdf}
-    \caption{$N=4$ (ring).}
-  \end{subfigure}\hfill
-  \begin{subfigure}{0.49\textwidth}
-    \includegraphics[width=\linewidth]{figures/phase8_curves_N8.pdf}
-    \caption{$N=8$ (ring).}
-  \end{subfigure}
-  \caption{Phase 8 training curves ($n{=}\PEseeds$ seeds, \PEsteps\ steps).
-  \mlpqmix\ (the parameter-matched no-graph control) tracks \qmix\ at both
-  scales, while \gnnqmix\ is both lower and visibly more variable across
-  seeds --- the destabilisation reported in Section~\ref{sec:results:capacity}.}
-  \label{fig:phase8curves}
-\end{figure}
+This appendix collects the per-condition depth--diameter curves that
+accompany the Phase 4 heatmap (Figure~\ref{fig:phase4_heatmap}) in the main
+text.
 
 \begin{table}[h!]
   \centering
@@ -1334,23 +1392,6 @@ aggregate results in the main text.
   \end{tabular}
 \end{table}
 
-\begin{figure}[h!]
-  \centering
-  \begin{subfigure}{0.49\textwidth}
-    \includegraphics[width=\linewidth]{figures/phase2__learning_curves_N4_erdos_renyi.pdf}
-    \caption{$N=4$, Erd\H{o}s--R\'enyi (matched density).}
-  \end{subfigure}\hfill
-  \begin{subfigure}{0.49\textwidth}
-    \includegraphics[width=\linewidth]{figures/phase2__learning_curves_N8_ring.pdf}
-    \caption{$N=8$, ring.}
-  \end{subfigure}
-  \caption{Phase 2 per-condition learning curves, the two most extreme
-  cells of the scale/graph sweep (Section~\ref{sec:results:scale}).
-  \gnnqmix\ flat-lines near random-play return on the $N{=}4$
-  Erd\H{o}s--R\'enyi cell, while \qmix\ scales cleanly past 150 on the
-  $N{=}8$ ring (the highest absolute return in the study).}
-  \label{fig:phase2curves}
-\end{figure}
 
 \begin{figure}[h!]
   \centering

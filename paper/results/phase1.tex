@@ -1,23 +1,6 @@
 \begin{figure}[t]
   \centering
   \includegraphics[width=0.52\linewidth]{figures/phase1__learning_curves.pdf}
-  \caption{Phase 1 learning curves on \coordgrid\ ($N=4$, ring), three seeds. Shaded bands are $\pm 1$ s.d.\ across seeds of the 25-episode rolling mean.}
+  \caption{Phase 1 learning curves on \coordgrid\ ($N=4$, ring), three seeds. Shaded bands are $\pm 1$ s.d.\ across seeds of the 25-episode rolling mean. Per-algorithm final-window returns are in Table~\ref{tab:phase1_summary} (Appendix~\ref{app:fulltables}).}
   \label{fig:phase1_curves}
 \end{figure}
-
-\begin{table}[t]
-  \centering
-  \small
-  \caption{Phase 1 final-window mean return ($N=4$, ring, 3 seeds). Confidence intervals are Student-$t$ 95\% across seeds; episodes-to-80\% is reported only for seeds that crossed the threshold within $5\times 10^4$ steps. Pairwise sanity-check tests are in Table~\ref{tab:phase1_pairwise} (Appendix~\ref{app:fulltables}).}
-  \label{tab:phase1_summary}
-  \begin{tabular}{lrrrr}
-    \toprule
-    Algorithm & $n_{\text{seeds}}$ & Final mean & 95\% CI & Episodes to 80\% \\
-    \midrule
-    IQL & 3 & 35.54 & [32.16, 38.93] & 1372 \\
-VDN & 3 & 65.04 & [53.38, 76.70] & 1526 \\
-QMIX & 3 & 84.27 & [83.80, 84.75] & 1422 \\
-GNN-QMIX & 3 & 58.47 & [0.88, 116.06] & 1553 \\
-    \bottomrule
-  \end{tabular}
-\end{table}
