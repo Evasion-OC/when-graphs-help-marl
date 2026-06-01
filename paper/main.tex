@@ -51,6 +51,7 @@
 \newcommand{\Gtask}{\mathcal{G}}
 \newcommand{\mlpqmix}{\algoname{MLP-QMIX}}
 \newcommand{\gatqmix}{\algoname{GAT-QMIX}}
+\newcommand{\dgnqmix}{\algoname{DGN-QMIX}}
 
 % --- Phase 8 numbers (capacity control + long-horizon, n=10 seeds). -------
 % Final values from the n=10 extension (seeds 0-9), ring graph, 150k steps.
@@ -121,6 +122,15 @@
 \newcommand{\PGgatGnnDNeight}{+1.3}   % Cohen d, GAT vs GNN, N=8
 \newcommand{\PGgatMpeNthree}{-8.1}    % GAT-QMIX - MLP-QMIX, MPE N=3 (MWU sig)
 \newcommand{\PGgatMpeNsix}{-12.2}     % GAT-QMIX - MLP-QMIX, MPE N=6 (dir., ns)
+% --- DGN-QMIX: multi-head dot-product attention (DGN/G2ANet mechanism). ----
+\newcommand{\PGdgnCGNfour}{73.2}      % DGN-QMIX final return, CoordGrid N=4 ring
+\newcommand{\PGdgnCGNeight}{131.4}    % DGN-QMIX final return, CoordGrid N=8 ring
+\newcommand{\PGdgnMlpNfour}{-10.3}    % DGN-QMIX - MLP-QMIX, N=4 (sig)
+\newcommand{\PGdgnMlpDNfour}{-4.5}    % Cohen d, DGN vs MLP, N=4
+\newcommand{\PGdgnMlpNeight}{-33.5}   % DGN-QMIX - MLP-QMIX, N=8 (sig)
+\newcommand{\PGdgnMlpDNeight}{-1.6}   % Cohen d, DGN vs MLP, N=8
+\newcommand{\PGdgnMpeNthree}{+4.1}    % DGN-QMIX - MLP-QMIX, MPE N=3 (ns)
+\newcommand{\PGdgnMpeNsix}{-9.1}      % DGN-QMIX - MLP-QMIX, MPE N=6 (ns)
 % --- Phase 11: graph-penalty scaling on CoordGrid ring, n=10, 150k. -------
 % Graph effect = GNN-QMIX - MLP-QMIX (negative); magnitude grows with N.
 \newcommand{\PSgapNfour}{-10.6}       % (= Phase 8 N=4, for the trend)
@@ -793,14 +803,16 @@ coordination-graph topologies.
 
 \textbf{Finding 5 --- the penalty survives a stronger GNN and grows with
 scale.} Two robustness checks (Appendices~\ref{app:gat}--\ref{app:scaling}).
-\emph{(i) GNN family.} The learned attention used by the methods we critique
-\citep{jiang_2020_dgn,liu_2020_g2anet} does not rescue the graph: \gatqmix\
-(single-head graph attention, marginally \emph{more} parameters than
-\mlpqmix) still loses to the no-graph control by $\PGgatMlpNfour$
-($d=\PGgatMlpDNfour$) at $N=4$ and $\PGgatMlpNeight$ ($d=\PGgatMlpDNeight$)
-at $N=8$ (Holm and Mann--Whitney significant). Attention \emph{does} beat
-the fixed GCN ($+\PGgatGnnNeight$ at $N=8$) --- the graph in its strongest
-form --- yet stays a net liability, and the same holds on MPE.
+\emph{(i) GNN family.} The learned attention these methods use
+\citep{jiang_2020_dgn,liu_2020_g2anet} does not rescue the graph. Beyond
+the GCN we run single-head (\gatqmix) and multi-head (\dgnqmix, the
+DGN/G2ANet operator, our largest variant) attention; on CoordGrid
+\emph{both} lose to the no-graph control at $N=8$ ($d=\PGgatMlpDNeight$ and
+$\PGdgnMlpDNeight$; Holm + MWU significant, likewise $N=4$). More attention
+climbs \emph{within} graph methods ($\dgnqmix>\gatqmix>\gnnqmix$ at $N=8$)
+yet never beats no-graph; on MPE it only narrows the gap (non-significant
+at $N{=}6$). Better attention helps the graph \emph{approach}, not
+overtake, the control.
 \emph{(ii) Scale.} Extending to $N\in\{12,16\}$, the graph effect grows
 \emph{monotonically}: $\PSgapNfour$, $\PSgapNeight$, $\PSgapNtwelve$,
 $\PSgapNsixteen$; at $N=16$ \gnnqmix\ reaches only
@@ -893,10 +905,11 @@ We list explicit limitations rather than burying them.
         (Section~\ref{sec:results:mpe}), where the graph is an unprivileged
         $k$-NN proximity graph, mitigates this; but tasks whose true
         coordination structure matches no observable graph may differ.
-  \item \textbf{GNN family.} We test a fixed GCN and single-head attention
-        (\gatqmix, Appendix~\ref{app:gat}); attention narrows but does not
-        close the gap. Multi-head attention, learned message passing
-        (\algoname{GIN}), and edge-feature GNNs remain open.
+  \item \textbf{GNN family.} We test three relational mechanisms --- a fixed
+        GCN, single-head (\gatqmix) and multi-head dot-product (\dgnqmix)
+        attention (Appendix~\ref{app:gat}); attention narrows but does not
+        close the gap. Learned message passing (\algoname{GIN}) and
+        edge-feature GNNs remain open.
   \item \textbf{Single-CPU training.} We did not retune learning-rate /
         batch-size choices for GPU throughput.
   \item \textbf{Seed count.} The main sweep (Phases 1--4) uses three seeds,
@@ -1170,47 +1183,59 @@ the non-parametric Mann--Whitney test ($p=\PEmwuP$). As on the ring,
 \end{table}
 
 % =========================================================================
-\section{Second GNN family: graph attention (GAT-QMIX)}
+\section{Graph attention: single- and multi-head (GAT-QMIX, DGN-QMIX)}
 \label{app:gat}
 
 To test whether the graph penalty is specific to the fixed Kipf--Welling
-GCN aggregation, we add \gatqmix: the same per-agent encoder and monotonic
-mixer as \gnnqmix, but with the degree-normalized aggregation replaced by
-single-head graph attention \citep{velickovic_2018_gat} --- the learned
-edge-weighting mechanism that underlies the attention-based graph-MARL
-methods we critique \citep{jiang_2020_dgn,liu_2020_g2anet}. \gatqmix\
-carries two attention vectors per layer, so it has marginally \emph{more}
-parameters than the \mlpqmix\ control; a $\gatqmix<\mlpqmix$ result is
-therefore conservative. We run it on the decisive cells under the identical
-protocol (\PEseeds\ seeds, \PEsteps\ steps).
+GCN aggregation, we add two graph-\emph{attention} variants that share
+\gnnqmix's encoder and monotonic mixer but replace the degree-normalized
+aggregation with learned attention: \gatqmix\ (single-head additive
+attention; \citealp{velickovic_2018_gat}) and \dgnqmix\ (multi-head
+scaled-dot-product attention --- the relational ``convolution'' of the
+attention-based graph-MARL methods we discuss,
+\citealp{jiang_2020_dgn,liu_2020_g2anet}). Both carry \emph{more}
+parameters than the \mlpqmix\ control (\dgnqmix, with per-head
+Q/K/V/output projections, by ${\sim}2.2\times$), so an
+attention-below-\mlpqmix\ result is conservative. We run both on the
+decisive cells under the identical protocol (\PEseeds\ seeds, \PEsteps\
+steps).
 
 \begin{figure}[h!]
   \centering
-  \includegraphics[width=0.6\textwidth]{figures/phase10_gat.pdf}
-  \caption{\gatqmix\ (graph attention) sits above \gnnqmix\ (the fixed GCN)
-  --- attention helps --- but still well below the parameter-matched
-  no-graph control \mlpqmix\ at both team sizes: the graph in its strongest
-  form is still a net liability.}
+  \includegraphics[width=0.8\textwidth]{figures/phase10_gat.pdf}
+  \caption{Single-head (\gatqmix) and multi-head (\dgnqmix) graph attention
+  both sit above \gnnqmix\ (the fixed GCN) --- more expressive attention
+  helps \emph{within} graph methods --- but still below the
+  parameter-matched no-graph control \mlpqmix\ at both team sizes on
+  CoordGrid: the graph in its strongest form remains a net liability.}
   \label{fig:gat}
 \end{figure}
 
 \begin{table}[h!]
   \centering
   \small
-  \caption{\gatqmix\ vs the QMIX family (mean final-window return, \PEseeds\
-  seeds). \gatqmix\ lands above \gnnqmix\ (attention beats the fixed GCN) but
-  below \mlpqmix\ (the graph still hurts). Last column: the attention-graph
-  effect $\gatqmix-\mlpqmix$. ${}^\ast$ Holm- and Mann--Whitney-significant;
-  ${}^\dagger$ Mann--Whitney-significant only.}
+  \caption{Attention variants vs the QMIX family (mean final-window return,
+  \PEseeds\ seeds). Both single-head (\gatqmix) and multi-head dot-product
+  (\dgnqmix, the DGN/G2ANet operator) attention land above \gnnqmix\ ---
+  more expressive attention helps \emph{within} graph methods --- but below
+  the no-graph control \mlpqmix\ on CoordGrid (the graph still hurts). Last
+  two columns: the attention-graph effects vs the matched no-graph control.
+  ${}^\ast$ Holm- and Mann--Whitney-significant; ${}^\dagger$
+  Mann--Whitney-significant only.}
   \label{tab:gat}
-  \begin{tabular}{llccccc}
+  \begin{tabular}{llccccccc}
     \toprule
-    Env & Cell & \qmix & \mlpqmix & \gnnqmix & \gatqmix & $\gatqmix-\mlpqmix$ \\
+    Env & Cell & \qmix & \mlpqmix & \gnnqmix & \gatqmix & \dgnqmix
+        & $\gatqmix{-}\mlpqmix$ & $\dgnqmix{-}\mlpqmix$ \\
     \midrule
-    CoordGrid (ring) & $N=4$ & 83.0 & 83.4 & 72.8 & \PGgatCGNfour & $\PGgatMlpNfour^\ast$ \\
-                     & $N=8$ & 164.9 & 164.9 & 78.3 & \PGgatCGNeight & $\PGgatMlpNeight^\ast$ \\
-    MPE \texttt{spread} & $N=3$ & $-44.9$ & $-44.3$ & $-42.4$ & $-52.5$ & $\PGgatMpeNthree^\dagger$ \\
-                     & $N=6$ & $-74.3$ & $-59.6$ & $-80.4$ & $-71.9$ & $\PGgatMpeNsix$ \\
+    CoordGrid (ring) & $N=4$ & 83.0 & 83.4 & 72.8 & \PGgatCGNfour & \PGdgnCGNfour
+        & $\PGgatMlpNfour^\ast$ & $\PGdgnMlpNfour^\ast$ \\
+                     & $N=8$ & 164.9 & 164.9 & 78.3 & \PGgatCGNeight & \PGdgnCGNeight
+        & $\PGgatMlpNeight^\ast$ & $\PGdgnMlpNeight^\ast$ \\
+    MPE \texttt{spread} & $N=3$ & $-44.9$ & $-44.3$ & $-42.4$ & $-52.5$ & $-40.2$
+        & $\PGgatMpeNthree^\dagger$ & $\PGdgnMpeNthree$ \\
+                     & $N=6$ & $-74.3$ & $-59.6$ & $-80.4$ & $-71.9$ & $-72.2$
+        & $\PGgatMpeNsix$ & $\PGdgnMpeNsix$ \\
     \bottomrule
   \end{tabular}
 \end{table}

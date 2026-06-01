@@ -27,10 +27,12 @@ ROOT = Path(__file__).resolve().parents[1]
 RES = ROOT / "results" / "phase8"
 OUT = ROOT / "paper" / "figures" / "phase10_gat.pdf"
 
-ALGOS = ["qmix", "mlp_qmix", "gnn_qmix", "gat_qmix"]
+ALGOS = ["qmix", "mlp_qmix", "gnn_qmix", "gat_qmix", "dgn_qmix"]
 LABELS = {"qmix": "QMIX\n(no cap,\nno graph)", "mlp_qmix": "MLP-QMIX\n(cap,\nno graph)",
-          "gnn_qmix": "GNN-QMIX\n(GCN)", "gat_qmix": "GAT-QMIX\n(attention)"}
-COLORS = {"qmix": "#2ca02c", "mlp_qmix": "#9467bd", "gnn_qmix": "#d62728", "gat_qmix": "#ff7f0e"}
+          "gnn_qmix": "GNN-QMIX\n(GCN)", "gat_qmix": "GAT-QMIX\n(1-head\nattn)",
+          "dgn_qmix": "DGN-QMIX\n(multi-head\nattn)"}
+COLORS = {"qmix": "#2ca02c", "mlp_qmix": "#9467bd", "gnn_qmix": "#d62728",
+          "gat_qmix": "#ff7f0e", "dgn_qmix": "#8c564b"}
 NS = [4, 8]
 
 
@@ -54,7 +56,7 @@ def ci(v: np.ndarray):
 
 
 def main() -> None:
-    fig, axes = plt.subplots(1, len(NS), figsize=(8.6, 3.9), dpi=150)
+    fig, axes = plt.subplots(1, len(NS), figsize=(9.4, 3.9), dpi=150)
     n_seeds = None
     for ax, n in zip(axes, NS):
         for i, algo in enumerate(ALGOS):
@@ -73,9 +75,9 @@ def main() -> None:
         ax.set_ylim(bottom=0)
     axes[0].set_ylabel("Final-window return")
     seedtxt = f"{n_seeds} seeds" if n_seeds else "seeds"
-    fig.suptitle(f"The graph penalty is not GCN-specific: GAT-QMIX (attention) "
-                 f"beats GCN but still loses to no-graph ({seedtxt}, 95\\% CIs)",
-                 fontsize=10)
+    fig.suptitle(f"The graph penalty is not GCN-specific: single- and "
+                 f"multi-head attention beat the GCN but still lose to "
+                 f"no-graph ({seedtxt}, 95\\% CIs)", fontsize=10)
     fig.tight_layout(rect=[0, 0, 1, 0.94])
     OUT.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(OUT)
