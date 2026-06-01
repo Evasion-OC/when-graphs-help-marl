@@ -241,13 +241,12 @@ specific gaps motivate the present study:
         coordination structure rather than a heuristic over a fixed task.
   \item We implement \iql, \vdn, \qmix, and \gnnqmix\ in a single harness
         with shared encoder, mixer, optimiser, and exploration schedule
-        (Figure~\ref{fig:overview}B), so the only architectural difference
-        between \gnnqmix\ and \qmix\ is the GNN. To address Gap~2 directly,
-        we add \mlpqmix: a
-        parameter-matched no-graph control with byte-identical parameter
-        count to \gnnqmix\ but no neighbour aggregation, which isolates the
-        contribution of the \emph{graph} from that of the extra
-        \emph{capacity}.
+        (Figure~\ref{fig:overview}B), so the only difference between
+        \gnnqmix\ and \qmix\ is the GNN. To isolate the graph from the
+        capacity it adds (Gap~2) we include \mlpqmix, a parameter-matched
+        no-graph control (byte-identical parameter count, no neighbour
+        aggregation); and \gatqmix, a graph-\emph{attention} variant that
+        tests whether the result is specific to the fixed GCN.
   \item We pre-register three falsifiable hypotheses
         (Section~\ref{sec:hypotheses}) and test them with a pilot,
         a graph-regime sweep, and a depth $\times$ diameter ablation
@@ -261,7 +260,10 @@ specific gaps motivate the present study:
         \qmix\ while \gnnqmix\ falls far below both, so the penalty is the
         graph aggregation, not the added parameters --- and shows it
         survives a $5\times$ longer training budget at $n{=}\PEseeds$ seeds
-        (ruling out undertraining) and grows with team size.
+        (ruling out undertraining), grows monotonically with team size out
+        to $N{=}16$, replicates on the standard MPE \texttt{simple\_spread}
+        benchmark, and persists when the GCN is replaced by graph attention
+        (\S\ref{sec:results:mpe},~\S\ref{sec:results:capacity}).
   \item The depth--diameter alignment heuristic (H3) is falsified in favour
         of a sharper practitioner rule (\S\ref{sec:results:ablation}): a
         hard over-depth cliff means GCN depth should not exceed two in
@@ -448,8 +450,10 @@ combining \texttt{complete} ($d=1$), \texttt{ring} on $N=4$ ($d=2$),
 \subsection{Algorithms}
 \label{sec:algos}
 
-All five algorithms below (\iql, \vdn, \qmix, \gnnqmix, and the
-\mlpqmix\ control) share a per-agent Q-network --- an MLP of the form
+The five core algorithms below (\iql, \vdn, \qmix, \gnnqmix, and the
+\mlpqmix\ control; a sixth, the graph-attention variant \gatqmix, is
+introduced for the robustness check in \S\ref{sec:results:capacity})
+share a per-agent Q-network --- an MLP of the form
 $\Aagent_i \mapsto \mathrm{ReLU}(\mathrm{Linear}_{64})
 \rightarrow \mathrm{ReLU}(\mathrm{Linear}_{64})
 \rightarrow \mathrm{Linear}_{|\Aagent_i|}$ with parameters shared across
