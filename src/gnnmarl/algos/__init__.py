@@ -12,6 +12,7 @@ from typing import Any
 from .base import Algo, BaseAlgo
 from .gnn_qmix import GNNQMIX
 from .iql import IQL
+from .mlp_qmix import MLPQMIX
 from .qmix import QMIX
 from .vdn import VDN
 
@@ -22,6 +23,7 @@ __all__ = [
     "VDN",
     "QMIX",
     "GNNQMIX",
+    "MLPQMIX",
     "make_algo",
 ]
 
@@ -31,6 +33,7 @@ _REGISTRY: dict[str, type[BaseAlgo]] = {
     "vdn": VDN,
     "qmix": QMIX,
     "gnn_qmix": GNNQMIX,
+    "mlp_qmix": MLPQMIX,
 }
 
 
