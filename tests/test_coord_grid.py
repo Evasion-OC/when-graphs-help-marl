@@ -243,3 +243,16 @@ def test_goal_routing_reward_counts_agents_at_goal() -> None:
     # Goal is a real cell, so a co-located non-goal reward path is not triggered.
     env._place_agents([other, other, other, other])
     assert env._compute_reward() == 0.0
+
+
+def test_goal_dense_reward_decreases_with_distance() -> None:
+    env = CoordGrid(n_agents=2, grid_size=5, graph="ring", seed=0,
+                    goal_routing=True, goal_dense=True)
+    env.reset(seed=0)
+    g = env._goal
+    env._place_agents([g, g])
+    assert env._compute_reward() == 2.0  # both on goal -> max
+    far = (g + np.array([2, 2])) % env.grid_size
+    env._place_agents([g, far])
+    r = env._compute_reward()
+    assert 1.0 <= r < 2.0  # one on goal (1.0) + one farther (<1.0)

@@ -80,6 +80,7 @@ class CoordGrid:
         obs_mode: str = "full",
         obs_radius: int | None = None,
         goal_routing: bool = False,
+        goal_dense: bool = False,
     ) -> None:
         if n_agents < 1:
             raise ValueError(f"n_agents must be >= 1, got {n_agents}")
@@ -135,6 +136,11 @@ class CoordGrid:
         # over the coordination graph -- so GNN-QMIX has a channel the no-graph
         # controls lack, despite all algorithms receiving identical observations.
         self.goal_routing = bool(goal_routing)
+        # Dense shaping makes the goal *learnable*: instead of a sparse +1 only
+        # when exactly on the goal, each agent scores by how close it is. This
+        # lets the goal-seeing source learn to approach, turning the task into a
+        # valid test of whether the graph routes the goal to the other agents.
+        self.goal_dense = bool(goal_dense)
 
         self.n_agents = int(n_agents)
         self.grid_size = int(grid_size)
@@ -348,6 +354,18 @@ class CoordGrid:
 
     def _compute_reward(self) -> float:
         if self.goal_routing:
+            if self.goal_dense:
+                # Shaped: each agent scores 1 - (toroidal Manhattan distance to
+                # goal)/max_dist, in [0, 1]; summed over agents. An agent with no
+                # goal information cannot systematically reduce its distance, so
+                # the no-graph control's non-source agents stay near the random
+                # baseline while a routed graph can drive them to the goal.
+                gs = self.grid_size
+                raw = np.abs(self._positions - self._goal[None, :])     # [N, 2]
+                tor = np.minimum(raw, gs - raw)                         # toroidal
+                dist = tor.sum(axis=-1)                                 # [N]
+                max_dist = 2 * (gs // 2)
+                return float(np.sum(1.0 - dist / max_dist))
             # +1 per agent co-located with the secret goal cell. Only the source
             # observes the goal directly, so non-source agents must have it
             # routed to them over the graph to score.

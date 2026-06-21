@@ -35,9 +35,12 @@ sys.path.insert(0, str(REPO_ROOT / "src"))
 
 from gnnmarl.training import TrainConfig, train  # noqa: E402
 
+# Small grids: navigation is trivial, so the goal-seeing source clearly learns
+# (calibrated: QMIX rises well above chance), making this a *valid* test of
+# whether the graph routes the goal to the non-source agents.
 CELLS = (
-    ("ring", 4, 5, "ring-N4-d2"),
-    ("line", 6, 7, "line-N6-d5"),
+    ("ring", 4, 3, "ring-N4-g3"),
+    ("line", 6, 3, "line-N6-g3"),
 )
 # (run-name, algo, extra algo_kwargs)
 ARMS = (
