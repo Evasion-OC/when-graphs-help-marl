@@ -174,18 +174,11 @@ def main() -> int:
                 gap = float(g.mean() - q.mean())
                 from scipy import stats as sst
                 t_h1 = sst.ttest_ind(g, q, equal_var=False, alternative="greater")
-                # Cohen's d using pooled SD (Hedges' correction unnecessary
-                # at this magnitude). Sign convention: d > 0 favours GNN-QMIX.
-                s_g = float(g.std(ddof=1))
-                s_q = float(q.std(ddof=1))
-                pooled = float(np.sqrt((s_g ** 2 + s_q ** 2) / 2.0))
-                d_cohen = gap / pooled if pooled > 1e-9 else float("nan")
                 h1h2_rows.append({
                     "n_agents": n, "graph": graph,
                     "gnn_qmix_mean": float(g.mean()),
                     "qmix_mean": float(q.mean()),
                     "gap_mean": gap,
-                    "cohens_d": d_cohen,
                     "h1_p_one_sided": float(t_h1.pvalue),
                 })
 

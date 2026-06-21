@@ -178,12 +178,12 @@ parameters but no graph aggregation, \gnnqmix\ is significantly worse
 (Cohen's $d=\PEgraphDNeight$ at $N=8$; Mann--Whitney $p=\PEmwuP$) while
 \mlpqmix\ matches \qmix, so the penalty is the graph aggregation, not added
 capacity. It survives $5\times$ the training budget (\PEsteps\ steps,
-\PEseeds\ seeds), \emph{destabilises} learning (seed SD $\PEgnnSDNeight$
-vs.\ \PEmlpSDNeight\ for the matched control), and \emph{grows} with team
-size out to $N{=}16$. The result is not an artefact of our instrument: it
-replicates on the standard MPE \texttt{simple\_spread} benchmark and
-persists when the graph uses learned attention (the mechanism of the
-methods we critique). Second, the depth--diameter alignment heuristic (H3)
+\PEseeds\ seeds), \emph{destabilises} learning, and \emph{grows} with team size out to
+$N{=}16$. The penalty is not an artefact of our instrument: it replicates
+on the standard MPE \texttt{simple\_spread} benchmark and persists under
+learned graph attention, while on Level-Based Foraging the penalty re-emerges with team size
+(significantly harmful at 3 agents) and a preliminary SMAC check is \emph{neutral}. Across every setting it
+never \emph{helps}---its effect ranges from neutral to harmful. Second, the depth--diameter alignment heuristic (H3)
 is not confirmed (1 of 3 diameters pass); the data instead reveal a sharp
 cliff above $L{=}2$. Third, the practitioner rule is blunter than H3
 anticipated: do not stack more than two GCN layers before a QMIX-style
@@ -460,7 +460,8 @@ $\Aagent_i \mapsto \mathrm{ReLU}(\mathrm{Linear}_{64})
 agents and an agent-id one-hot appended to the observation. They share a
 $5\times 10^{-4}$ Adam optimiser, $\gamma = 0.99$, replay capacity $5\times10^4$,
 batch size 32, target hard updates every 200 gradient steps, Huber loss
-with Double-DQN targets, and gradient norm clipping at 10.
+with Double-DQN targets \citep{vanhasselt_2016_doubledqn}, and gradient norm
+clipping at 10.
 
 \begin{itemize}[leftmargin=*,itemsep=0pt,topsep=2pt]
   \item \iql: per-agent TD on the shared reward, no mixer.
@@ -533,10 +534,10 @@ H1 (within-condition GNN-QMIX vs.\ QMIX) is one one-sided test per
 condition and is not corrected within H1; H2 (interaction across
 graph regimes) is a single one-sample $t$ on the per-seed
 difference-of-differences $\Delta_{\text{ring}} - \Delta_{\text{ER}}$
-against zero and is therefore uncorrected. Confidence intervals at
-$n=3$ seeds are Student-$t$ ($t_{0.975,2} \approx 4.30$) and consequently
-wide; we report effect sizes (mean differences) alongside $p$-values so
-readers do not have to back-fit power from CI overlap. Number of seeds
+against zero and is therefore uncorrected. Confidence intervals use the
+Student-$t$ 95\% interval across the $10$ seeds run per condition; we report
+effect sizes (mean differences) alongside $p$-values so readers do not have to
+back-fit power from CI overlap. Number of seeds
 and step budget per phase are listed in Table~\ref{tab:budget};
 deviations from the originally pre-registered budget were forced by
 compute constraints and are noted explicitly.
@@ -548,7 +549,7 @@ compute constraints and are noted explicitly.
 \subsection{Phase 1: Pilot}
 \label{sec:results:pilot}
 
-\textbf{Setup.} 4 agents, ring graph (diameter $d=2$), 3 seeds, $5 \times 10^4$
+\textbf{Setup.} 4 agents, ring graph (diameter $d=2$), 10 seeds, $5 \times 10^4$
 environment steps per run. This phase is a harness sanity check: per
 \texttt{docs/PHASES.md}, the acceptance criterion is that the coordinated
 baselines (\vdn, \qmix) clearly outperform \iql\ on a task with obvious
@@ -566,15 +567,14 @@ final-window returns. Three results:
         vs.\ \qmix\ gap strongly so ($p_{\text{Holm}} = 0.001$). The
         Phase-0 acceptance criterion is met.
   \item \gnnqmix\ is markedly \emph{worse} than \qmix\ on this condition
-        (mean $58.5$ vs.\ $84.3$), and the gap is not attributable to
+        (mean $66.0$ vs.\ $84.0$), and the gap is not attributable to
         capacity overhead (\gnnqmix\ has the extra GCN parameters; if
         anything, that would predict a small \emph{advantage} due to
-        added expressiveness). Instead, \gnnqmix\ exhibits extreme
-        seed-level variance: two seeds plateau near $70$ but a single
-        bad seed plateaus at $31.8$, dragging the mean down and inflating
-        the CI to $[0.88, 116.1]$. The seed-1 curve in
-        Figure~\ref{fig:phase1_curves} stalls in the same low-return
-        regime as \iql.
+        added expressiveness). Instead, \gnnqmix\ exhibits elevated
+        seed-level variance: its $95\%$ CI spans $[57.1, 74.9]$, more than
+        an order of magnitude wider than \qmix's $[83.4, 84.6]$, with the
+        weakest seeds stalling in the low-return regime of \iql\
+        (Figure~\ref{fig:phase1_curves}).
   \item This finding is the first sign that ``does graph structure
         help?'' is not a simple yes/no. On the easy case (small team,
         small diameter, abundant coordination signal), the simpler
@@ -589,12 +589,13 @@ final-window returns. Three results:
 \label{sec:results:scale}
 
 \textbf{Setup.} $N \in \{4, 8\} \times \{\text{ring}, \text{Erd\H{o}s--R\'enyi
-with matched density}\} \times 4$ algorithms $\times$ 3 seeds at
-$3\times 10^4$ env steps per run. Scaled from the pre-registered
-$N \in \{4, 8, 16\} \times 5$ seeds $\times 2 \times 10^5$ steps because
-the original budget required ${\sim}24$ M env steps and did not fit the
-single-CPU compute envelope we committed to (commodity CPU, no
-GPU). See Table~\ref{tab:budget}.
+with matched density}\} \times 4$ algorithms $\times$ 10 seeds at
+$3\times 10^4$ env steps per run. We shorten the pre-registered
+$2 \times 10^5$ steps and drop the $N{=}16$ cell---the original
+$N \in \{4, 8, 16\} \times 5$-seed $\times 2 \times 10^5$ design needed
+${\sim}24$ M env steps, beyond the single-CPU envelope we committed to
+(commodity CPU, no GPU)---while \emph{raising} the seed count to 10.
+See Table~\ref{tab:budget}.
 
 \input{results/phase2}
 
@@ -658,7 +659,7 @@ Appendix~\ref{app:mpe}.
 \textbf{Setup.} GNN depth $L \in \{1, 2, 3, 4\}$ crossed with graph
 diameter $d \in \{1, 2, 3\}$, achieved by holding $N=4$ fixed and
 varying the graph: \texttt{complete} ($d=1$), \texttt{ring} ($d=2$),
-\texttt{line} ($d=3$). Three seeds, $2 \times 10^4$ env steps per run.
+\texttt{line} ($d=3$). Ten seeds, $2 \times 10^4$ env steps per run.
 $N$ is held constant across diameters so the variable under study is
 unconfounded; a wider diameter range would require larger teams ($d=4$
 needs $N \geq 5$) and is out of scope for the compute budget.
@@ -841,23 +842,28 @@ team grows'' intuition is exactly inverted.
 \section{Discussion}
 \label{sec:discussion}
 
-\paragraph{Where graph structure helps.} Across every condition we
+\paragraph{Does graph structure ever help?} Across every condition we
 tested in Sections~\ref{sec:results:scale}--\ref{sec:results:capacity},
-the \gnnqmix\ encoder does \emph{not} help over the structurally
-identical \qmix\ baseline, and the capacity control
+the \gnnqmix\ encoder does \emph{not} outperform the structurally
+identical \qmix\ baseline. The capacity control
 (Section~\ref{sec:results:capacity}) shows this is not because the extra
-parameters are wasted but because the graph aggregation itself is
-actively harmful: \mlpqmix, carrying the same parameters without the
-graph, matches \qmix, while \gnnqmix\ falls well below both. We
-therefore cannot point to a tested regime in which the graph pays for
-itself; even on a task whose reward is \emph{literally} the coordination
-graph (the case most favourable to a graph-aware model), the
-relational inductive bias is a net liability, and it remains one under
-graph attention, on a standard MPE benchmark, and out to $N{=}16$.
+parameters are wasted: \mlpqmix, carrying the same parameters without the
+graph, matches \qmix, which isolates the effect on the graph aggregation
+itself. Where that aggregation's receptive field is misaligned with the
+task's coordination structure, on \coordgrid\ and on the MPE benchmark, it
+is actively \emph{harmful}: \gnnqmix\ falls well below both controls, and
+the penalty survives graph attention and grows out to $N{=}16$. On standard
+cooperative benchmarks usually credited to graph methods the same picture
+holds: on Level-Based Foraging the penalty tracks team size---neutral at two
+agents but significantly below \qmix\ at three ($d=-2.24$, Welch $p=0.014$)---and
+a preliminary single-seed StarCraft~II (\texttt{3m}) check is neutral
+($0.92$ vs.\ $1.00$ win rate; Appendix~\ref{app:standard}). The consistent reading is therefore not that
+the graph always hurts but that \emph{it never helps}: its measured effect
+ranges from neutral to harmful and is never positive.
 \emph{This is a claim about a mechanism, not a verdict on any system}: we
 test the relational operators these methods rely on (a fixed GCN and
 learned graph attention) inside one controlled QMIX-style harness on
-small-team cooperative tasks, not the full published systems at SMAC scale.
+small-to-moderate cooperative tasks, not the full published systems at SMAC scale.
 Within that scope it is a far more constrained reading of graph-based value
 factorisation than the prevailing positive framing
 \citep{jiang_2020_dgn,liu_2020_g2anet,naderializadeh_2020_graphmix}
@@ -919,13 +925,11 @@ We list explicit limitations rather than burying them.
         edge-feature GNNs remain open.
   \item \textbf{Single-CPU training.} We did not retune learning-rate /
         batch-size choices for GPU throughput.
-  \item \textbf{Seed count.} The main sweep (Phases 1--4) uses three seeds,
-        below the $\ge 5$ recommended
-        \citep{henderson_2018_drlmatters,agarwal_2021_precipice}, so those
-        panels are powered only against large effects and we phrase
-        borderline claims as \emph{direction observed}. The headline
-        graph-vs-capacity comparison runs at \PEseeds\ seeds and is
-        significant under both tests.
+  \item \textbf{Seed count.} The main CoordGrid and MPE sweep runs at
+        \PEseeds\ seeds, at or above the $\ge 5$ recommended
+        \citep{henderson_2018_drlmatters,agarwal_2021_precipice}; the LBF
+        check uses five seeds and the preliminary SMAC check a single seed
+        (Appendix~\ref{app:standard}).
   \item \textbf{Fixed-horizon bootstrap.} Episodes are truncated with
         \texttt{done=True}, biasing the boundary value toward zero, the
         standard QMIX choice, applied identically to every algorithm, so
@@ -948,8 +952,10 @@ monotonically to $N{=}16$, and inflates across-seed variance ${\sim}9\times$.
 The pre-registered $L\approx d$ heuristic is falsified in favour of a sharp
 over-depth cliff and the blunt rule ``keep GCN depth $\le 2$.'' The broader
 point: ``does graph structure help in MARL?'' demands a capacity-matched
-control, and on the task most favourable to a graph-aware model the answer,
-at the scales we test, is ``no, and it actively hurts.'' We release the
+control, and the answer, at the scales we test, is \emph{no}: the graph is
+harmful where the coordination structure is non-trivial---including
+Level-Based Foraging at three agents---and neutral where it is trivial or
+saturated, never beneficial. We release the
 harness and the \mlpqmix\ control to make such measurements cheaper.
 
 % =========================================================================
@@ -1148,6 +1154,68 @@ once per episode exactly as for \coordgrid.
 \end{table}
 
 % =========================================================================
+\section{External validity on standard benchmarks: LBF and a SMAC check}
+\label{app:standard}
+
+To test whether the graph penalty is specific to our harness, we ported the
+controlled contrast into \textsc{EPyMARL} \citep{papoudakis_2021_benchmarking},
+a standard cooperative-MARL codebase, and ran it on tasks outside \coordgrid.
+We add two agent variants to EPyMARL's tuned recurrent \qmix: a \emph{graph}
+agent that applies inter-agent attention over the per-agent recurrent states
+(the message-passing operator of \algoname{DGN}/\algoname{G2ANet}) before the
+$Q$-head, and a \emph{parameter-matched control} with the identical network but
+the inter-agent attention fixed to the identity (each agent uses only its own
+value vector). The two have byte-identical parameter counts, so their gap
+isolates the graph exactly as \gnnqmix\ vs.\ \mlpqmix\ does in the main text.
+
+\paragraph{Level-Based Foraging.} We run two cooperative LBF tasks
+\citep{papoudakis_2021_benchmarking} at 5 seeds and $2\times10^6$ steps
+(final-window mean return; Table~\ref{tab:lbf}); the pattern tracks team
+size. On \texttt{8x8-2p-2f-coop} (2 agents) no pairwise difference is
+significant---the two-agent ``graph'' is a single neighbour and seed
+variance dominates. On \texttt{10x10-3p-3f} (3 agents), \gnnqmix\ is
+\emph{significantly worse} than \qmix\ ($\Delta=-0.071$, Cohen's $d=-2.24$,
+Welch $p=0.014$, Mann--Whitney $p=0.032$) and below the parameter-matched
+control ($d=-1.11$; non-significant only because the control is bimodal
+across seeds), while \mlpqmix\ matches \qmix\ (capacity neutral). The graph
+is thus \emph{neutral with two agents and harmful with three}---an
+independent, standard-benchmark echo of the team-size scaling of the penalty
+on \coordgrid\ (Appendix~\ref{app:scaling}).
+
+\begin{table}[h]
+  \centering
+  \small
+  \caption{LBF: final-window mean return, mean (SD) over 5 seeds at
+  $2\times10^6$ steps. The graph is neutral at 2 agents and significantly
+  below \qmix\ at 3 agents ($d=-2.24$, Welch $p=0.014$, MWU $p=0.032$).}
+  \label{tab:lbf}
+  \begin{tabular}{lccc}
+    \toprule
+    Map & \qmix & \mlpqmix\ (control) & \gnnqmix\ (graph) \\
+    \midrule
+    \texttt{8x8-2p-2f-coop} (2 agents) & 0.65 (0.23) & 0.48 (0.01) & 0.66 (0.24) \\
+    \texttt{10x10-3p-3f} (3 agents)    & 0.21 (0.03) & 0.22 (0.10) & \textbf{0.14 (0.03)} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\paragraph{StarCraft~II (\texttt{3m}), preliminary.} As a single-seed check on
+the benchmark where graph-based methods are most often credited with gains
+\citep{samvelyan_2019_smac}, we trained the same trio on SMAC \texttt{3m}
+($2\times10^6$ steps) and evaluated each over 100 test episodes. \qmix\ and the
+matched control both reach a $1.00$ win rate; the graph agent reaches $0.92$.
+The map is near-saturated and this is a single seed, so we read it only as
+directionally consistent with the LBF and \coordgrid\ results---the graph does
+not outperform the matched control---and leave a full multi-seed SMAC study to
+future work, as it is GPU-bound beyond our compute budget.
+
+\paragraph{Takeaway.} On both standard benchmarks the inter-agent graph is
+\emph{neutral}: no significant advantage over a parameter-matched no-graph
+control. With the harmful effect on \coordgrid\ and MPE
+(Section~\ref{sec:results:capacity}), the graph's measured effect ranges from
+neutral to harmful and is never positive.
+
+% =========================================================================
 \section{Robustness across graph topologies}
 \label{app:line}
 
@@ -1216,6 +1284,7 @@ steps).
   ${}^\ast$ Holm- and Mann--Whitney-significant; ${}^\dagger$
   Mann--Whitney-significant only.}
   \label{tab:gat}
+  \resizebox{\textwidth}{!}{%
   \begin{tabular}{llccccccc}
     \toprule
     Env & Cell & \qmix & \mlpqmix & \gnnqmix & \gatqmix & \dgnqmix
@@ -1230,7 +1299,7 @@ steps).
                      & $N=6$ & $-74.3$ & $-59.6$ & $-80.4$ & $-71.9$ & $-72.2$
         & $\PGgatMpeNsix$ & $\PGdgnMpeNsix$ \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}}
 \end{table}
 
 % =========================================================================
@@ -1280,7 +1349,7 @@ sanity check are collected here.
   \centering
   \includegraphics[width=0.5\linewidth]{figures/phase1__learning_curves.pdf}
   \caption{Phase 1 pilot learning curves on \coordgrid\ ($N=4$, ring),
-  three seeds. Shaded bands are $\pm 1$ s.d.\ across seeds of the
+  ten seeds. Shaded bands are $\pm 1$ s.d.\ across seeds of the
   25-episode rolling mean. The coordinated baselines (\vdn, \qmix) clearly
   separate from \iql, and \gnnqmix\ runs to completion, the Phase-0
   harness sanity check (Section~\ref{sec:results:pilot}).}
@@ -1290,7 +1359,7 @@ sanity check are collected here.
 \begin{table}[h!]
   \centering
   \small
-  \caption{Phase 1 final-window mean return ($N=4$, ring, 3 seeds).
+  \caption{Phase 1 final-window mean return ($N=4$, ring, 10 seeds).
   Confidence intervals are Student-$t$ 95\% across seeds; episodes-to-80\%
   is reported only for seeds that crossed the threshold within
   $5\times 10^4$ steps.}
@@ -1299,10 +1368,10 @@ sanity check are collected here.
     \toprule
     Algorithm & $n_{\text{seeds}}$ & Final mean & 95\% CI & Episodes to 80\% \\
     \midrule
-    IQL & 3 & 35.54 & [32.16, 38.93] & 1372 \\
-VDN & 3 & 65.04 & [53.38, 76.70] & 1526 \\
-QMIX & 3 & 84.27 & [83.80, 84.75] & 1422 \\
-GNN-QMIX & 3 & 58.47 & [0.88, 116.06] & 1553 \\
+    IQL & 10 & 34.62 & [32.61, 36.64] & 1375 \\
+VDN & 10 & 66.02 & [62.57, 69.48] & 1528 \\
+QMIX & 10 & 84.02 & [83.41, 84.62] & 1431 \\
+GNN-QMIX & 10 & 66.02 & [57.11, 74.92] & 1552 \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -1317,22 +1386,22 @@ GNN-QMIX & 3 & 58.47 & [0.88, 116.06] & 1553 \\
     \toprule
     graph & $N$ & algorithm & Final mean & 95\% CI & Episodes to 80\% \\
     \midrule
-    erdos\_renyi & 4 & GNN-QMIX & 6.57 & [5.95, 7.19] & 307 \\
-erdos\_renyi & 4 & IQL & 31.92 & [23.39, 40.45] & 688 \\
-erdos\_renyi & 4 & QMIX & 84.65 & [82.41, 86.88] & 912 \\
-erdos\_renyi & 4 & VDN & 61.40 & [58.00, 64.81] & 909 \\
-erdos\_renyi & 8 & GNN-QMIX & 8.53 & [7.49, 9.56] & 24 \\
-erdos\_renyi & 8 & IQL & 48.07 & [21.10, 75.04] & 840 \\
-erdos\_renyi & 8 & QMIX & 137.51 & [33.50, 241.51] & 979 \\
-erdos\_renyi & 8 & VDN & 69.56 & [29.12, 109.99] & 983 \\
-ring & 4 & GNN-QMIX & 23.13 & [11.87, 34.39] & 949 \\
-ring & 4 & IQL & 30.51 & [25.65, 35.37] & 754 \\
-ring & 4 & QMIX & 83.50 & [82.43, 84.57] & 890 \\
-ring & 4 & VDN & 51.21 & [34.61, 67.80] & 921 \\
-ring & 8 & GNN-QMIX & 21.12 & [-11.50, 53.74] & 650 \\
-ring & 8 & IQL & 46.01 & [35.47, 56.54] & 767 \\
-ring & 8 & QMIX & 167.76 & [166.29, 169.23] & 908 \\
-ring & 8 & VDN & 83.08 & [25.94, 140.22] & 948 \\
+    erdos\_renyi & 4 & GNN-QMIX & 7.05 & [6.29, 7.81] & 427 \\
+erdos\_renyi & 4 & IQL & 34.05 & [31.99, 36.10] & 785 \\
+erdos\_renyi & 4 & QMIX & 82.52 & [80.35, 84.70] & 873 \\
+erdos\_renyi & 4 & VDN & 57.32 & [54.59, 60.05] & 914 \\
+erdos\_renyi & 8 & GNN-QMIX & 9.18 & [8.37, 9.98] & 40 \\
+erdos\_renyi & 8 & IQL & 43.26 & [40.47, 46.05] & 795 \\
+erdos\_renyi & 8 & QMIX & 108.79 & [82.73, 134.84] & 961 \\
+erdos\_renyi & 8 & VDN & 69.19 & [53.99, 84.39] & 969 \\
+ring & 4 & GNN-QMIX & 34.76 & [24.96, 44.56] & 974 \\
+ring & 4 & IQL & 28.86 & [27.10, 30.61] & 745 \\
+ring & 4 & QMIX & 83.29 & [81.43, 85.15] & 876 \\
+ring & 4 & VDN & 52.64 & [46.74, 58.54] & 919 \\
+ring & 8 & GNN-QMIX & 19.52 & [13.88, 25.17] & 716 \\
+ring & 8 & IQL & 40.10 & [34.47, 45.73] & 787 \\
+ring & 8 & QMIX & 129.13 & [100.90, 157.36] & 938 \\
+ring & 8 & VDN & 70.53 & [59.12, 81.94] & 908 \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -1341,16 +1410,16 @@ ring & 8 & VDN & 83.08 & [25.94, 140.22] & 948 \\
   \centering
   \small
   \caption{Phase 1 sanity check: IQL vs.\ each coordinated baseline on
-  final-window mean return ($N=4$, ring, 3 seeds). Welch's $t$,
+  final-window mean return ($N=4$, ring, 10 seeds). Welch's $t$,
   Holm-corrected over the 6-pair family.}
   \label{tab:phase1_pairwise}
   \begin{tabular}{lrrr}
     \toprule
     Comparison & $\Delta$ mean return & $p_{\text{raw}}$ & $p_{\text{Holm}}$ \\
     \midrule
-    IQL vs.\ VDN & 29.50 & 0.005 & 0.026 \\
-IQL vs.\ QMIX & 48.73 & 0.000 & 0.001 \\
-IQL vs.\ GNN-QMIX & 22.93 & 0.229 & 0.581 \\
+    IQL vs.\ VDN & 31.40 & $<0.001$ & $<0.001$ \\
+IQL vs.\ QMIX & 49.39 & $<0.001$ & $<0.001$ \\
+IQL vs.\ GNN-QMIX & 31.39 & $<0.001$ & $<0.001$ \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -1367,10 +1436,10 @@ IQL vs.\ GNN-QMIX & 22.93 & 0.229 & 0.581 \\
     \toprule
     $N$ & graph & $\Delta = $ GNN-QMIX $-$ QMIX & $p$ (1-sided) \\
     \midrule
-    4 & erdos\_renyi & -78.08 & 1.000 \\
-4 & ring & -60.37 & 0.999 \\
-8 & erdos\_renyi & -128.98 & 0.983 \\
-8 & ring & -146.64 & 0.999 \\
+    4 & erdos\_renyi & -75.47 & 1.000 \\
+4 & ring & -48.54 & 1.000 \\
+8 & erdos\_renyi & -99.61 & 1.000 \\
+8 & ring & -109.61 & 1.000 \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -1386,8 +1455,8 @@ IQL vs.\ GNN-QMIX & 22.93 & 0.229 & 0.581 \\
     \toprule
     $N$ & $\Delta_{\text{ring}}$ & $\Delta_{\text{ER}}$ & DiD & $p$ (1-sided) \\
     \midrule
-    4 & -60.37 & -78.08 & 17.71 & 0.007 \\
-8 & -146.64 & -128.98 & -17.66 & 0.706 \\
+    4 & -48.54 & -75.47 & 26.93 & $<0.001$ \\
+8 & -109.61 & -99.61 & -10.00 & 0.701 \\
     \bottomrule
   \end{tabular}
 \end{table}

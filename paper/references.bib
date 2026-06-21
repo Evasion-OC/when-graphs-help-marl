@@ -1,6 +1,5 @@
 % ============================================================
-% References for "When do Graphs Help MARL?"
-% Generated and verified by web search.
+% References for "When Does Graph Structure Help in MARL?"
 % ============================================================
 
 % -------------------- Value-factorization MARL --------------------
@@ -79,17 +78,6 @@
   note      = {arXiv:1911.10715}
 }
 
-@article{naderializadeh_2021_wireless,
-  author  = {Naderializadeh, Navid and Sydir, Jaroslaw J. and Simsek, Meryem and Nikopour, Hosein},
-  title   = {Resource Management in Wireless Networks via Multi-Agent Deep Reinforcement Learning},
-  journal = {IEEE Transactions on Wireless Communications},
-  volume  = {20},
-  number  = {6},
-  pages   = {3507--3523},
-  year    = {2021},
-  note    = {arXiv:2002.06215}
-}
-
 @misc{naderializadeh_2020_graphmix,
   author        = {Naderializadeh, Navid and Hung, Fan H. and Soleyman, Sean and Khosla, Deepak},
   title         = {Graph Convolutional Value Decomposition in Multi-Agent Reinforcement Learning},
@@ -105,15 +93,6 @@
   pages     = {980--991},
   year      = {2020},
   note      = {arXiv:1910.00091}
-}
-
-@inproceedings{iqbal_2019_maac,
-  author    = {Iqbal, Shariq and Sha, Fei},
-  title     = {Actor-Attention-Critic for Multi-Agent Reinforcement Learning},
-  booktitle = {Proceedings of the 36th International Conference on Machine Learning (ICML)},
-  pages     = {2961--2970},
-  year      = {2019},
-  note      = {arXiv:1810.02912}
 }
 
 % -------------------- Foundational GNN --------------------
@@ -150,17 +129,7 @@
   note          = {arXiv:1806.01261}
 }
 
-% -------------------- Foundational deep RL --------------------
-
-@article{mnih_2015_dqn,
-  author  = {Mnih, Volodymyr and Kavukcuoglu, Koray and Silver, David and Rusu, Andrei A. and Veness, Joel and Bellemare, Marc G. and Graves, Alex and Riedmiller, Martin and Fidjeland, Andreas K. and Ostrovski, Georg and Petersen, Stig and Beattie, Charles and Sadik, Amir and Antonoglou, Ioannis and King, Helen and Kumaran, Dharshan and Wierstra, Daan and Legg, Shane and Hassabis, Demis},
-  title   = {Human-Level Control through Deep Reinforcement Learning},
-  journal = {Nature},
-  volume  = {518},
-  number  = {7540},
-  pages   = {529--533},
-  year    = {2015}
-}
+% -------------------- Deep RL --------------------
 
 @inproceedings{vanhasselt_2016_doubledqn,
   author    = {van Hasselt, Hado and Guez, Arthur and Silver, David},
@@ -172,15 +141,6 @@
 }
 
 % -------------------- Actor-critic MARL --------------------
-
-@inproceedings{foerster_2018_coma,
-  author    = {Foerster, Jakob N. and Farquhar, Gregory and Afouras, Triantafyllos and Nardelli, Nantas and Whiteson, Shimon},
-  title     = {Counterfactual Multi-Agent Policy Gradients},
-  booktitle = {Proceedings of the Thirty-Second AAAI Conference on Artificial Intelligence},
-  pages     = {2974--2982},
-  year      = {2018},
-  note      = {arXiv:1705.08926}
-}
 
 @inproceedings{lowe_2017_maddpg,
   author    = {Lowe, Ryan and Wu, Yi and Tamar, Aviv and Harb, Jean and Abbeel, Pieter and Mordatch, Igor},
@@ -229,27 +189,15 @@
   note      = {arXiv:1902.04043}
 }
 
-% MPE was introduced alongside MADDPG (Lowe et al., 2017); see lowe_2017_maddpg.
-
-% -------------------- Optional --------------------
-
-@article{tampuu_2017_multiagent,
-  author  = {Tampuu, Ardi and Matiisen, Tambet and Kodelja, Dorian and Kuzovkin, Ilya and Korjus, Kristjan and Aru, Juhan and Aru, Jaan and Vicente, Raul},
-  title   = {Multiagent Cooperation and Competition with Deep Reinforcement Learning},
-  journal = {PLoS ONE},
-  volume  = {12},
-  number  = {4},
-  pages   = {e0172395},
-  year    = {2017}
-}
-
-@inproceedings{wang_2021_rode,
-  author    = {Wang, Tonghan and Gupta, Tarun and Mahajan, Anuj and Peng, Bei and Whiteson, Shimon and Zhang, Chongjie},
-  title     = {{RODE}: Learning Roles to Decompose Multi-Agent Tasks},
-  booktitle = {International Conference on Learning Representations (ICLR)},
+@inproceedings{papoudakis_2021_benchmarking,
+  author    = {Papoudakis, Georgios and Christianos, Filippos and Sch{\"a}fer, Lukas and Albrecht, Stefano V.},
+  title     = {Benchmarking Multi-Agent Deep Reinforcement Learning Algorithms in Cooperative Tasks},
+  booktitle = {Advances in Neural Information Processing Systems (NeurIPS), Datasets and Benchmarks Track},
   year      = {2021},
-  note      = {arXiv:2010.01523}
+  note      = {arXiv:2006.07869}
 }
+
+% -------------------- Problem formulation --------------------
 
 @book{oliehoek_2016_decpomdp,
   author    = {Oliehoek, Frans A. and Amato, Christopher},
@@ -259,7 +207,7 @@
   isbn      = {978-3-319-28929-8}
 }
 
-% -------------------- Added per pre-submission review --------------------
+% -------------------- Additional MARL methods --------------------
 
 @inproceedings{wang_2021_qplex,
   author    = {Wang, Jianhao and Ren, Zhizhou and Liu, Terry and Yu, Yang and Zhang, Chongjie},
@@ -291,12 +239,4 @@
   booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
   year      = {2016},
   note      = {arXiv:1605.06676}
-}
-
-@inproceedings{alon_2021_oversquashing,
-  author    = {Alon, Uri and Yahav, Eran},
-  title     = {On the Bottleneck of Graph Neural Networks and its Practical Implications},
-  booktitle = {International Conference on Learning Representations (ICLR)},
-  year      = {2021},
-  note      = {arXiv:2006.05205}
 }

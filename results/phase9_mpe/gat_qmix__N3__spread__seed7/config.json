@@ -1,0 +1,33 @@
+{
+  "algo": "gat_qmix",
+  "algo_kwargs": {
+    "batch_size": 32,
+    "buffer_capacity": 50000,
+    "gamma": 0.99,
+    "gnn_hidden": 64,
+    "gnn_layers": 2,
+    "lr": 0.0005,
+    "target_update_interval": 200
+  },
+  "device": "auto",
+  "env": "mpe:simple_spread",
+  "env_kwargs": {
+    "k_neighbors": 2,
+    "local_ratio": 0.5,
+    "max_cycles": 25,
+    "n_agents": 3
+  },
+  "eps_anneal_steps": 120000,
+  "eps_end": 0.05,
+  "eps_start": 1.0,
+  "log_dir": "results/phase9_mpe",
+  "n_actions": 5,
+  "n_agents": 3,
+  "obs_dim": 18,
+  "run_id": "gat_qmix__N3__spread__seed7",
+  "seed": 7,
+  "state_dim": 54,
+  "total_env_steps": 150000,
+  "update_every": 4,
+  "warmup_steps": 200
+}

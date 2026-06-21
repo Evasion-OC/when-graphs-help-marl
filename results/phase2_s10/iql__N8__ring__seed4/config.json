@@ -1,0 +1,33 @@
+{
+  "algo": "iql",
+  "algo_kwargs": {
+    "batch_size": 32,
+    "buffer_capacity": 50000,
+    "gamma": 0.99,
+    "gnn_hidden": 64,
+    "gnn_layers": 2,
+    "lr": 0.0005,
+    "target_update_interval": 200
+  },
+  "device": "auto",
+  "env": "coord_grid",
+  "env_kwargs": {
+    "episode_steps": 25,
+    "graph": "ring",
+    "grid_size": 5,
+    "n_agents": 8
+  },
+  "eps_anneal_steps": 24000,
+  "eps_end": 0.05,
+  "eps_start": 1.0,
+  "log_dir": "results/phase2_s10",
+  "n_actions": 5,
+  "n_agents": 8,
+  "obs_dim": 14,
+  "run_id": "iql__N8__ring__seed4",
+  "seed": 4,
+  "state_dim": 16,
+  "total_env_steps": 30000,
+  "update_every": 4,
+  "warmup_steps": 200
+}

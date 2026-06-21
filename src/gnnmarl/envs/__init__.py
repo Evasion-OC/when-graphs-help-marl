@@ -23,4 +23,7 @@ def make_env(name: str, **kwargs: Any) -> MultiAgentEnv:
     if name.startswith("mpe:"):
         from gnnmarl.envs.mpe_adapter import MPEEnvAdapter
         return MPEEnvAdapter(env_name=name.split(":", 1)[1], **kwargs)
+    if name.startswith("lbf:") or name.startswith("rware:"):
+        from gnnmarl.envs.epymarl_adapter import GymMARLAdapter
+        return GymMARLAdapter(env_id=name.split(":", 1)[1], **kwargs)
     raise ValueError(f"Unknown env name: {name!r}")

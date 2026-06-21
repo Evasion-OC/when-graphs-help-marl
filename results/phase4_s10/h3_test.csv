@@ -1,0 +1,4 @@
+diameter,argmax_depth,peak_mean_return,floor_mean_return,relative_range,non_flat,within_window,h3_match
+1,3,6.766249999999999,6.18,0.08664326621097354,0,0,0
+2,2,16.03375,4.4262500000000005,0.7239416855071334,1,1,1
+3,1,20.71,5.54125,0.732436021245775,1,0,0

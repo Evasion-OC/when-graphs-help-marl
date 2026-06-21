@@ -1,0 +1,33 @@
+{
+  "algo": "mlp_qmix",
+  "algo_kwargs": {
+    "batch_size": 32,
+    "buffer_capacity": 50000,
+    "gamma": 0.99,
+    "gnn_hidden": 64,
+    "gnn_layers": 2,
+    "lr": 0.0005,
+    "target_update_interval": 200
+  },
+  "device": "auto",
+  "env": "coord_grid",
+  "env_kwargs": {
+    "episode_steps": 25,
+    "graph": "ring",
+    "grid_size": 5,
+    "n_agents": 16
+  },
+  "eps_anneal_steps": 120000,
+  "eps_end": 0.05,
+  "eps_start": 1.0,
+  "log_dir": "results/phase11_scale",
+  "n_actions": 5,
+  "n_agents": 16,
+  "obs_dim": 22,
+  "run_id": "mlp_qmix__N16__ring__seed2",
+  "seed": 2,
+  "state_dim": 32,
+  "total_env_steps": 150000,
+  "update_every": 4,
+  "warmup_steps": 200
+}

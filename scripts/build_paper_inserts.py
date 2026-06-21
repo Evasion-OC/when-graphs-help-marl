@@ -32,10 +32,6 @@ PAPER_FIGS = REPO_ROOT / "paper" / "figures"
 ALGO_LABEL = {"iql": "IQL", "vdn": "VDN", "qmix": "QMIX", "gnn_qmix": "GNN-QMIX"}
 
 
-def _tex_escape(s: str) -> str:
-    return s.replace("_", r"\_")
-
-
 def _fmt(x: float, digits: int = 2) -> str:
     if x is None or (isinstance(x, float) and (np.isnan(x) or np.isinf(x))):
         return "--"
@@ -180,7 +176,7 @@ def phase2() -> None:
         ci = f"[{_fmt(r['final_ci_lo'])}, {_fmt(r['final_ci_hi'])}]"
         ep80 = _fmt(r["ep80_mean"], 0) if pd.notna(r["ep80_mean"]) else "--"
         rows.append(
-            f"{_tex_escape(r['graph'])} & {int(r['n_agents'])} & "
+            f"{r['graph']} & {int(r['n_agents'])} & "
             f"{ALGO_LABEL.get(r['algo'], r['algo'])} & "
             f"{_fmt(r['final_mean'])} & {ci} & {ep80} \\\\"
         )
@@ -190,9 +186,8 @@ def phase2() -> None:
         h = pd.read_csv(h_path)
         if not h.empty:
             lines = [
-                f"{int(r['n_agents'])} & {_tex_escape(r['graph'])} & {_fmt(r['gap_mean'])} "
-                f"& {_fmt(r.get('cohens_d', float('nan')))} & "
-                f"{_fmt(r['h1_p_one_sided'], 3)} \\\\"
+                f"{int(r['n_agents'])} & {r['graph']} & {_fmt(r['gap_mean'])} "
+                f"& {_fmt(r['h1_p_one_sided'], 3)} \\\\"
                 for _, r in h.iterrows()
             ]
             h_block = (
@@ -200,15 +195,14 @@ def phase2() -> None:
                 "  \\centering\n"
                 "  \\small\n"
                 "  \\caption{H1 (within-condition): GNN-QMIX minus QMIX in "
-                "mean final-window return, with Cohen's $d$ effect size "
-                "(pooled SD, sign convention $d > 0$ favours GNN-QMIX). "
-                "$p$-values are one-sided Welch $t$ ($H_a$: \\gnnqmix\\ $>$ "
-                "\\qmix), not corrected (single test per condition).}\n"
+                "mean final-window return. $p$-values are one-sided Welch "
+                "$t$ ($H_a$: \\gnnqmix\\ $>$ \\qmix), not corrected (single "
+                "test per condition).}\n"
                 "  \\label{tab:phase2_h1}\n"
-                "  \\begin{tabular}{rlrrr}\n"
+                "  \\begin{tabular}{rlrr}\n"
                 "    \\toprule\n"
-                "    $N$ & graph & $\\Delta = $ GNN $-$ QMIX & "
-                "Cohen's $d$ & $p$ (1-sided) \\\\\n"
+                "    $N$ & graph & $\\Delta = $ GNN-QMIX $-$ QMIX & "
+                "$p$ (1-sided) \\\\\n"
                 "    \\midrule\n"
                 f"    {chr(10).join(lines)}\n"
                 "    \\bottomrule\n"
@@ -250,12 +244,9 @@ def phase2() -> None:
             "\\begin{figure}[t]\n"
             "  \\centering\n"
             f"  \\includegraphics[width=0.78\\linewidth]{{figures/{forest}}}\n"
-            "  \\caption{Phase 2 forest plot: episodes to 80\\% of each "
-            "algorithm's \\emph{own} final-window return, per algorithm "
-            "$\\times$ condition. Lower is better. Bars are 95\\% Student-$t$ "
-            "CIs across seeds; CIs that extend into negative values reflect "
-            "the conservative Student-$t$ interval with $n=3$ and should be "
-            "interpreted as 'no lower bound resolved.'}\n"
+            "  \\caption{Phase 2 forest plot: episodes to 80\\% of best final-"
+            "window return per algorithm $\\times$ condition. Lower is better. "
+            "Bars are 95\\% Student-$t$ CIs across seeds.}\n"
             "  \\label{fig:phase2_forest}\n"
             "\\end{figure}\n"
         )
@@ -301,12 +292,10 @@ def phase4() -> None:
     if h3_path.exists():
         h3 = pd.read_csv(h3_path)
         if not h3.empty:
-            # Use 3-dp on relative_range so the 9.77% vs 10% boundary is
-            # visible (would round to 0.10 at 2dp and look like a pass-by-rounding).
             lines = [
                 f"{int(r['diameter'])} & {int(r['argmax_depth'])} & "
-                f"{_fmt(r['peak_mean_return'])} & {_fmt(r['relative_range'], 3)} & "
-                + (r"\checkmark" if int(r['h3_match']) else r"$\times$") + r" \\"
+                f"{_fmt(r['peak_mean_return'])} & {_fmt(r['relative_range'])} & "
+                f"{'\\\\checkmark' if int(r['h3_match']) else '$\\\\times$'} \\\\"
                 for _, r in h3.iterrows()
             ]
             n_match = int(h3["h3_match"].sum())
