@@ -56,3 +56,4 @@ paper/*.synctex.gz
 
 # Stage A smoke scratch (kept out until results are curated)
 results/phaseA_smoke/
+results/phaseA_repair/

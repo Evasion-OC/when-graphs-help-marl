@@ -117,6 +117,11 @@ class BaseAlgo(nn.Module, ABC):
         # GNN-specific (ignored by non-GNN algos).
         gnn_layers: int = 2,
         gnn_hidden: int = 64,
+        # Anti-over-smoothing knobs for the GCN encoder (off by default so the
+        # paper's depth ablation keeps its plain-GCN semantics). When on, each
+        # GCN layer becomes ``h + ReLU(LayerNorm(A_hat h W))`` (GCNII-flavoured).
+        gnn_residual: bool = False,
+        gnn_layernorm: bool = False,
     ):
         super().__init__()
         self.n_agents = n_agents
@@ -131,6 +136,8 @@ class BaseAlgo(nn.Module, ABC):
         self.seed = seed
         self.gnn_layers = gnn_layers
         self.gnn_hidden = gnn_hidden
+        self.gnn_residual = gnn_residual
+        self.gnn_layernorm = gnn_layernorm
 
         # Deterministic init: seed torch globally before module construction so
         # the per-component generators below derive from a known state.

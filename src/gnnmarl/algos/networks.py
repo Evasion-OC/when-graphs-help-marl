@@ -99,19 +99,33 @@ class GCNStack(nn.Module):
     stacks (helpful in the Phase-4 depth ablation).
     """
 
-    def __init__(self, in_dim: int, hidden_dim: int, n_layers: int):
+    def __init__(
+        self,
+        in_dim: int,
+        hidden_dim: int,
+        n_layers: int,
+        residual: bool = False,
+        layernorm: bool = False,
+    ):
         super().__init__()
         if n_layers < 1:
             raise ValueError(f"GCNStack requires n_layers >= 1, got {n_layers}")
         self.in_dim = in_dim
         self.hidden_dim = hidden_dim
         self.n_layers = n_layers
+        self.residual = bool(residual)
+        self.layernorm = bool(layernorm)
 
         layers: list[nn.Linear] = []
         for layer_idx in range(n_layers):
             din = in_dim if layer_idx == 0 else hidden_dim
             layers.append(nn.Linear(din, hidden_dim, bias=True))
         self.layers = nn.ModuleList(layers)
+        self.norms = (
+            nn.ModuleList([nn.LayerNorm(hidden_dim) for _ in range(n_layers)])
+            if self.layernorm
+            else None
+        )
 
     @staticmethod
     def _normalize_adj(adj: torch.Tensor) -> torch.Tensor:
@@ -157,10 +171,17 @@ class GCNStack(nn.Module):
         stack — do not add it inside.
         """
         norm = self._normalize_adj(adj)
-        for lin in self.layers:
+        for idx, lin in enumerate(self.layers):
             # Aggregate neighbours then project: A_hat @ H @ W
             agg = torch.bmm(norm, h)        # [B, N, in/hidden]
-            h = F.relu(lin(agg))            # [B, N, hidden]
+            out = lin(agg)
+            if self.norms is not None:
+                out = self.norms[idx](out)  # LayerNorm before the nonlinearity
+            out = F.relu(out)               # [B, N, hidden]
+            # Residual skip when shapes line up (anti-over-smoothing). With the
+            # default flags this branch never runs, so plain-GCN behaviour and
+            # the depth ablation are unchanged.
+            h = h + out if (self.residual and out.shape == h.shape) else out
         return h
 
 
