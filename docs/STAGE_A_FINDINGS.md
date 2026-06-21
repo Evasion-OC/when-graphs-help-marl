@@ -74,3 +74,30 @@ This is a real new experiment with uncertain payoff, not p-hacking. But the
 accumulated evidence (graph dominated in every controlled condition so far)
 means the base rate for a strong positive is now low. Pursue only as a bounded,
 pre-registered probe — and report honestly if it, too, comes back null.
+
+## Experiment 3 — Goal-routing task (H7): INCONCLUSIVE (task not learned)
+
+We built the convention-proof routing task and tested QMIX / MLP-QMIX /
+gnn_repair on it (3 seeds, 30k steps).
+
+| cell | chance | QMIX | MLP-QMIX | gnn_repair | A |
+|------|--------|------|----------|------------|---|
+| ring-N4 (d2) | ~4.0 | 6.1 | 6.4 | 5.5 | −0.9 |
+| line-N6 (d5) | ~3.1 | 3.6 | 3.3 | 3.3 | −0.3 |
+
+**Verdict: inconclusive, not a clean negative.** Every arm sits at/near chance —
+including QMIX, whose source agent *can see the goal*. The task was simply not
+learned by anyone at this budget (rendezvous at an exact random cell is too
+sparse), so it does not fairly test the routing hypothesis. To turn it into a
+valid test we would need to make it *learnable* (denser reward shaping, a
+smaller grid, or a longer budget) so that at minimum the goal-seeing agent
+succeeds — only then is "does routing help the others" a meaningful question.
+
+## Overall status of the positive-result hunt
+
+Three attempts: observability (clean negative), architecture repair (clean
+negative), routing (inconclusive — unlearnable as built). No positive result.
+The negative result is robust across every *valid* test run so far. Remaining
+options: (a) lock in the strengthened negative paper; (b) one more bounded probe
+that first makes the routing task learnable, then asks whether the graph helps.
+Given the base rate, (a) is the recommended default.
