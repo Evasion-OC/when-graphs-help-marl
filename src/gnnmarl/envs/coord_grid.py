@@ -79,6 +79,7 @@ class CoordGrid:
         max_neighbors_override: int | None = None,
         obs_mode: str = "full",
         obs_radius: int | None = None,
+        goal_routing: bool = False,
     ) -> None:
         if n_agents < 1:
             raise ValueError(f"n_agents must be >= 1, got {n_agents}")
@@ -126,6 +127,15 @@ class CoordGrid:
         self.obs_mode = str(obs_mode)
         self.obs_radius = None if obs_radius is None else int(obs_radius)
 
+        # Goal-routing task: each episode samples a secret goal cell that only
+        # the source agent (agent 0) observes. Reward is the number of agents
+        # co-located at that goal. The task is convention-proof (the goal is
+        # random per episode, so no fixed rendezvous policy works) and the
+        # non-source agents can only learn the goal if it is *routed* to them
+        # over the coordination graph -- so GNN-QMIX has a channel the no-graph
+        # controls lack, despite all algorithms receiving identical observations.
+        self.goal_routing = bool(goal_routing)
+
         self.n_agents = int(n_agents)
         self.grid_size = int(grid_size)
         self.episode_steps = int(episode_steps)
@@ -157,11 +167,15 @@ class CoordGrid:
         else:
             self.max_neighbors = int(max(1, self._adj.sum(axis=1).max()))
 
-        self.obs_dim = 2 + 2 * self.max_neighbors + self.n_agents
+        # Goal block (3 slots: has-goal flag + normalized goal x/y) is appended
+        # only in goal-routing mode, and only filled for the source agent.
+        self._goal_slots = 3 if self.goal_routing else 0
+        self.obs_dim = 2 + 2 * self.max_neighbors + self.n_agents + self._goal_slots
         self.state_dim = 2 * self.n_agents
 
         # Per-episode state.
         self._positions: np.ndarray = np.zeros((self.n_agents, 2), dtype=np.int64)
+        self._goal: np.ndarray = np.zeros(2, dtype=np.int64)
         self._episode_step: int = 0
         self._closed: bool = False
 
@@ -178,6 +192,10 @@ class CoordGrid:
         self._positions = self._rng.integers(
             low=0, high=self.grid_size, size=(self.n_agents, 2), dtype=np.int64
         )
+        if self.goal_routing:
+            self._goal = self._rng.integers(
+                low=0, high=self.grid_size, size=2, dtype=np.int64
+            )
         self._episode_step = 0
 
         return StepResult(
@@ -305,6 +323,15 @@ class CoordGrid:
             # Agent-id one-hot.
             obs[i, 2 + 2 * self.max_neighbors + i] = 1.0
 
+        # Goal-routing: only the source agent (index 0) sees the goal. Other
+        # agents must receive it via graph message passing. Goal block lives in
+        # the final 3 slots: [has_goal flag, goal_x / gs, goal_y / gs].
+        if self.goal_routing:
+            base = 2 + 2 * self.max_neighbors + n
+            obs[0, base] = 1.0
+            obs[0, base + 1] = self._goal[0] / gs
+            obs[0, base + 2] = self._goal[1] / gs
+
         return obs
 
     def _toroidal_delta(self, d: int) -> int:
@@ -320,6 +347,12 @@ class CoordGrid:
         return (self._positions.astype(np.float32) / gs).reshape(-1)
 
     def _compute_reward(self) -> float:
+        if self.goal_routing:
+            # +1 per agent co-located with the secret goal cell. Only the source
+            # observes the goal directly, so non-source agents must have it
+            # routed to them over the graph to score.
+            at_goal = np.all(self._positions == self._goal[None, :], axis=-1)
+            return float(np.sum(at_goal))
         # Sum +1 per graph edge (i<j) whose endpoints share a cell.
         same = np.all(
             self._positions[:, None, :] == self._positions[None, :, :], axis=-1

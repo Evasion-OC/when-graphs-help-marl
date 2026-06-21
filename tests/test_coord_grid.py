@@ -212,3 +212,34 @@ def test_radius_mode_requires_valid_radius() -> None:
 def test_make_env_threads_obs_mode() -> None:
     env = make_env("coord_grid", n_agents=4, graph="ring", obs_mode="ego")
     assert env.obs_mode == "ego"
+
+
+# ----------------------------------------------------- goal-routing task (Stage A)
+
+def test_goal_routing_adds_three_obs_slots() -> None:
+    base = CoordGrid(n_agents=4, grid_size=5, graph="ring", seed=0)
+    gr = CoordGrid(n_agents=4, grid_size=5, graph="ring", seed=0, goal_routing=True)
+    assert gr.obs_dim == base.obs_dim + 3
+
+
+def test_only_source_agent_sees_goal() -> None:
+    env = CoordGrid(n_agents=4, grid_size=5, graph="ring", seed=0, goal_routing=True)
+    env.reset(seed=0)
+    obs = env._compute_obs()
+    goal = obs[:, -3:]  # [has_goal, gx, gy]
+    # Source agent (0) has the flag set; everyone else's goal block is zero.
+    assert goal[0, 0] == 1.0
+    np.testing.assert_array_equal(goal[1:], np.zeros((env.n_agents - 1, 3), dtype=np.float32))
+
+
+def test_goal_routing_reward_counts_agents_at_goal() -> None:
+    env = CoordGrid(n_agents=4, grid_size=5, graph="ring", seed=0, goal_routing=True)
+    env.reset(seed=0)
+    g = env._goal
+    # Put two agents on the goal cell, two elsewhere.
+    other = (g + np.array([1, 0])) % env.grid_size
+    env._place_agents([g, g, other, other])
+    assert env._compute_reward() == 2.0
+    # Goal is a real cell, so a co-located non-goal reward path is not triggered.
+    env._place_agents([other, other, other, other])
+    assert env._compute_reward() == 0.0
