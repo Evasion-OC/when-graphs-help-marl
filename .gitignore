@@ -58,3 +58,7 @@ paper/*.synctex.gz
 results/phaseA_smoke/
 results/phaseA_repair/
 results/phaseA_goal/
+# Stage B raw runs (keep the two small summary CSVs if curated)
+results/phaseB/*
+!results/phaseB/summary.csv
+!results/phaseB/h5_verdict.csv
