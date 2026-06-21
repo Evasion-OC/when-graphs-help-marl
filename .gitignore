@@ -53,3 +53,6 @@ paper/*.synctex.gz
 
 # Run stdout logs
 *.out
+
+# Stage A smoke scratch (kept out until results are curated)
+results/phaseA_smoke/

@@ -134,3 +134,81 @@ def test_make_env_factory() -> None:
     env.reset(seed=0)
     with pytest.raises(ValueError):
         make_env("unknown_env")
+
+
+# --------------------------------------------------------------- obs_mode (Stage A)
+
+def _obs_blocks(env: CoordGrid) -> tuple[slice, slice, slice]:
+    """Slices for the own-position, neighbour, and agent-id blocks of an obs row."""
+    mn = env.max_neighbors
+    return slice(0, 2), slice(2, 2 + 2 * mn), slice(2 + 2 * mn, env.obs_dim)
+
+
+@pytest.mark.parametrize("mode", ["full", "ego", "radius"])
+def test_obs_mode_keeps_obs_dim_constant(mode: str) -> None:
+    # Every algorithm must see the same input shape regardless of observability,
+    # so the GNN-vs-control contrast is not confounded with input dimension.
+    extra = {"obs_radius": 1} if mode == "radius" else {}
+    env = CoordGrid(n_agents=4, grid_size=5, graph="ring", seed=0, obs_mode=mode, **extra)
+    baseline = CoordGrid(n_agents=4, grid_size=5, graph="ring", seed=0)
+    assert env.obs_dim == baseline.obs_dim
+    out = env.reset(seed=0)
+    assert out.obs.shape == (4, env.obs_dim)
+
+
+def test_ego_withholds_neighbours_but_keeps_self_and_id() -> None:
+    env = CoordGrid(n_agents=4, grid_size=5, graph="ring", seed=0, obs_mode="ego")
+    env.reset(seed=0)
+    env._place_agents([[0, 0], [1, 0], [2, 0], [3, 0]])
+    obs = env._compute_obs()
+    own, nbr, idblk = _obs_blocks(env)
+    # The graph is now the only channel to neighbours: neighbour block is empty.
+    np.testing.assert_array_equal(obs[:, nbr], 0.0)
+    # Self-position survives for off-origin agents, and the id one-hot is intact.
+    assert np.any(obs[:, own] != 0.0)
+    np.testing.assert_array_equal(obs[:, idblk].sum(axis=1), np.ones(4, dtype=np.float32))
+
+
+def test_full_reveals_neighbours() -> None:
+    env = CoordGrid(n_agents=4, grid_size=5, graph="ring", seed=0, obs_mode="full")
+    env.reset(seed=0)
+    env._place_agents([[0, 0], [1, 0], [2, 0], [3, 0]])
+    obs = env._compute_obs()
+    _, nbr, _ = _obs_blocks(env)
+    assert np.any(obs[:, nbr] != 0.0)
+
+
+def test_radius_hides_far_neighbours_only() -> None:
+    # Ring N=4: agent 0's neighbours are agents 1 and 3.
+    layout = [[0, 0], [1, 0], [4, 4], [4, 0]]  # nbr 1 is 1 step away, nbr 3 is far
+    env = CoordGrid(n_agents=4, grid_size=9, graph="ring", seed=0,
+                    obs_mode="radius", obs_radius=1)
+    env.reset(seed=0)
+    env._place_agents(layout)
+    obs = env._compute_obs()
+    full = CoordGrid(n_agents=4, grid_size=9, graph="ring", seed=0, obs_mode="full")
+    full.reset(seed=0)
+    full._place_agents(layout)
+    fobs = full._compute_obs()
+    _, nbr, _ = _obs_blocks(env)
+    # The near neighbour is visible; the far one is masked -> strictly fewer
+    # non-zeros than full, but at least the near neighbour shows through.
+    assert np.count_nonzero(obs[0, nbr]) >= 1
+    assert np.count_nonzero(obs[0, nbr]) < np.count_nonzero(fobs[0, nbr])
+
+
+def test_invalid_obs_mode_raises() -> None:
+    with pytest.raises(ValueError):
+        CoordGrid(obs_mode="bogus")
+
+
+def test_radius_mode_requires_valid_radius() -> None:
+    with pytest.raises(ValueError):
+        CoordGrid(obs_mode="radius")  # missing obs_radius
+    with pytest.raises(ValueError):
+        CoordGrid(obs_mode="radius", obs_radius=-1)
+
+
+def test_make_env_threads_obs_mode() -> None:
+    env = make_env("coord_grid", n_agents=4, graph="ring", obs_mode="ego")
+    assert env.obs_mode == "ego"

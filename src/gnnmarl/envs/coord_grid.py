@@ -14,7 +14,6 @@ Phase-0 plan for the experimental setup.
 from __future__ import annotations
 
 import math
-from typing import Any
 
 import numpy as np
 
@@ -35,6 +34,7 @@ _ACTION_DELTAS: np.ndarray = np.array(
 )
 
 _VALID_GRAPHS = ("ring", "line", "complete", "erdos_renyi", "grid2d")
+_VALID_OBS_MODES = ("full", "ego", "radius")
 
 
 class CoordGrid:
@@ -54,6 +54,16 @@ class CoordGrid:
         Edge probability for ``erdos_renyi``; ignored otherwise.
     seed
         Seed for the env-owned ``numpy`` RNG.
+    obs_mode
+        Local observability of neighbours. ``"full"`` (default) reveals every
+        graph neighbour's relative position; ``"ego"`` withholds the neighbour
+        block entirely (the agent sees only its own cell + id, so the graph is
+        the sole channel to neighbour information); ``"radius"`` reveals only
+        neighbours within ``obs_radius`` toroidal Manhattan steps. ``obs_dim``
+        is identical across modes (hidden slots are zero-filled), so every
+        algorithm receives the same input shape.
+    obs_radius
+        Required when ``obs_mode="radius"``; the visibility radius in cells.
     """
 
     n_actions: int = 5
@@ -67,6 +77,8 @@ class CoordGrid:
         er_prob: float = 0.3,
         seed: int | None = None,
         max_neighbors_override: int | None = None,
+        obs_mode: str = "full",
+        obs_radius: int | None = None,
     ) -> None:
         if n_agents < 1:
             raise ValueError(f"n_agents must be >= 1, got {n_agents}")
@@ -93,6 +105,26 @@ class CoordGrid:
             raise ValueError(
                 f"er_prob must be in [0, 1], got {er_prob}"
             )
+
+        # Observability mode controls how much of a neighbour an agent can see
+        # *locally* in its own observation vector. The graph adjacency (used by
+        # GNN-QMIX for message passing) is unaffected — so under "ego" the graph
+        # is the only channel through which neighbour information can reach an
+        # agent at decentralised execution. obs_dim is held constant across
+        # modes (hidden slots are zero-filled) so every algorithm sees the same
+        # input shape and the contrast stays clean.
+        if obs_mode not in _VALID_OBS_MODES:
+            raise ValueError(
+                f"obs_mode must be one of {_VALID_OBS_MODES}, got {obs_mode!r}"
+            )
+        if obs_mode == "radius":
+            if obs_radius is None or obs_radius < 0:
+                raise ValueError(
+                    "obs_mode='radius' requires obs_radius >= 0, "
+                    f"got {obs_radius!r}"
+                )
+        self.obs_mode = str(obs_mode)
+        self.obs_radius = None if obs_radius is None else int(obs_radius)
 
         self.n_agents = int(n_agents)
         self.grid_size = int(grid_size)
@@ -250,15 +282,25 @@ class CoordGrid:
             obs[i, 1] = yi / gs
 
             # Relative positions of graph neighbours, zero-padded.
-            neighbours = np.where(self._adj[i] > 0.0)[0]
-            for slot, j in enumerate(neighbours[: self.max_neighbors]):
-                xj, yj = self._positions[j]
-                # Toroidal shortest signed delta. Positive points from i to j.
-                dx = self._toroidal_delta(xj - xi)
-                dy = self._toroidal_delta(yj - yi)
-                base = 2 + 2 * slot
-                obs[i, base] = dx / gs
-                obs[i, base + 1] = dy / gs
+            # Under "ego" the whole neighbour block is withheld (the agent must
+            # rely on the graph to learn about neighbours); under "radius" only
+            # neighbours within ``obs_radius`` toroidal Manhattan steps are
+            # revealed; under "full" all graph neighbours are revealed.
+            if self.obs_mode != "ego":
+                neighbours = np.where(self._adj[i] > 0.0)[0]
+                for slot, j in enumerate(neighbours[: self.max_neighbors]):
+                    xj, yj = self._positions[j]
+                    # Toroidal shortest signed delta. Positive points from i to j.
+                    dx = self._toroidal_delta(xj - xi)
+                    dy = self._toroidal_delta(yj - yi)
+                    if self.obs_mode == "radius" and (
+                        abs(dx) + abs(dy) > self.obs_radius
+                    ):
+                        # Out of sight: leave this neighbour's slot zero-filled.
+                        continue
+                    base = 2 + 2 * slot
+                    obs[i, base] = dx / gs
+                    obs[i, base + 1] = dy / gs
 
             # Agent-id one-hot.
             obs[i, 2 + 2 * self.max_neighbors + i] = 1.0
