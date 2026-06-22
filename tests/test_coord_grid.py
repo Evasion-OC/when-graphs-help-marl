@@ -256,3 +256,74 @@ def test_goal_dense_reward_decreases_with_distance() -> None:
     env._place_agents([g, far])
     r = env._compute_reward()
     assert 1.0 <= r < 2.0  # one on goal (1.0) + one farther (<1.0)
+
+
+# --------------------------------------------------------------- pair_routing
+# Stage C structure test: comm graph must match the task pairing (see docs/STAGE_C.md).
+
+
+def test_pair_routing_obs_dim_constant_across_comm_graphs() -> None:
+    # With max_neighbors_override fixed, the true/wrong/complete comm graphs all
+    # yield the SAME obs_dim, so the structure arms share byte-identical I/O.
+    dims = {
+        g: CoordGrid(n_agents=6, grid_size=3, graph=g, pair_routing=True,
+                     obs_mode="ego", max_neighbors_override=5, seed=0).obs_dim
+        for g in ("matching", "matching_wrong", "complete")
+    }
+    assert len(set(dims.values())) == 1, dims
+
+
+def test_pair_routing_partner_is_canonical_matching_regardless_of_graph() -> None:
+    # The reward partner is the fixed matching (0,1),(2,3),(4,5) for ANY comm graph.
+    for g in ("matching", "matching_wrong", "complete"):
+        env = CoordGrid(n_agents=6, grid_size=3, graph=g, pair_routing=True, seed=0)
+        assert env._partner.tolist() == [1, 0, 3, 2, 5, 4]
+
+
+def test_matching_graphs_are_disjoint_and_one_regular() -> None:
+    a_true = CoordGrid(n_agents=6, grid_size=3, graph="matching", seed=0).adjacency()
+    a_wrong = CoordGrid(n_agents=6, grid_size=3, graph="matching_wrong", seed=0).adjacency()
+    # Both are perfect matchings (each node degree 1) ...
+    np.testing.assert_array_equal(a_true.sum(axis=1), np.ones(6))
+    np.testing.assert_array_equal(a_wrong.sum(axis=1), np.ones(6))
+    # ... and share no edge, so "wrong" pairs every agent with a non-partner.
+    assert np.all(a_true * a_wrong == 0.0)
+    env = CoordGrid(n_agents=6, grid_size=3, graph="matching", pair_routing=True, seed=0)
+    for i in range(6):
+        assert np.where(a_true[i] > 0)[0].tolist() == [env._partner[i]]
+        assert env._partner[i] not in np.where(a_wrong[i] > 0)[0].tolist()
+
+
+def test_pair_routing_every_agent_sees_only_its_own_goal_under_ego() -> None:
+    env = CoordGrid(n_agents=6, grid_size=3, graph="matching", pair_routing=True,
+                    obs_mode="ego", max_neighbors_override=5, seed=0)
+    env.reset(seed=1)
+    obs = env._compute_obs()
+    goal_block = obs[:, -3:]  # [has_goal, gx, gy] per agent
+    for i in range(env.n_agents):
+        assert goal_block[i, 0] == 1.0  # every agent has its own goal
+        np.testing.assert_allclose(goal_block[i, 1:], env._goals[i] / env.grid_size)
+    # Neighbour block is withheld under ego (no agent sees another's position).
+    nbr = obs[:, 2:2 + 2 * env.max_neighbors]
+    np.testing.assert_array_equal(nbr, np.zeros_like(nbr))
+
+
+def test_pair_routing_reward_max_when_all_on_partner_goal() -> None:
+    env = CoordGrid(n_agents=6, grid_size=3, graph="matching", pair_routing=True, seed=0)
+    env.reset(seed=2)
+    env._place_agents(env._goals[env._partner])  # each agent on its partner's goal
+    assert env._compute_reward() == pytest.approx(6.0)  # == N, maximal
+    # Sitting all on a single corner over a fixed goal set is below max.
+    env._place_agents(np.zeros((6, 2), dtype=np.int64))
+    assert env._compute_reward() < 6.0
+
+
+@pytest.mark.parametrize("kwargs,match", [
+    ({"n_agents": 5, "pair_routing": True}, "even"),
+    ({"n_agents": 5, "graph": "matching"}, "even"),
+    ({"n_agents": 2, "graph": "matching_wrong"}, ">= 4"),
+    ({"n_agents": 4, "pair_routing": True, "goal_routing": True}, "mutually exclusive"),
+])
+def test_pair_routing_validation(kwargs: dict, match: str) -> None:
+    with pytest.raises(ValueError, match=match):
+        CoordGrid(grid_size=3, seed=0, **kwargs)

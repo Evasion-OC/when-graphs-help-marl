@@ -33,7 +33,15 @@ _ACTION_DELTAS: np.ndarray = np.array(
     dtype=np.int64,
 )
 
-_VALID_GRAPHS = ("ring", "line", "complete", "erdos_renyi", "grid2d")
+_VALID_GRAPHS = (
+    "ring",
+    "line",
+    "complete",
+    "erdos_renyi",
+    "grid2d",
+    "matching",
+    "matching_wrong",
+)
 _VALID_OBS_MODES = ("full", "ego", "radius")
 
 
@@ -81,6 +89,7 @@ class CoordGrid:
         obs_radius: int | None = None,
         goal_routing: bool = False,
         goal_dense: bool = False,
+        pair_routing: bool = False,
     ) -> None:
         if n_agents < 1:
             raise ValueError(f"n_agents must be >= 1, got {n_agents}")
@@ -102,6 +111,18 @@ class CoordGrid:
             self._grid2d_side = side
         else:
             self._grid2d_side = 0
+
+        if graph in ("matching", "matching_wrong"):
+            if n_agents % 2 != 0:
+                raise ValueError(
+                    f"graph={graph!r} requires an even n_agents (a perfect "
+                    f"matching); got n_agents={n_agents}"
+                )
+            if graph == "matching_wrong" and n_agents < 4:
+                raise ValueError(
+                    "graph='matching_wrong' needs n_agents >= 4 (with N=2 the "
+                    "only matching is the canonical one)"
+                )
 
         if graph == "erdos_renyi" and not (0.0 <= er_prob <= 1.0):
             raise ValueError(
@@ -142,6 +163,24 @@ class CoordGrid:
         # valid test of whether the graph routes the goal to the other agents.
         self.goal_dense = bool(goal_dense)
 
+        # Pair-routing task: every agent holds a *private* goal it alone observes,
+        # and is rewarded for reaching its graph *partner's* goal (a fixed perfect
+        # matching defines the partners). Partners must therefore swap goals over
+        # their edge. Unlike goal_routing's single broadcast goal, the information
+        # an agent needs is held by one specific other agent -- so the
+        # *communication graph must match the task structure*: a wrong matching
+        # (matching_wrong) or all-to-all (complete) delivers the wrong / diluted
+        # partner, and only the true matching routes the right goal. This makes
+        # graph STRUCTURE (not merely having a channel) the load-bearing variable.
+        self.pair_routing = bool(pair_routing)
+        if self.pair_routing and self.goal_routing:
+            raise ValueError("pair_routing and goal_routing are mutually exclusive")
+        if self.pair_routing and n_agents % 2 != 0:
+            raise ValueError(
+                f"pair_routing requires an even n_agents (a perfect matching "
+                f"defines the partners); got n_agents={n_agents}"
+            )
+
         self.n_agents = int(n_agents)
         self.grid_size = int(grid_size)
         self.episode_steps = int(episode_steps)
@@ -174,14 +213,27 @@ class CoordGrid:
             self.max_neighbors = int(max(1, self._adj.sum(axis=1).max()))
 
         # Goal block (3 slots: has-goal flag + normalized goal x/y) is appended
-        # only in goal-routing mode, and only filled for the source agent.
-        self._goal_slots = 3 if self.goal_routing else 0
+        # in goal-routing mode (filled only for the source agent) and in
+        # pair-routing mode (filled for *every* agent with its own private goal).
+        self._goal_slots = 3 if (self.goal_routing or self.pair_routing) else 0
         self.obs_dim = 2 + 2 * self.max_neighbors + self.n_agents + self._goal_slots
         self.state_dim = 2 * self.n_agents
+
+        # Canonical perfect matching used by pair-routing to define each agent's
+        # partner: (0,1), (2,3), ... This is the *task* structure and is fixed
+        # regardless of the communication ``graph`` -- so feeding the GNN the
+        # matching graph means comm == task (true), while matching_wrong /
+        # complete deliberately mismatch it (the structure controls).
+        if self.pair_routing:
+            self._partner = np.empty(self.n_agents, dtype=np.int64)
+            for k in range(self.n_agents // 2):
+                self._partner[2 * k] = 2 * k + 1
+                self._partner[2 * k + 1] = 2 * k
 
         # Per-episode state.
         self._positions: np.ndarray = np.zeros((self.n_agents, 2), dtype=np.int64)
         self._goal: np.ndarray = np.zeros(2, dtype=np.int64)
+        self._goals: np.ndarray = np.zeros((self.n_agents, 2), dtype=np.int64)
         self._episode_step: int = 0
         self._closed: bool = False
 
@@ -201,6 +253,10 @@ class CoordGrid:
         if self.goal_routing:
             self._goal = self._rng.integers(
                 low=0, high=self.grid_size, size=2, dtype=np.int64
+            )
+        if self.pair_routing:
+            self._goals = self._rng.integers(
+                low=0, high=self.grid_size, size=(self.n_agents, 2), dtype=np.int64
             )
         self._episode_step = 0
 
@@ -287,6 +343,23 @@ class CoordGrid:
                         j = (r + 1) * side + c
                         a[i, j] = 1.0
                         a[j, i] = 1.0
+        elif self.graph_kind == "matching":
+            # Canonical perfect matching: edges (0,1), (2,3), ... Each agent has
+            # exactly one neighbour -- its task partner -- so message passing
+            # routes precisely the partner's state and nothing else.
+            for k in range(n // 2):
+                a[2 * k, 2 * k + 1] = 1.0
+                a[2 * k + 1, 2 * k] = 1.0
+        elif self.graph_kind == "matching_wrong":
+            # A perfect matching that shares NO edge with the canonical one:
+            # (1,2), (3,4), ..., (n-1,0). Same density (1-regular) as `matching`
+            # but pairs every agent with a *non-partner* -- the structure control
+            # that isolates "right graph" from "a graph of the right size".
+            for k in range(n // 2):
+                i = 2 * k + 1
+                j = (2 * k + 2) % n
+                a[i, j] = 1.0
+                a[j, i] = 1.0
         else:  # pragma: no cover — guarded in __init__.
             raise ValueError(self.graph_kind)
 
@@ -338,6 +411,18 @@ class CoordGrid:
             obs[0, base + 1] = self._goal[0] / gs
             obs[0, base + 2] = self._goal[1] / gs
 
+        # Pair-routing: every agent sees ONLY its own private goal (the thing its
+        # partner must reach). It never sees its partner's goal directly -- under
+        # any obs_mode -- so the partner's goal can reach it only via the graph.
+        # The own-goal block is shown regardless of obs_mode (it is the agent's
+        # own private state, not a neighbour's).
+        if self.pair_routing:
+            base = 2 + 2 * self.max_neighbors + n
+            for i in range(n):
+                obs[i, base] = 1.0
+                obs[i, base + 1] = self._goals[i, 0] / gs
+                obs[i, base + 2] = self._goals[i, 1] / gs
+
         return obs
 
     def _toroidal_delta(self, d: int) -> int:
@@ -353,6 +438,18 @@ class CoordGrid:
         return (self._positions.astype(np.float32) / gs).reshape(-1)
 
     def _compute_reward(self) -> float:
+        if self.pair_routing:
+            # Dense: each agent scores by toroidal proximity to its PARTNER's
+            # private goal, summed over agents. An agent that has not received its
+            # partner's goal (no graph channel, or the wrong/diluted one) cannot
+            # systematically approach it, so it stays near the random floor; only
+            # routing the correct partner's goal lets the team score.
+            targets = self._goals[self._partner]                 # [N, 2]
+            raw = np.abs(self._positions - targets)
+            tor = np.minimum(raw, self.grid_size - raw)          # toroidal
+            dist = tor.sum(axis=-1)                               # [N]
+            max_dist = max(1, 2 * (self.grid_size // 2))
+            return float(np.sum(1.0 - dist / max_dist))
         if self.goal_routing:
             if self.goal_dense:
                 # Shaped: each agent scores 1 - (toroidal Manhattan distance to

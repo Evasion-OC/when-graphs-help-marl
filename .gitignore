@@ -62,3 +62,6 @@ results/phaseA_goal/
 results/phaseB/*
 !results/phaseB/summary.csv
 !results/phaseB/h5_verdict.csv
+# Stage C raw runs (keep curated top-level summary CSVs: manifest/summary/verdict)
+results/phaseC/*
+!results/phaseC/*.csv
