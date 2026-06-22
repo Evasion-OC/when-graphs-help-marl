@@ -252,7 +252,8 @@ class GATStack(nn.Module):
     """
 
     def __init__(self, in_dim: int, hidden_dim: int, n_layers: int,
-                 leaky_slope: float = 0.2):
+                 leaky_slope: float = 0.2, residual: bool = False,
+                 layernorm: bool = False):
         super().__init__()
         if n_layers < 1:
             raise ValueError(f"GATStack requires n_layers >= 1, got {n_layers}")
@@ -260,12 +261,22 @@ class GATStack(nn.Module):
         self.hidden_dim = hidden_dim
         self.n_layers = n_layers
         self.leaky_slope = leaky_slope
+        # Optional anti-over-smoothing knobs, matched to GCNStack so attention
+        # arms can be stabilization-matched to the repaired GCN (default off keeps
+        # the prior plain-GAT behaviour and the depth ablation unchanged).
+        self.residual = bool(residual)
+        self.layernorm = bool(layernorm)
 
         layers: list[nn.Linear] = []
         for layer_idx in range(n_layers):
             din = in_dim if layer_idx == 0 else hidden_dim
             layers.append(nn.Linear(din, hidden_dim, bias=True))
         self.layers = nn.ModuleList(layers)
+        self.norms = (
+            nn.ModuleList([nn.LayerNorm(hidden_dim) for _ in range(n_layers)])
+            if self.layernorm
+            else None
+        )
 
         # Single-head additive attention: one source + one target vector per
         # layer, scoring the projected features.
@@ -307,7 +318,11 @@ class GATStack(nn.Module):
             scores = F.leaky_relu(s + t.transpose(1, 2), self.leaky_slope)
             scores = scores.masked_fill(~edge, neg_inf)
             alpha = torch.softmax(scores, dim=-1)               # [B, N, N]
-            h = F.relu(torch.bmm(alpha, z))                     # [B, N, hidden]
+            out = torch.bmm(alpha, z)                           # [B, N, hidden]
+            if self.norms is not None:
+                out = self.norms[layer_idx](out)
+            out = F.relu(out)
+            h = h + out if (self.residual and out.shape == h.shape) else out
         return h
 
 
@@ -336,7 +351,8 @@ class DGNStack(nn.Module):
     """
 
     def __init__(self, in_dim: int, hidden_dim: int, n_layers: int,
-                 n_heads: int = 4):
+                 n_heads: int = 4, residual: bool = False,
+                 layernorm: bool = False):
         super().__init__()
         if n_layers < 1:
             raise ValueError(f"DGNStack requires n_layers >= 1, got {n_layers}")
@@ -349,6 +365,14 @@ class DGNStack(nn.Module):
         self.n_layers = n_layers
         self.n_heads = n_heads
         self.head_dim = hidden_dim // n_heads
+        # Optional anti-over-smoothing knobs (matched to GCNStack); default off.
+        self.residual = bool(residual)
+        self.layernorm = bool(layernorm)
+        self.norms = (
+            nn.ModuleList([nn.LayerNorm(hidden_dim) for _ in range(n_layers)])
+            if self.layernorm
+            else None
+        )
 
         self.q = nn.ModuleList()
         self.k = nn.ModuleList()
@@ -384,7 +408,11 @@ class DGNStack(nn.Module):
             alpha = torch.softmax(scores, dim=-1)                          # [B,H,N,N]
             ctx = torch.matmul(alpha, v)                                   # [B,H,N,d]
             ctx = ctx.transpose(1, 2).reshape(b, n, heads * d)             # [B,N,hidden]
-            h = F.relu(self.o[layer_idx](ctx))                             # [B,N,hidden]
+            out = self.o[layer_idx](ctx)                                   # [B,N,hidden]
+            if self.norms is not None:
+                out = self.norms[layer_idx](out)
+            out = F.relu(out)
+            h = h + out if (self.residual and out.shape == h.shape) else out
         return h
 
 

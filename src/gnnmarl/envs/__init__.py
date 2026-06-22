@@ -6,8 +6,9 @@ from typing import Any
 
 from gnnmarl.envs.base import MultiAgentEnv, StepResult
 from gnnmarl.envs.coord_grid import CoordGrid
+from gnnmarl.envs.token_match import TokenMatch
 
-__all__ = ["MultiAgentEnv", "StepResult", "CoordGrid", "make_env"]
+__all__ = ["MultiAgentEnv", "StepResult", "CoordGrid", "TokenMatch", "make_env"]
 
 
 def make_env(name: str, **kwargs: Any) -> MultiAgentEnv:
@@ -20,6 +21,8 @@ def make_env(name: str, **kwargs: Any) -> MultiAgentEnv:
     """
     if name == "coord_grid":
         return CoordGrid(**kwargs)
+    if name == "token_match":
+        return TokenMatch(**kwargs)
     if name.startswith("mpe:"):
         from gnnmarl.envs.mpe_adapter import MPEEnvAdapter
         return MPEEnvAdapter(env_name=name.split(":", 1)[1], **kwargs)

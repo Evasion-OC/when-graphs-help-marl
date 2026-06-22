@@ -85,18 +85,27 @@ count; vs the as-run *repaired* GCN it differs by 256 LayerNorm parameters (<2% 
 ~14k), far too few to explain a *d*≈5 effect, and `gnn_wrong`/`gnn_complete` carry the
 same LayerNorm yet floor — so stabilization is not the source of the win.
 
-## 4. Does learned attention over all-to-all recover it? (inconclusive — scoped)
+## 4. Even learned attention cannot substitute for the right structure (resolved)
 
-We tested whether single-head (GAT) and multi-head (DGN/G2ANet-style) attention over
-the **complete** graph recover `gnn_true`. As run they did not (both ~floor). **We do
-not, however, claim "attention cannot substitute for structure," because the attention
-arms are not cleanly identified:** they lacked the residual+LayerNorm stabilization the
-GCN arms carry, and GAT *given the correct graph* (`gat_true`) also floored (51.45) —
-i.e. the attention arms failed to **train**, not demonstrably to **find** structure.
-The "structure, not channel" conclusion therefore rests on the clean
-`gnn_true` vs `gcn_complete` contrast (both repaired GCN, +15.2, *d*=5.1), **not** on
-the attention arms. A matched-stabilization attention re-run (add residual+LayerNorm to
-GAT/DGN) is the cheapest open follow-up; until then C3 is reported as inconclusive.
+Does an expressive *learned* aggregator recover the result from all-to-all? We added
+single-head (GAT) and multi-head (DGN/G2ANet-style) attention arms, **stabilization-
+matched** to the GCN (residual+LayerNorm), N=6, 12 seeds:
+
+| arm | aggregator / comm graph | return |
+|-----|--------------------------|--------|
+| `gnn_true` | GCN / true matching | 66.10 |
+| `gat_true` | **attention / true matching** | **67.03** (n.s. vs gnn_true: −0.9, p=0.64) |
+| `gat_complete` | attention / all-to-all | 50.19 (floor) |
+| `dgn_complete` | multi-head attention / all-to-all | 50.45 (floor) |
+
+This is now cleanly identified (the earlier confound — attention arms lacking the GCN's
+stabilization — is removed). Two facts: (i) given the **right** graph, learned attention
+trains *as well as* the GCN (`gat_true` 67.0 ≈ `gnn_true` 66.1, not significant) — so the
+attention arms are not under-trained; (ii) over **all-to-all**, learned attention still
+**floors** (`gnn_true` beats `gat_complete`/`dgn_complete` by +15.9/+15.7, *d*≈5.5,
+p<1e-4). **So even an expressive, well-trained attention aggregator does not recover the
+result from the wrong structure — it needs the right graph too.** The advantage is the
+structure, not the channel, the capacity, *or* the aggregator's expressiveness.
 
 ## 5. Effect vs team size N — significant at every N, but non-monotone (H-N not supported)
 
@@ -137,15 +146,41 @@ efficiently than single-partner routing. (Exploratory 3-seed runs showed the sam
 ordering, weak at 30k and ~+5 at 80k; only the 12-seed/30k matched cell above is
 confirmatory.)
 
-## 7. Honest scope and limitations
+## 7. Out-of-harness replication: not a CoordGrid artifact (Stage D)
+
+To test whether the effect is a gridworld/navigation artifact, we replicate the
+structure test in a **completely different environment** — `TokenMatch`, a referential
+matching game with **no grid, no movement, no navigation**: each agent privately holds
+a token and must *output its partner's token* (which can arrive only over the graph).
+Same structure-isolating arms (only `env.adjacency()` differs), N=6, K=5 tokens,
+12 seeds:
+
+| arm | comm graph | return (max 60; random floor ≈12) |
+|-----|-----------|-----------------------------------|
+| `mlp` | none | 11.90 [11.67, 12.14] |
+| `gnn_wrong` | wrong matching | 12.03 [11.78, 12.27] |
+| `gnn_complete` | all-to-all | 24.50 [24.18, 24.81] |
+| **`gnn_true`** | true matching | **57.59 [57.55, 57.63]** |
+
+`gnn_true` **near-solves** the task (57.6 / 60 ≈ 96%) and shows **complete
+distributional separation** from every rival (beats wrong +45.6, all-to-all +33.1,
+no-comm +45.7; p<1e-4 both tests; variance near zero). The structure effect is **not a
+CoordGrid artifact** — it replicates, more cleanly, in a structurally unrelated task.
+(All-to-all does partial routing here — +12 over floor — because the partner's token is
+*one of* the averaged tokens; but it is still +33 below the focused true graph.)
+
+## 8. Honest scope and limitations
 
 - **Constructed-task existence/boundary result.** The tasks are built so routing is
   necessary — the right design to *isolate* structure from capacity, convention, and
   observability, and exactly the pre-registered plan (`STRENGTHENING_PLAN.md` §2). It
   **coexists with** the prior negative; it does not show the prior negative was wrong.
-- **No out-of-harness replication of the positive yet.** The negative half replicated
-  on MPE/LBF/SMAC; the positive half is, so far, one env family (3×3 CoordGrid), N≤10.
-  Do not generalize beyond "task-structured routing under partial information."
+- **Replicated out-of-harness, but still synthetic.** The positive now reproduces in a
+  structurally-unrelated env (TokenMatch, §7) as well as CoordGrid, so it is not a
+  gridworld artifact. Both are still purpose-built cooperative tasks with a
+  private-partner-routing structure; replication on a *standard* third-party benchmark
+  (an MPE/LBF variant with private per-agent goals) remains future work. Do not
+  generalize beyond "task-structured routing under partial information."
 - **Robust to observability.** Under full obs the effect is *larger* (+22.6, *d*=5.4) —
   the partner's goal is private under any obs mode, so the win is not a partial-obs
   artifact.
@@ -158,27 +193,28 @@ confirmatory.)
 
 ---
 
-## 8. Proposed paper reframe (for confirmation — not yet applied to `paper/`)
+## 9. Paper reframe (applied to `paper/`; strengtheners folded in)
 
-Turn the pure negative into a **boundary paper** (negative endpoint + identified
-positive endpoint), a direct answer to the title question.
+The pure negative is now a **boundary paper** (negative endpoint + identified positive
+endpoint), a direct answer to the title question (`paper/main.tex`, commit e82b8fa;
+strengtheners §4/§7 to be folded in next).
 
-- **Title (option):** *"When Does Graph Structure Help in Multi-Agent RL? Route Along
-  Task Edges, or Not At All — A Controlled Boundary."*
-- **Abstract delta:** keep the identified negative (GNN-QMIX ≤ MLP-QMIX in
+- **Title:** *"When Does Graph Structure Help in Multi-Agent RL? A Controlled Boundary."*
+- **Abstract:** keeps the identified negative (GNN-QMIX ≤ MLP-QMIX in
   full-info/convention-reducible settings; penalty grows with N; replicates on
-  MPE/LBF). **Add:** when the task requires routing private information to specific
+  MPE/LBF). **Adds:** when the task requires routing private information to specific
   partners, the task-matched graph beats a density-matched wrong graph and all-to-all
   at byte-identical params/obs (*d*≈5 at degree-1; significant but ~7× smaller at
-  degree-2), and the effect is the *structure*, not the channel. State plainly: H-N
-  (grows-with-N) not supported (significant but non-monotone); attention-vs-structure
-  inconclusive; positive result is a single-env existence/boundary result.
+  degree-2), and the effect is the **structure** — not the channel, the capacity, or the
+  aggregator's expressiveness (**even stabilization-matched learned attention floors over
+  all-to-all while matching the GCN given the right graph**, §4). Replicates **out of
+  harness** in a non-spatial token-matching game (§7), removing the single-env concern.
+  State plainly: H-N (grows-with-N) **not supported** (significant but non-monotone);
+  positive is a synthetic-task existence/boundary result (no standard-benchmark
+  replication yet).
 - **Claims that change:** "graphs never help here" → "graphs help *iff* message passing
   follows the task's coordination edges and the information is otherwise unavailable."
   The H1–H3 negative becomes the full-obs/convention-reducible endpoint of the boundary.
-- **Figures:** structure-bar with the random/oracle reference lines (controls
-  foregrounded); N-robustness forest plot showing the attenuation; degree-1 vs degree-2
-  magnitude.
-
-Full LaTeX integration (abstract, intro, a new results section, related-work on
-comm-MARL under partial obs) is a separate, confirm-first step.
+- **Status:** core reframe applied (e82b8fa). Remaining: fold §4 (attention now
+  resolved: clean "needs structure too") and §7 (out-of-harness replication) into the
+  manuscript; rebuild. Targeting TMLR resubmission / JAIR (both free, no APC).

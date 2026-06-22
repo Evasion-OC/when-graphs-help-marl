@@ -48,6 +48,8 @@ class _GATAgentNet(nn.Module):
         n_actions: int,
         gnn_hidden: int,
         gnn_layers: int,
+        gnn_residual: bool = False,
+        gnn_layernorm: bool = False,
     ):
         super().__init__()
         self.obs_dim = obs_dim
@@ -63,7 +65,8 @@ class _GATAgentNet(nn.Module):
             nn.Linear(64, gnn_hidden),
             nn.ReLU(),
         )
-        self.gnn = GATStack(in_dim=gnn_hidden, hidden_dim=gnn_hidden, n_layers=gnn_layers)
+        self.gnn = GATStack(in_dim=gnn_hidden, hidden_dim=gnn_hidden, n_layers=gnn_layers,
+                            residual=gnn_residual, layernorm=gnn_layernorm)
         self.head = nn.Linear(gnn_hidden, n_actions)
 
         self.register_buffer(
@@ -102,6 +105,8 @@ class GATQMIX(BaseAlgo):
             n_actions=self.n_actions,
             gnn_hidden=self.gnn_hidden,
             gnn_layers=self.gnn_layers,
+            gnn_residual=self.gnn_residual,
+            gnn_layernorm=self.gnn_layernorm,
         )
         self.mixer = QMixerHypernet(
             n_agents=self.n_agents,

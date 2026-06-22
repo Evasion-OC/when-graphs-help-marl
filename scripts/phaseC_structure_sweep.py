@@ -73,9 +73,11 @@ def arms(task: str, suite: str) -> tuple[tuple[str, str, str, dict], ...]:
             ("mlp", "mlp_qmix", true_g, {"gnn_layers": 2}),
             ("gnn_true", "gnn_qmix", true_g, {"gnn_layers": 2, **repaired}),
             ("gcn_complete", "gnn_qmix", "complete", {"gnn_layers": 2, **repaired}),
-            ("gat_complete", "gat_qmix", "complete", {"gnn_layers": 2}),
-            ("dgn_complete", "dgn_qmix", "complete", {"gnn_layers": 2}),
-            ("gat_true", "gat_qmix", true_g, {"gnn_layers": 2}),
+            # Attention arms now stabilization-MATCHED to the GCN arms (residual+
+            # LayerNorm) so GAT/DGN-vs-GCN is a clean aggregator comparison.
+            ("gat_complete", "gat_qmix", "complete", {"gnn_layers": 2, **repaired}),
+            ("dgn_complete", "dgn_qmix", "complete", {"gnn_layers": 2, **repaired}),
+            ("gat_true", "gat_qmix", true_g, {"gnn_layers": 2, **repaired}),
         )
     raise ValueError(f"unknown suite {suite!r}")
 
