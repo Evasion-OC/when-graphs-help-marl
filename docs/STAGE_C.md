@@ -82,8 +82,67 @@ gap between them is the **graph structure**, with capacity, depth, degree
 ## Run
 
 ```bash
-python scripts/phaseC_structure_sweep.py --seeds 12 --obs ego --workers 16
-python scripts/phaseC_analysis.py
+python scripts/phaseC_structure_sweep.py --task pair --seeds 12 --obs ego --workers 16
+python scripts/phaseC_analysis.py --label N6_ego
 # secondary dose-response:
-for N in 4 6 8 10; do python scripts/phaseC_structure_sweep.py --seeds 12 --n-agents $N --workers 16; done
+for N in 4 6 8 10; do python scripts/phaseC_structure_sweep.py --task pair --seeds 12 --n-agents $N --workers 16; done
+```
+
+---
+
+# Stage C2/C3 — earning the word "structure" (pre-registered before these runs)
+
+The matching result (above) is a clean existence proof, but a matching is the
+*degenerate* topology — disjoint edges, no neighbourhoods, no paths. A skeptic can
+fairly call it "targeted point-to-point communication," not graph *structure*.
+Two further pre-registered experiments decide how far the claim generalises.
+(Registered here **before** running C2/C3; the pair confirmatory above is done.)
+
+## C2 — neighbourhood task (degree ≥ 2 makes topology load-bearing)
+
+`CoordGrid(nbr_routing=True)`, 3×3, ego, N=6, 12 seeds, 30k steps. Each agent holds
+a private goal and must reach the **centroid of its true +-1 ring neighbours'
+goals**. Reaching the centroid of a *set* needs the right neighbour set:
+
+| arm | comm graph | role |
+|-----|-----------|------|
+| `mlp` | none | floor |
+| `gnn_true` | `ring` (+-1) | comm == task neighbourhood |
+| `gnn_wrong` | `skip_ring` (+-2, 2-regular) | wrong neighbours, matched degree |
+| `gnn_complete` | all-to-all | aggregates all N (≈ global centroid, ~constant) |
+
+- **H-struct-2 (primary):** `gnn_true` beats `gnn_wrong`, `gnn_complete`, and `mlp`,
+  each significant (same stats as above). This is what earns "topology": the win
+  survives at degree 2 where the neighbour *set* (not a 1-to-1 link) is the variable.
+- **Key risk:** if `gnn_complete` *catches up* at degree 2, the structure claim
+  weakens to "communication helps." Reported honestly if so.
+
+## C3 — does learned attention substitute for the right structure?
+
+`--suite attention`: GAT-QMIX and DGN-QMIX (the attention mechanisms of DGN /
+G2ANet, which this paper critiques) run over the **complete** graph. With the
+pairing fixed and agent-ids in the features, attention *could* learn to attend to
+the correct partner/neighbour, recovering `gnn_true` from all-to-all.
+
+- **H-attn:** does `gat_complete` / `dgn_complete` reach `gnn_true`? Tested on both
+  the pair and nbr tasks, N=6, ego, 12 seeds.
+
+## Title decision (pre-committed mapping — advisor)
+
+- **C2 holds (`true ≫ wrong ≈ complete`) AND C3 attention-complete does NOT recover**
+  → **strong**: *"message passing must follow task topology; learned attention does
+  not substitute for the right graph."*
+- **C2 holds BUT C3 attention recovers** → **medium**: *"the right structure **or**
+  learned attention; fixed aggregation over the wrong topology fails."*
+- **C2 fails / complete catches up at degree 2** → **narrow, honest**: *"targeted
+  pairwise communication helps in cooperative MARL"* — the matching result as-is, no
+  "structure" overclaim.
+
+```bash
+python scripts/phaseC_structure_sweep.py --task nbr  --seeds 12 --obs ego --workers 16
+python scripts/phaseC_structure_sweep.py --task nbr  --suite attention --seeds 12 --workers 16
+python scripts/phaseC_structure_sweep.py --task pair --suite attention --seeds 12 --workers 16
+python scripts/phaseC_analysis.py --label nbr_N6_ego
+python scripts/phaseC_analysis.py --label nbr_N6_ego_attention
+python scripts/phaseC_analysis.py --label pair_N6_ego_attention
 ```

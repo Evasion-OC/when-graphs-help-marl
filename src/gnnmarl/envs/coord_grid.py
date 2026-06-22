@@ -41,6 +41,7 @@ _VALID_GRAPHS = (
     "grid2d",
     "matching",
     "matching_wrong",
+    "skip_ring",
 )
 _VALID_OBS_MODES = ("full", "ego", "radius")
 
@@ -90,6 +91,7 @@ class CoordGrid:
         goal_routing: bool = False,
         goal_dense: bool = False,
         pair_routing: bool = False,
+        nbr_routing: bool = False,
     ) -> None:
         if n_agents < 1:
             raise ValueError(f"n_agents must be >= 1, got {n_agents}")
@@ -123,6 +125,12 @@ class CoordGrid:
                     "graph='matching_wrong' needs n_agents >= 4 (with N=2 the "
                     "only matching is the canonical one)"
                 )
+
+        if graph == "skip_ring" and n_agents < 5:
+            raise ValueError(
+                "graph='skip_ring' (the +-2 ring) needs n_agents >= 5 so it is "
+                f"2-regular and edge-disjoint from the +-1 ring; got {n_agents}"
+            )
 
         if graph == "erdos_renyi" and not (0.0 <= er_prob <= 1.0):
             raise ValueError(
@@ -181,6 +189,24 @@ class CoordGrid:
                 f"defines the partners); got n_agents={n_agents}"
             )
 
+        # Neighbourhood-routing task: the degree>=2 generalisation of pair_routing
+        # that makes graph TOPOLOGY (not just a 1-to-1 link) load-bearing. Every
+        # agent holds a private goal and must reach the centroid of its *true ring
+        # neighbours'* goals (a fixed +-1 ring defines the task neighbourhood).
+        # Reaching the centroid of a SET requires aggregating the right set: the
+        # complete graph averages all N goals (-> the global centroid, ~constant)
+        # and a skip-ring averages the wrong pair, so only the true ring matches.
+        self.nbr_routing = bool(nbr_routing)
+        if self.nbr_routing and (self.goal_routing or self.pair_routing):
+            raise ValueError(
+                "nbr_routing is mutually exclusive with goal_routing / pair_routing"
+            )
+        if self.nbr_routing and n_agents < 3:
+            raise ValueError(
+                f"nbr_routing requires n_agents >= 3 (a +-1 ring neighbourhood); "
+                f"got n_agents={n_agents}"
+            )
+
         self.n_agents = int(n_agents)
         self.grid_size = int(grid_size)
         self.episode_steps = int(episode_steps)
@@ -212,10 +238,11 @@ class CoordGrid:
         else:
             self.max_neighbors = int(max(1, self._adj.sum(axis=1).max()))
 
-        # Goal block (3 slots: has-goal flag + normalized goal x/y) is appended
-        # in goal-routing mode (filled only for the source agent) and in
-        # pair-routing mode (filled for *every* agent with its own private goal).
-        self._goal_slots = 3 if (self.goal_routing or self.pair_routing) else 0
+        # Goal block (3 slots: has-goal flag + normalized goal x/y) is appended in
+        # goal-routing mode (filled only for the source agent) and in pair/nbr
+        # routing (filled for *every* agent with its own private goal).
+        self._private_goals = self.pair_routing or self.nbr_routing
+        self._goal_slots = 3 if (self.goal_routing or self._private_goals) else 0
         self.obs_dim = 2 + 2 * self.max_neighbors + self.n_agents + self._goal_slots
         self.state_dim = 2 * self.n_agents
 
@@ -229,6 +256,16 @@ class CoordGrid:
             for k in range(self.n_agents // 2):
                 self._partner[2 * k] = 2 * k + 1
                 self._partner[2 * k + 1] = 2 * k
+
+        # Fixed +-1 ring neighbourhood used by nbr-routing to define each agent's
+        # target set: agent i must reach the centroid of goals of {i-1, i+1}. Like
+        # the matching above this is the *task* structure, fixed regardless of the
+        # communication graph (ring => comm==task; skip_ring / complete mismatch).
+        if self.nbr_routing:
+            n = self.n_agents
+            self._ring_nbrs = np.array(
+                [[(i - 1) % n, (i + 1) % n] for i in range(n)], dtype=np.int64
+            )
 
         # Per-episode state.
         self._positions: np.ndarray = np.zeros((self.n_agents, 2), dtype=np.int64)
@@ -254,7 +291,7 @@ class CoordGrid:
             self._goal = self._rng.integers(
                 low=0, high=self.grid_size, size=2, dtype=np.int64
             )
-        if self.pair_routing:
+        if self._private_goals:
             self._goals = self._rng.integers(
                 low=0, high=self.grid_size, size=(self.n_agents, 2), dtype=np.int64
             )
@@ -360,6 +397,14 @@ class CoordGrid:
                 j = (2 * k + 2) % n
                 a[i, j] = 1.0
                 a[j, i] = 1.0
+        elif self.graph_kind == "skip_ring":
+            # The +-2 ring: edges (i, i+2). 2-regular like the +-1 ring but
+            # edge-disjoint from it -- the degree-matched WRONG-topology control
+            # for nbr_routing (it aggregates the wrong neighbour set).
+            for i in range(n):
+                j = (i + 2) % n
+                a[i, j] = 1.0
+                a[j, i] = 1.0
         else:  # pragma: no cover — guarded in __init__.
             raise ValueError(self.graph_kind)
 
@@ -411,12 +456,12 @@ class CoordGrid:
             obs[0, base + 1] = self._goal[0] / gs
             obs[0, base + 2] = self._goal[1] / gs
 
-        # Pair-routing: every agent sees ONLY its own private goal (the thing its
-        # partner must reach). It never sees its partner's goal directly -- under
-        # any obs_mode -- so the partner's goal can reach it only via the graph.
-        # The own-goal block is shown regardless of obs_mode (it is the agent's
-        # own private state, not a neighbour's).
-        if self.pair_routing:
+        # Pair/nbr-routing: every agent sees ONLY its own private goal (the thing
+        # its partner / neighbours must reach). It never sees another agent's goal
+        # directly -- under any obs_mode -- so a partner's goal can reach it only
+        # via the graph. The own-goal block is shown regardless of obs_mode (it is
+        # the agent's own private state, not a neighbour's).
+        if self._private_goals:
             base = 2 + 2 * self.max_neighbors + n
             for i in range(n):
                 obs[i, base] = 1.0
@@ -450,6 +495,16 @@ class CoordGrid:
             dist = tor.sum(axis=-1)                               # [N]
             max_dist = max(1, 2 * (self.grid_size // 2))
             return float(np.sum(1.0 - dist / max_dist))
+        if self.nbr_routing:
+            # Each agent scores by its MEAN toroidal proximity to its true ring
+            # neighbours' goals -- so the optimal cell is the neighbourhood
+            # centroid, which requires aggregating exactly that neighbour set.
+            max_dist = max(1, 2 * (self.grid_size // 2))
+            nbr_goals = self._goals[self._ring_nbrs]             # [N, 2, 2]
+            raw = np.abs(self._positions[:, None, :] - nbr_goals)
+            tor = np.minimum(raw, self.grid_size - raw)          # [N, 2, 2]
+            prox = 1.0 - tor.sum(axis=-1) / max_dist             # [N, 2]
+            return float(np.sum(prox.mean(axis=-1)))
         if self.goal_routing:
             if self.goal_dense:
                 # Shaped: each agent scores 1 - (toroidal Manhattan distance to

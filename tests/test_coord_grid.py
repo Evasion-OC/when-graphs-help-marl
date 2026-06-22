@@ -327,3 +327,57 @@ def test_pair_routing_reward_max_when_all_on_partner_goal() -> None:
 def test_pair_routing_validation(kwargs: dict, match: str) -> None:
     with pytest.raises(ValueError, match=match):
         CoordGrid(grid_size=3, seed=0, **kwargs)
+
+
+# --------------------------------------------------------------- nbr_routing
+# Degree-2 generalisation: structure (the neighbourhood SET) is load-bearing.
+
+
+def test_skip_ring_is_two_regular_and_disjoint_from_ring() -> None:
+    a_ring = CoordGrid(n_agents=6, grid_size=3, graph="ring", seed=0).adjacency()
+    a_skip = CoordGrid(n_agents=6, grid_size=3, graph="skip_ring", seed=0).adjacency()
+    np.testing.assert_array_equal(a_ring.sum(axis=1), np.full(6, 2.0))
+    np.testing.assert_array_equal(a_skip.sum(axis=1), np.full(6, 2.0))
+    assert np.all(a_ring * a_skip == 0.0)  # edge-disjoint
+
+
+def test_skip_ring_requires_five_agents() -> None:
+    with pytest.raises(ValueError, match=">= 5"):
+        CoordGrid(n_agents=4, grid_size=3, graph="skip_ring", seed=0)
+
+
+def test_nbr_routing_obs_dim_constant_across_comm_graphs() -> None:
+    dims = {
+        g: CoordGrid(n_agents=6, grid_size=3, graph=g, nbr_routing=True,
+                     obs_mode="ego", max_neighbors_override=5, seed=0).obs_dim
+        for g in ("ring", "skip_ring", "complete")
+    }
+    assert len(set(dims.values())) == 1, dims
+
+
+def test_nbr_routing_ring_neighbours_are_plus_minus_one() -> None:
+    env = CoordGrid(n_agents=6, grid_size=3, graph="ring", nbr_routing=True, seed=0)
+    np.testing.assert_array_equal(
+        env._ring_nbrs, [[5, 1], [0, 2], [1, 3], [2, 4], [3, 5], [4, 0]]
+    )
+
+
+def test_nbr_routing_reward_max_when_goals_coincide() -> None:
+    env = CoordGrid(n_agents=6, grid_size=3, graph="ring", nbr_routing=True, seed=0)
+    env.reset(seed=3)
+    # Force all goals to one cell; then sitting on it scores 1.0 to both nbrs -> N.
+    env._goals[:] = np.array([1, 1])
+    env._place_agents(np.tile([1, 1], (6, 1)))
+    assert env._compute_reward() == pytest.approx(6.0)
+    # Sitting away from that shared goal scores less than max.
+    env._place_agents(np.zeros((6, 2), dtype=np.int64))
+    assert env._compute_reward() < 6.0
+
+
+@pytest.mark.parametrize("kwargs,match", [
+    ({"n_agents": 2, "nbr_routing": True}, ">= 3"),
+    ({"n_agents": 6, "nbr_routing": True, "pair_routing": True}, "mutually exclusive"),
+])
+def test_nbr_routing_validation(kwargs: dict, match: str) -> None:
+    with pytest.raises(ValueError, match=match):
+        CoordGrid(grid_size=3, seed=0, **kwargs)

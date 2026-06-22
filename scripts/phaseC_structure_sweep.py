@@ -1,28 +1,31 @@
 """Stage C -- the graph-STRUCTURE test (parallel).
 
-The decisive question the advisor raised: does the *right* graph beat a *wrong*
-graph at matched communication and parameters? If yes, graph STRUCTURE (not just
-having a comm channel) is what helps. We test it on the pair-routing task: every
-agent holds a private goal and must reach its PARTNER's goal (a fixed perfect
-matching defines partners), under ``ego`` observability so the partner's goal can
-arrive only over the graph.
+The decisive question (advisor): does the *right* graph beat a *wrong* graph at
+matched communication and parameters? If yes, graph STRUCTURE -- not just having a
+channel -- is what helps. Tested on private-goal routing tasks under ``ego``
+observability, where a partner's/neighbour's goal can arrive only over the graph.
 
-Arms (identical gnn_qmix architecture + params; ONLY the comm graph differs):
-  mlp          -- no-comm, parameter-matched control (floor: no channel at all)
-  gnn_true     -- GNN message passing over the TRUE matching   (comm == task)
-  gnn_wrong    -- GNN over a WRONG matching, same density       (comm != task)
-  gnn_complete -- GNN over the COMPLETE graph (all-to-all)      (most comm, unfocused)
+Two task topologies (``--task``):
+  pair  -- perfect MATCHING: reach your one partner's goal. True=matching,
+           wrong=matching_wrong (same density), complete=all-to-all. The clean
+           mechanism-isolator (degree 1).
+  nbr   -- +-1 RING neighbourhood (degree 2): reach the centroid of your two ring
+           neighbours' goals. True=ring, wrong=skip_ring (+-2, same degree),
+           complete=all-to-all. This makes the *neighbourhood set* (topology)
+           load-bearing, not just a 1-to-1 link.
 
-Pre-registered prediction (structure matters):
-  gnn_true  >  max(gnn_wrong, gnn_complete, mlp), significantly.
-If instead gnn_true ~ gnn_complete, structure is irrelevant (comm alone helps) --
-report that honestly (it is essentially the negative paper, reworded).
+Two arm suites (``--suite``):
+  core      -- mlp, gnn_true, gnn_wrong, gnn_complete (all GCN; isolate structure).
+  attention -- gnn_true vs GAT/DGN on the COMPLETE graph: can *learned* attention
+               recover the right neighbour from all-to-all, or does even attention
+               need the right structure? (Defends the complete arm vs "mean-pool
+               is just dumb"; ties to the DGN/G2ANet methods the paper critiques.)
 
 Usage::
-    python scripts/phaseC_structure_sweep.py --seeds 3            # smoke
-    python scripts/phaseC_structure_sweep.py --seeds 12 --workers 16   # confirmatory
-    python scripts/phaseC_structure_sweep.py --obs full          # crossover control
-    python scripts/phaseC_structure_sweep.py --dry-run
+    python scripts/phaseC_structure_sweep.py --task nbr --seeds 3            # smoke
+    python scripts/phaseC_structure_sweep.py --task nbr --seeds 12 --workers 16
+    python scripts/phaseC_structure_sweep.py --task pair --suite attention --seeds 12
+    python scripts/phaseC_structure_sweep.py --task nbr --dry-run
 """
 
 from __future__ import annotations
@@ -46,16 +49,35 @@ sys.path.insert(0, str(REPO_ROOT / "src"))
 GRID = 3
 EPISODE_STEPS = 25
 
+# Per task: (env routing flag, true comm graph, wrong comm graph).
+TASKS = {
+    "pair": ("pair_routing", "matching", "matching_wrong"),
+    "nbr": ("nbr_routing", "ring", "skip_ring"),
+}
 
-def arms() -> tuple[tuple[str, str, str, dict], ...]:
-    """(arm_name, algo, env_graph, extra algo_kwargs). Same arch for all GNN arms."""
+
+def arms(task: str, suite: str) -> tuple[tuple[str, str, str, dict], ...]:
+    """(arm_name, algo, env_graph, extra algo_kwargs)."""
+    _, true_g, wrong_g = TASKS[task]
     repaired = {"gnn_residual": True, "gnn_layernorm": True}
-    return (
-        ("mlp", "mlp_qmix", "matching", {"gnn_layers": 2}),
-        ("gnn_true", "gnn_qmix", "matching", {"gnn_layers": 2, **repaired}),
-        ("gnn_wrong", "gnn_qmix", "matching_wrong", {"gnn_layers": 2, **repaired}),
-        ("gnn_complete", "gnn_qmix", "complete", {"gnn_layers": 2, **repaired}),
-    )
+    if suite == "core":
+        return (
+            ("mlp", "mlp_qmix", true_g, {"gnn_layers": 2}),
+            ("gnn_true", "gnn_qmix", true_g, {"gnn_layers": 2, **repaired}),
+            ("gnn_wrong", "gnn_qmix", wrong_g, {"gnn_layers": 2, **repaired}),
+            ("gnn_complete", "gnn_qmix", "complete", {"gnn_layers": 2, **repaired}),
+        )
+    if suite == "attention":
+        # Does learned attention over all-to-all recover the true-structure GCN?
+        return (
+            ("mlp", "mlp_qmix", true_g, {"gnn_layers": 2}),
+            ("gnn_true", "gnn_qmix", true_g, {"gnn_layers": 2, **repaired}),
+            ("gcn_complete", "gnn_qmix", "complete", {"gnn_layers": 2, **repaired}),
+            ("gat_complete", "gat_qmix", "complete", {"gnn_layers": 2}),
+            ("dgn_complete", "dgn_qmix", "complete", {"gnn_layers": 2}),
+            ("gat_true", "gat_qmix", true_g, {"gnn_layers": 2}),
+        )
+    raise ValueError(f"unknown suite {suite!r}")
 
 
 def _run_one(job: dict) -> dict:
@@ -73,7 +95,7 @@ def _run_one(job: dict) -> dict:
             "grid_size": GRID,
             "episode_steps": EPISODE_STEPS,
             "graph": job["env_graph"],
-            "pair_routing": True,
+            job["routing_flag"]: True,
             "obs_mode": job["obs"],
             "max_neighbors_override": n - 1,  # constant obs_dim across comm graphs
         },
@@ -100,19 +122,20 @@ def _run_one(job: dict) -> dict:
     ret = pd.read_csv(Path(run_dir) / "episodes.csv")["return"].to_numpy(dtype=float)
     k = max(1, int(len(ret) * 0.2))
     return {
-        "arm": job["arm"],
-        "algo": job["algo"],
-        "env_graph": job["env_graph"],
-        "obs": job["obs"],
-        "n_agents": n,
-        "seed": job["seed"],
-        "run_dir": str(run_dir),
+        "arm": job["arm"], "algo": job["algo"], "env_graph": job["env_graph"],
+        "task": job["task"], "suite": job["suite"], "obs": job["obs"],
+        "n_agents": n, "seed": job["seed"], "run_dir": str(run_dir),
+        # Stamp the budget so a manifest reveals co-mingled step counts (a label
+        # dir reused across --steps would otherwise silently mix budgets).
+        "steps": steps, "n_episodes": int(len(ret)),
         "final": float(ret[-k:].mean()),
     }
 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
+    ap.add_argument("--task", type=str, default="pair", choices=tuple(TASKS))
+    ap.add_argument("--suite", type=str, default="core", choices=("core", "attention"))
     ap.add_argument("--steps", type=int, default=30_000)
     ap.add_argument("--seeds", type=int, default=3)
     ap.add_argument("--n-agents", type=int, default=6)
@@ -123,24 +146,27 @@ def main() -> int:
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args()
 
-    label = f"N{args.n_agents}_{args.obs}"
+    routing_flag = TASKS[args.task][0]
+    suite_tag = "" if args.suite == "core" else f"_{args.suite}"
+    label = f"{args.task}_N{args.n_agents}_{args.obs}{suite_tag}"
     jobs: list[dict] = []
-    for arm, algo, env_graph, extra in arms():
+    for arm, algo, env_graph, extra in arms(args.task, args.suite):
         for seed in range(args.seeds):
             jobs.append({
                 "arm": arm, "algo": algo, "env_graph": env_graph, "extra": extra,
+                "routing_flag": routing_flag, "task": args.task, "suite": args.suite,
                 "obs": args.obs, "n_agents": args.n_agents, "seed": seed,
                 "steps": args.steps, "device": args.device,
                 "log_dir": str(args.log_dir / label),
-                "run_id": f"{arm}__{args.obs}__N{args.n_agents}__seed{seed}",
+                "run_id": f"{arm}__{label}__seed{seed}",
             })
 
-    print(f"[phaseC] {len(jobs)} runs x {args.steps} steps | N={args.n_agents} "
-          f"obs={args.obs} grid={GRID} | workers={args.workers} device={args.device}",
-          flush=True)
+    print(f"[phaseC] task={args.task} suite={args.suite} {len(jobs)} runs x {args.steps} "
+          f"steps | N={args.n_agents} obs={args.obs} grid={GRID} | "
+          f"workers={args.workers} device={args.device}", flush=True)
     if args.dry_run:
         for j in jobs:
-            print(f"  {j['run_id']:<34} algo={j['algo']:<9} graph={j['env_graph']}")
+            print(f"  {j['run_id']:<40} algo={j['algo']:<9} graph={j['env_graph']}")
         return 0
 
     args.log_dir.mkdir(parents=True, exist_ok=True)
@@ -157,11 +183,11 @@ def main() -> int:
                   f"final={r['final']:.2f} ({time.monotonic() - t0:.0f}s)", flush=True)
 
     manifest = args.log_dir / f"manifest_{label}.csv"
-    pd.DataFrame(rows).sort_values(["arm", "seed"]).to_csv(manifest, index=False)
     df = pd.DataFrame(rows)
+    df.sort_values(["arm", "seed"]).to_csv(manifest, index=False)
     print(f"\n[phaseC] complete in {time.monotonic() - t0:.0f}s -> {manifest}")
-    print("\n=== mean final return by arm (obs={}) ===".format(args.obs))
-    for arm, _, _, _ in arms():
+    print(f"\n=== mean final return by arm (task={args.task} obs={args.obs}) ===")
+    for arm, *_ in arms(args.task, args.suite):
         sub = df[df.arm == arm]["final"]
         print(f"  {arm:<13} {sub.mean():7.2f}  (sd {sub.std():.2f}, n={len(sub)})")
     return 0

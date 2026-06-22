@@ -1,17 +1,21 @@
-"""Stage C analysis -- test the pre-registered H-struct (graph STRUCTURE helps).
+"""Stage C analysis -- test the pre-registered structure hypotheses.
 
-Reads results/phaseC/manifest_<label>.csv (written by phaseC_structure_sweep.py)
-and evaluates the pre-registered decision rule:
+Generic over the Stage C sweeps (any --label written by phaseC_structure_sweep.py).
+Reports per-arm final-window return (mean, 95% CI) and compares gnn_true against
+EVERY other arm present, Holm-correcting across exactly that family (the
+pre-registered family in docs/STAGE_C.md), with two-sided Welch t + Mann-Whitney U
+and Cohen's d.
 
-  H-struct: gnn_true beats EACH of {gnn_wrong, gnn_complete, mlp}, significantly
-            (Holm-corrected Welch t AND Mann-Whitney U, two-sided, p<0.05).
-  Discriminator: does gnn_complete beat mlp? (comm without structure)
-
-Writes results/phaseC/{summary,struct_verdict}_<label>.csv and prints the verdict.
+  core suite (mlp/gnn_true/gnn_wrong/gnn_complete):
+      H-struct holds iff gnn_true beats wrong AND complete AND mlp, significantly.
+  attention suite (adds gat/dgn on complete):
+      reports whether learned attention over all-to-all (gat_complete/dgn_complete)
+      reaches gnn_true -- i.e. whether attention can substitute for the right graph.
 
 Usage::
-    python scripts/phaseC_analysis.py                  # N6, ego (default)
-    python scripts/phaseC_analysis.py --label N6_full
+    python scripts/phaseC_analysis.py --label N6_ego          # committed pair result
+    python scripts/phaseC_analysis.py --label nbr_N6_ego      # neighbourhood task
+    python scripts/phaseC_analysis.py --label nbr_N6_ego_attention
 """
 
 from __future__ import annotations
@@ -29,9 +33,10 @@ sys.path.insert(0, str(REPO_ROOT / "src"))
 
 from gnnmarl.utils.stats import holm_correct, mean_with_ci  # noqa: E402
 
-ARMS = ["mlp", "gnn_true", "gnn_wrong", "gnn_complete"]
 KEY = "gnn_true"
-RIVALS = ("gnn_wrong", "gnn_complete", "mlp")
+# Preferred display order; any extra arms are appended in first-seen order.
+ARM_ORDER = ["mlp", "gnn_true", "gnn_wrong", "gnn_complete",
+             "gcn_complete", "gat_complete", "dgn_complete", "gat_true"]
 
 
 def cohens_d(a: np.ndarray, b: np.ndarray) -> float:
@@ -66,77 +71,87 @@ def main() -> int:
     man["final"] = [
         final_window_mean(r.run_dir, args.window, r.final) for r in man.itertuples()
     ]
+    present = list(man["arm"].unique())
+    arms_ordered = [a for a in ARM_ORDER if a in present] + \
+                   [a for a in present if a not in ARM_ORDER]
+    scores = {a: man[man.arm == a]["final"].to_numpy() for a in arms_ordered}
 
-    scores = {arm: man[man.arm == arm]["final"].to_numpy() for arm in ARMS
-              if len(man[man.arm == arm]) > 0}
-
-    # ---- summary ----
     print(f"\n=== Stage C [{args.label}]: final-window return mean [95% CI] ===")
     summ = []
-    for arm in ARMS:
-        if arm not in scores:
-            continue
-        m, lo, hi = mean_with_ci(scores[arm])
-        summ.append({"arm": arm, "n": len(scores[arm]), "mean": m, "ci_lo": lo, "ci_hi": hi})
-        print(f"  {arm:<13} {m:8.2f}  [{lo:7.2f}, {hi:7.2f}]  (n={len(scores[arm])})")
+    for a in arms_ordered:
+        m, lo, hi = mean_with_ci(scores[a])
+        summ.append({"arm": a, "n": len(scores[a]), "mean": m, "ci_lo": lo, "ci_hi": hi})
+        print(f"  {a:<13} {m:8.2f}  [{lo:7.2f}, {hi:7.2f}]  (n={len(scores[a])})")
     pd.DataFrame(summ).to_csv(args.log_dir / f"summary_{args.label}.csv", index=False)
 
     if KEY not in scores:
-        print(f"ERROR: {KEY} missing.")
+        print(f"ERROR: {KEY} not in manifest arms {present}.")
         return 1
 
-    # ---- H-struct: gnn_true vs each rival; Holm across EXACTLY this 3-comparison
-    # family (the pre-registered family in docs/STAGE_C.md), not all 6 arm-pairs. ----
-    rivals = [r for r in RIVALS if r in scores]
+    rivals = [a for a in arms_ordered if a != KEY]
     raw_welch = [
         float(stats.ttest_ind(scores[KEY], scores[r], equal_var=False,
                               alternative="two-sided").pvalue)
         for r in rivals
     ]
     welch_holm = dict(zip(rivals, holm_correct(raw_welch)))
-    print(f"\n=== H-struct: {KEY} vs each rival (Welch Holm[3-family] + MWU) ===")
+
+    print(f"\n=== {KEY} vs each other arm (Welch Holm[{len(rivals)}-family] + MWU) ===")
     verdict_rows = []
-    all_sig = len(rivals) == len(RIVALS)
-    for rival in rivals:
-        key_v, riv_v = scores[KEY], scores[rival]
-        adv = float(key_v.mean() - riv_v.mean())
-        welch_p = welch_holm[rival]
-        mwu_p = float(stats.mannwhitneyu(key_v, riv_v, alternative="two-sided").pvalue)
-        d = cohens_d(key_v, riv_v)
-        sig = bool(adv > 0 and welch_p < 0.05 and mwu_p < 0.05)
-        all_sig = all_sig and sig
-        verdict_rows.append({"comparison": f"{KEY}_vs_{rival}", "advantage": adv,
-                             "cohens_d": d, "welch_p_holm": welch_p, "mwu_p": mwu_p,
+    core_rivals = [r for r in ("gnn_wrong", "gnn_complete", "mlp") if r in scores]
+    all_core_sig = len(core_rivals) == 3
+    for r in rivals:
+        kv, rv = scores[KEY], scores[r]
+        adv = float(kv.mean() - rv.mean())
+        wp = welch_holm[r]
+        mwu = float(stats.mannwhitneyu(kv, rv, alternative="two-sided").pvalue)
+        d = cohens_d(kv, rv)
+        sig = bool(adv > 0 and wp < 0.05 and mwu < 0.05)
+        if r in core_rivals:
+            all_core_sig = all_core_sig and sig
+        verdict_rows.append({"comparison": f"{KEY}_vs_{r}", "advantage": adv,
+                             "cohens_d": d, "welch_p_holm": wp, "mwu_p": mwu,
                              "significant": sig})
-        print(f"  {KEY} - {rival:<13} = {adv:+7.2f}  d={d:5.2f}  "
-              f"Welch p_holm={welch_p:.4f}  MWU p={mwu_p:.4f}  "
-              f"{'<<< SIG' if sig else ''}")
+        print(f"  {KEY} - {r:<13} = {adv:+7.2f}  d={d:6.2f}  "
+              f"Welch p_holm={wp:.4f}  MWU p={mwu:.4f}  {'<<< SIG' if sig else ''}")
+    pd.DataFrame(verdict_rows).to_csv(args.log_dir / f"struct_verdict_{args.label}.csv",
+                                      index=False)
 
-    # ---- discriminator: comm without structure (gnn_complete vs mlp) ----
-    disc = None
-    if "gnn_complete" in scores and "mlp" in scores:
-        cv, mv = scores["gnn_complete"], scores["mlp"]
-        disc_p = float(stats.ttest_ind(cv, mv, equal_var=False,
-                                       alternative="two-sided").pvalue)
-        disc = float(cv.mean() - mv.mean())
-        print(f"\n  discriminator  gnn_complete - mlp = {disc:+7.2f}  "
-              f"Welch p={disc_p:.4f}  "
-              f"({'comm alone helps' if disc > 0 and disc_p < 0.05 else 'comm alone does NOT help'})")
-    pd.DataFrame(verdict_rows).to_csv(args.log_dir / f"struct_verdict_{args.label}.csv", index=False)
-
-    # ---- verdict ----
-    print("\n=== STAGE C VERDICT ===")
-    if all_sig:
-        print("  => H-struct SUPPORTED. gnn_true significantly beats the wrong graph,\n"
-              "     the complete graph, AND no-comm -- at matched params/obs. Graph\n"
-              "     STRUCTURE genuinely helps: message passing must follow the task's\n"
-              "     coordination edges. This is a real, structure-level positive result.")
-    elif disc is not None and disc > 0:
-        print("  => Partial: communication helps but the CORRECT graph is not clearly\n"
-              "     better than all-to-all. Speaks to comm, not structure. Report honestly.")
-    else:
-        print("  => NOT supported. The graph does not beat its controls here either.\n"
-              "     Lock in the strengthened negative paper.")
+    # ---- verdicts ----
+    print("\n=== VERDICT ===")
+    if {"gnn_wrong", "gnn_complete", "mlp"}.issubset(scores):
+        if all_core_sig:
+            print("  H-struct SUPPORTED: gnn_true beats the wrong graph, the complete\n"
+                  "  graph, AND no-comm at matched params/obs. Graph STRUCTURE helps --\n"
+                  "  message passing must follow the task's coordination topology.")
+        else:
+            print("  H-struct NOT fully supported: gnn_true does not significantly beat\n"
+                  "  all of {wrong, complete, mlp}. Report honestly.")
+    # attention read-out (power-gated: do not assert "recovers" on an underpowered
+    # or confounded comparison). If gat_true itself floors, the attention arms are
+    # undertrained/unstabilized and the gat_complete comparison is uninformative.
+    gat_true_floored = (
+        "gat_true" in scores and "mlp" in scores
+        and float(scores["gat_true"].mean() - scores["mlp"].mean()) < 3.0
+    )
+    for att in ("gat_complete", "dgn_complete"):
+        if att in scores:
+            gap = float(scores[KEY].mean() - scores[att].mean())
+            wp = welch_holm[att]
+            n = min(len(scores[KEY]), len(scores[att]))
+            if n < 10:
+                print(f"  attention: {att} gap {gap:+.1f} (p_holm={wp:.3f}) "
+                      f"-> INCONCLUSIVE (underpowered, n={n}).")
+            elif gat_true_floored:
+                print(f"  attention: {att} gap {gap:+.1f} (p_holm={wp:.3f}); but gat_true is "
+                      f"at the floor -> attention arms UNDERTRAINED/confounded (lack the GCN's "
+                      f"residual+LayerNorm); comparison inconclusive.")
+            elif gap > 0 and wp < 0.05:
+                print(f"  attention: gnn_true still beats {att} (+{gap:.1f}, p_holm={wp:.3f})"
+                      f" -> learned attention does NOT substitute for structure.")
+            else:
+                print(f"  attention: {att} reaches gnn_true (gap {gap:+.1f}, p_holm={wp:.3f})"
+                      f" -> attention can LEARN the structure from all-to-all.")
     return 0
 
 
