@@ -207,12 +207,39 @@
 \newcommand{\SCnbrTmD}{1.5}
 \newcommand{\SCnbrPHolm}{0.005}       % all degree-2 contrasts p_holm < 0.005
 \newcommand{\SCnbrShrink}{7}          % ~7x smaller than degree-1
-% Attention arms (N=6, ego) -- all floored; inconclusive (no residual+LN):
-\newcommand{\SCgatComplete}{49.65}
-\newcommand{\SCdgnComplete}{50.09}
-\newcommand{\SCgatTrue}{51.45}
-\newcommand{\SCtrueGatTrueGap}{+14.7} % gnn_true - gat_true
-\newcommand{\SCtrueGatTrueD}{4.5}
+% Attention arms (N=6, ego) -- STABILIZATION-MATCHED (residual+LayerNorm added
+% to GAT/DGN), 12 seeds. Now cleanly identified (no stabilization confound).
+\newcommand{\SCgatComplete}{50.19}    % gat_true's all-to-all sibling (floor)
+\newcommand{\SCdgnComplete}{50.45}    % multi-head attention / all-to-all (floor)
+\newcommand{\SCgatTrue}{67.03}        % attention / true matching: trains as well as GCN
+\newcommand{\SCgatTrueGap}{+0.9}      % gat_true - gnn_true = +0.93 (n.s., p=0.64)
+\newcommand{\SCgatTrueP}{0.64}        % Welch p, gat_true vs gnn_true (not significant)
+\newcommand{\SCtrueGatCompGap}{+15.9} % gnn_true - gat_complete (floor contrast)
+\newcommand{\SCtrueDgnCompGap}{+15.7} % gnn_true - dgn_complete (floor contrast)
+\newcommand{\SCtrueAttCompD}{5.5}     % Cohen's d, gnn_true vs attention-over-all-to-all
+% --- Stage D: out-of-harness replication in TokenMatch (no grid/movement). --
+% Referential matching game: each agent must OUTPUT its partner's private
+% token, routable only over the graph. SAME structure arms (only adjacency
+% differs). N=6, K=5 tokens, 12 seeds. Numbers from STAGE_C_FINDINGS.md sec.7.
+\newcommand{\tokenmatch}{\textsc{TokenMatch}}
+\newcommand{\TMmax}{60}               % task maximum
+\newcommand{\TMfloor}{12}             % random floor (~)
+\newcommand{\TMmlp}{11.90}            % mlp (no comm)
+\newcommand{\TMmlpLo}{11.67}
+\newcommand{\TMmlpHi}{12.14}
+\newcommand{\TMwrong}{12.03}          % gnn_wrong
+\newcommand{\TMwrongLo}{11.78}
+\newcommand{\TMwrongHi}{12.27}
+\newcommand{\TMcomplete}{24.50}       % gnn_complete (all-to-all: PARTIAL routing)
+\newcommand{\TMcompleteLo}{24.18}
+\newcommand{\TMcompleteHi}{24.81}
+\newcommand{\TMtrue}{57.59}           % gnn_true (near-solves: ~96% of max)
+\newcommand{\TMtrueLo}{57.55}
+\newcommand{\TMtrueHi}{57.63}
+\newcommand{\TMfrac}{96}              % gnn_true as % of max (57.6/60)
+\newcommand{\TMtwGap}{+45.6}          % gnn_true - gnn_wrong
+\newcommand{\TMtcGap}{+33.1}          % gnn_true - gnn_complete
+\newcommand{\TMtmGap}{+45.7}          % gnn_true - mlp
 
 % --- Title block. ---------------------------------------------------------
 \title{When Does Graph Structure Help in Multi-Agent\\
@@ -262,16 +289,18 @@ the task-matched graph beats a density-matched \emph{wrong} graph and
 all-to-all communication at byte-identical parameters and observations
 (Cohen's $d\approx5$; $+16$ return over a random floor of ${\sim}50$ at
 degree-1; Welch with Holm correction and Mann--Whitney $p<10^{-4}$). More
-communication did not help; the \emph{right} communication did---so the
-advantage is graph \emph{structure}, not the channel or the capacity. The
-effect is significant at every team size $N{=}4$--$10$ but
-\emph{non-monotone} (it does not grow as a dose-response), is robust to full
-observability, and persists at degree-2 (genuine topology) though about
-$\SCnbrShrink\times$ smaller. We state scope plainly: this is a
-constructed-task existence/boundary result on a single environment family,
-and whether learned attention can substitute for fixed structure is left
-inconclusive (the attention arms lacked the stabilisation the GCN arms
-carry and failed to train). The practical rule: add a coordination graph,
+communication did not help; the \emph{right} communication did---and the
+advantage is graph \emph{structure}, not the channel, the capacity, or the
+aggregator's expressiveness: even a stabilisation-matched \emph{learned}
+attention aggregator floors over all-to-all while matching the GCN given the
+right graph, so it needs the structure too. The effect is significant at every
+team size $N{=}4$--$10$ but \emph{non-monotone} (it does not grow as a
+dose-response), is robust to full observability, and persists at degree-2
+(genuine topology) though about $\SCnbrShrink\times$ smaller. It replicates
+out of harness in a non-spatial token-matching game, so it is not a gridworld
+artefact. We state scope plainly: this is a constructed-task
+existence/boundary result---replication on a standard third-party benchmark is
+still future work. The practical rule: add a coordination graph,
 and route along task-relevant edges rather than all-to-all, only when agents
 must act on information held by specific others they cannot observe. We
 release the harness, configs, and plotting code as supplementary material
@@ -376,10 +405,13 @@ into a single ``when does it help'' statement rather than overturning it.
         communication at byte-identical parameters and observations
         ($d\approx5$ at degree-1; Welch/Holm and Mann--Whitney $p<10^{-4}$):
         more communication did not help, the \emph{right} communication did.
-        The effect is significant at every $N{=}4$--$10$ (but non-monotone),
-        robust to observability, and survives at degree-2 about
-        $\SCnbrShrink\times$ smaller; whether learned attention substitutes
-        for fixed structure is left inconclusive.
+        The advantage is the structure, not the channel, the capacity, or the
+        aggregator's expressiveness: even a stabilisation-matched learned
+        attention aggregator floors over all-to-all yet matches the GCN given
+        the right graph. The effect is significant at every $N{=}4$--$10$ (but
+        non-monotone), robust to observability, survives at degree-2 about
+        $\SCnbrShrink\times$ smaller, and replicates out of harness in a
+        non-spatial token-matching game (not a gridworld artefact).
   \item The depth--diameter alignment heuristic (H3) is falsified in favour
         of a sharper practitioner rule (\S\ref{sec:results:ablation}): a
         hard over-depth cliff means GCN depth should not exceed two in
@@ -1151,38 +1183,88 @@ $+16$ / ${\sim}33\%$). A fixed mean-aggregating GCN exploits a
 neighbourhood-set (centroid) task far less efficiently than single-partner
 routing.
 
-\subsection{What we do \emph{not} claim: attention vs.\ structure}
+\subsection{Learned attention does not substitute for structure either}
 \label{sec:structure:attention}
 
-A natural question is whether learned attention over the \emph{complete}
-graph could rediscover the right edges and thus substitute for fixed
-structure. We tested single-head (GAT) and multi-head (DGN/G2ANet-style)
-attention over all-to-all; as run, both stayed at the floor
-($\SCgatComplete$, $\SCdgnComplete$). \textbf{We do not conclude ``attention
-cannot substitute for structure,'' because the attention arms are not cleanly
-identified:} they lacked the residual$+$LayerNorm stabilisation the GCN arms
-carry, and GAT \emph{given the correct graph} (\texttt{gat\_true}) also
-floored ($\SCgatTrue$, vs.\ \gtrue\ at $66.1$: a $\SCtrueGatTrueGap$ gap,
-$d=\SCtrueGatTrueD$). The attention arms thus failed to \emph{train}, not
-demonstrably to \emph{find} structure. The ``structure, not channel''
-conclusion rests entirely on the clean \gtrue\ vs.\ \gcomplete\ contrast
-(both repaired GCN; $\SCtcGap$, $d=\SCtcD$). A matched-stabilisation
-attention re-run (adding residual$+$LayerNorm to GAT/DGN) is the cheapest
-open follow-up; until then we report attention-vs-structure as inconclusive.
+A natural question is whether an expressive \emph{learned} aggregator over the
+\emph{complete} graph could rediscover the right edges and thus substitute for
+fixed structure. We add single-head (GAT) and multi-head (DGN/G2ANet-style)
+attention arms, \textbf{stabilisation-matched} to the GCN (the same
+residual$+$LayerNorm), $N{=}6$, 12 seeds---so the earlier confound, attention
+arms lacking the GCN's stabilisation, is removed. Two facts settle the
+question. \emph{(i) The attention arms are not under-trained:} given the
+\emph{right} graph, learned attention is statistically indistinguishable from
+the GCN (\texttt{gat\_true} $\SCgatTrue$ vs.\ \gtrue\ at \SCtrueN; the gap
+$\SCgatTrueGap$ nominally favours attention but is not significant, Welch
+$p=\SCgatTrueP$). \emph{(ii) Over
+all-to-all, learned attention still floors:} \gtrue\ beats
+\texttt{gat\_complete} ($\SCgatComplete$) and \texttt{dgn\_complete}
+($\SCdgnComplete$) by $\SCtrueGatCompGap$ and $\SCtrueDgnCompGap$
+respectively (Cohen's $d{\approx}\SCtrueAttCompD$, $p<10^{-4}$). So even an
+expressive, well-trained attention aggregator does \emph{not} recover the
+result from the wrong structure---it needs the right graph too. The advantage
+is the structure, not the channel, the capacity, \emph{or} the aggregator's
+expressiveness.
+
+\subsection{Out-of-harness replication: not a gridworld artefact}
+\label{sec:structure:tokenmatch}
+
+Everything above is \coordgrid, a navigation task; the effect could be a
+gridworld artefact. To rule that out we replicate the structure test in a
+\emph{completely different} environment---\tokenmatch, a referential matching
+game with \emph{no grid, no movement, no navigation}: each agent privately
+holds a token and must \emph{output its partner's token}, which can reach it
+only over the graph. The structure-isolating arms carry over unchanged (only
+\texttt{env.adjacency()} differs): \gtrue\ (the matching), \gwrong\ (a wrong
+matching), \gcomplete\ (all-to-all), and the no-communication \mlpc\ control.
+With $N{=}6$, $K{=}5$ tokens, and 12 seeds (Table~\ref{tab:tokenmatch}),
+\gtrue\ \emph{near-solves} the task ($\TMtrue$ of a maximum $\TMmax$, ${\approx}\TMfrac\%$)
+and is completely separated from every rival---it beats the wrong matching by
+$\TMtwGap$, all-to-all by $\TMtcGap$, and no communication by $\TMtmGap$
+($p<10^{-4}$ on both tests, variance near zero). All-to-all does
+\emph{partial} routing here ($\TMcomplete$, ${\approx}{+}12$ over the
+${\approx}\TMfloor$ floor)---the partner's token is one of the inputs the mean
+aggregator averages---but it remains $\TMtcGap$ below the task-matched graph.
+The structure effect therefore reproduces, more cleanly, in a structurally
+unrelated task: it is \textbf{not} a \coordgrid\ artefact.
+
+\begin{table}[t]
+  \centering
+  \small
+  \caption{\textbf{Out-of-harness replication} (\tokenmatch, a non-spatial
+  referential matching game; $N{=}6$, $K{=}5$ tokens, 12 seeds). Same
+  structure-isolating arms as \pairrouting\ (only \texttt{adjacency()}
+  differs). The task-matched graph near-solves the task; the wrong graph and
+  no-communication sit at the random floor (${\approx}\TMfloor$); all-to-all
+  routes only partially because the partner's token is one of the averaged
+  inputs.}
+  \label{tab:tokenmatch}
+  \begin{tabular}{llr}
+    \toprule
+    Arm & comm.\ graph & final return [95\% CI] \\
+    \midrule
+    \mlpc      & none                  & $\TMmlp$ $[\TMmlpLo, \TMmlpHi]$ \\
+    \gwrong    & wrong matching        & $\TMwrong$ $[\TMwrongLo, \TMwrongHi]$ \\
+    \gcomplete & all-to-all (partial routing) & $\TMcomplete$ $[\TMcompleteLo, \TMcompleteHi]$ \\
+    \textbf{\gtrue} & \textbf{the task matching} & $\mathbf{\TMtrue}$ $[\TMtrueLo, \TMtrueHi]$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
 
 \paragraph{Scope of the positive endpoint.} These tasks are \emph{built} so
 that routing is necessary---the right design to isolate structure from
 capacity, convention, and observability, and the pre-registered plan. The
 result \emph{coexists with} the negative endpoint; it does not show the
-negative was wrong. Two limits are explicit. (i) It is a constructed-task
-existence/boundary result on a single environment family (the $3{\times}3$
-\coordgrid, $N\le10$); the negative half replicated out of harness on
-MPE/LBF, but the positive half has not yet, so we do not generalise beyond
-``task-structured routing under partial information.'' (ii) Whether learned
-attention can recover the effect is open (\S\ref{sec:structure:attention}).
-For reproducibility, the $N{=}6$ headline is \emph{bit-identical} across two
-independent runs spanning a script refactor---genuine seed determinism, not
-relabelled copies.
+negative was wrong. The positive effect now reproduces out of harness in a
+structurally unrelated, non-spatial environment (\tokenmatch,
+\S\ref{sec:structure:tokenmatch}), so it is not a gridworld artefact; both
+\tokenmatch\ and \pairrouting\ are nonetheless purpose-built cooperative tasks
+with a private-partner-routing structure, and replication on a \emph{standard}
+third-party benchmark (an MPE/LBF variant with private per-agent goals)
+remains future work---we do not generalise beyond ``task-structured routing
+under partial information.'' For reproducibility, the $N{=}6$ headline is
+\emph{bit-identical} across two independent runs spanning a script
+refactor---genuine seed determinism, not relabelled copies.
 
 % =========================================================================
 \section{Discussion}
@@ -1300,19 +1382,17 @@ We list explicit limitations rather than burying them.
         attention (Appendix~\ref{app:gat}); at the negative endpoint
         attention narrows but does not close the gap. Learned message passing
         (\algoname{GIN}) and edge-feature GNNs remain open.
-  \item \textbf{Positive endpoint is a single-env existence result.} The
+  \item \textbf{Positive endpoint is still a synthetic-task result.} The
         positive boundary (Section~\ref{sec:results:structure}) is a
-        constructed-task existence/boundary result on one environment family
-        (the $3{\times}3$ \coordgrid, $N\le10$). Unlike the negative half, it
-        has not yet been replicated out of harness, so we do not generalise it
-        beyond ``task-structured routing under partial information.''
-  \item \textbf{Attention vs.\ structure is inconclusive.} The attention arms
-        at the positive endpoint (GAT/DGN over the complete graph) lacked the
-        residual$+$LayerNorm stabilisation the GCN arms carry and failed to
-        train---GAT \emph{given the correct graph} also floored
-        (Section~\ref{sec:structure:attention}). We therefore cannot say
-        whether learned attention can substitute for fixed structure; a
-        matched-stabilisation re-run is the cleanest follow-up.
+        constructed-task existence/boundary result. It now replicates out of
+        harness in a structurally unrelated, non-spatial environment
+        (\tokenmatch, Section~\ref{sec:structure:tokenmatch}), so it is not a
+        \coordgrid\ artefact; but both \tokenmatch\ and \pairrouting\ are
+        purpose-built cooperative tasks with a private-partner-routing
+        structure. Replication on a standard third-party benchmark (an MPE/LBF
+        variant with private per-agent goals) remains future work, and we do
+        not generalise beyond ``task-structured routing under partial
+        information.''
   \item \textbf{Single-CPU training.} We did not retune learning-rate /
         batch-size choices for GPU throughput.
   \item \textbf{Seed count.} The main CoordGrid and MPE sweep runs at
@@ -1348,16 +1428,18 @@ beats a density-matched wrong graph \emph{and} all-to-all communication at
 byte-identical parameters and observations ($d\approx5$ at degree-1;
 Welch/Holm and Mann--Whitney $p<10^{-4}$)---more communication did not help,
 the \emph{right} communication did, so the advantage is structure, not the
-channel. The effect is significant at every $N{=}4$--$10$ (non-monotone),
-robust to observability, and survives at degree-2 about $\SCnbrShrink\times$
-smaller. The practical rule that unifies the two: route along task-relevant
+channel, the capacity, \emph{or} the aggregator's expressiveness: a
+stabilisation-matched learned attention aggregator floors over all-to-all yet
+matches the GCN given the right graph. The effect is significant at every
+$N{=}4$--$10$ (non-monotone), robust to observability, survives at degree-2
+about $\SCnbrShrink\times$ smaller, and replicates out of harness in a
+non-spatial token-matching game (\tokenmatch), so it is not a gridworld
+artefact. The practical rule that unifies the two: route along task-relevant
 edges, not all-to-all, only when agents must act on information held by
-specific others they cannot observe. Two follow-ups would sharpen the
-positive endpoint: replicating it out of harness on a standard
-partially-observable benchmark, and a matched-stabilisation attention re-run
-(adding residual$+$LayerNorm to GAT/DGN) to settle whether learned attention
-can substitute for fixed structure. We release the harness and the
-\mlpqmix\ control to make such measurements cheaper.
+specific others they cannot observe. The positive endpoint remains a
+synthetic-task result---replication on a standard third-party benchmark with
+private per-agent goals is the natural next step. We release the harness and
+the \mlpqmix\ control to make such measurements cheaper.
 
 % =========================================================================
 \bibliographystyle{tmlr}
