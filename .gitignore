@@ -50,6 +50,8 @@ paper/*.log
 paper/*.out
 paper/*.toc
 paper/*.synctex.gz
+paper/*.bcf
+paper/*.run.xml
 
 # Run stdout logs
 *.out
