@@ -358,7 +358,9 @@ agent must act on private information held by one specific partner it cannot
 observe, so the coordination graph is the only path for that information.
 There, message passing helps---but only when the communication topology
 matches the task's coordination edges; pointing the same channel at the
-wrong neighbours, or at everyone, is no better than no channel. The two
+wrong neighbours leaves it at the no-communication floor, and broadcasting to
+everyone does at most weak, task-incidental routing far below the task-matched
+graph. The two
 endpoints \emph{coexist}: the positive result completes the negative one
 into a single ``when does it help'' statement rather than overturning it.
 
@@ -1306,10 +1308,12 @@ suggests, consistent with the evaluation-rigour concerns of
 \paragraph{The practical rule.} Add a coordination graph, and route along
 \emph{task-relevant} edges rather than all-to-all, only when agents must act
 on information held by specific others they cannot observe. The controls make
-the rule sharp: at our positive endpoint, all-to-all communication and a
-density-matched wrong graph were both no better than no communication at all
-(Section~\ref{sec:structure:headline}). Pointing the channel at the wrong
-neighbours wastes it; pointing it at everyone does not rescue it. Where the
+the rule sharp: in the gridworld headline (Section~\ref{sec:structure:headline}),
+all-to-all communication and a density-matched wrong graph both sat at the
+no-communication floor; in the token-matching task all-to-all managed only weak,
+task-incidental routing (Section~\ref{sec:structure:tokenmatch})---in neither
+case approaching the task-matched graph. Pointing the channel at the wrong
+neighbours wastes it; broadcasting to everyone does not rescue it. Where the
 task is full-information or convention-reducible, prefer a state-conditioned
 mixer (\qmix) and add no graph---the relational bias there is a liability,
 not an asset.
@@ -1345,10 +1349,11 @@ complementary case: a graph mixer pays off when (i) the task requires an
 agent to act on information held by a specific other it cannot observe, so
 the graph is the only route for that information, \emph{and} (ii) the
 communication topology is aligned with the task's coordination structure. Our
-controls show both conditions are necessary, not just sufficient: at the
-positive endpoint, removing alignment (the wrong graph) or flooding the
-channel (all-to-all) each collapsed the advantage to zero
-(Section~\ref{sec:structure:headline}). The same aggregation that is a
+controls show both conditions are necessary, not just sufficient: in the
+gridworld headline (Section~\ref{sec:structure:headline}), removing alignment
+(the wrong graph) or flooding the channel (all-to-all) each collapsed the
+advantage to near zero, and in the token-matching task all-to-all retained only
+weak, task-incidental routing---far below the matched graph in both. The same aggregation that is a
 liability in the convention-reducible regime becomes a large, reproducible
 asset here ($d\approx5$), so the design question is not ``graph or no graph''
 but ``do the task's information dependencies match the edges I wire in.''
