@@ -78,6 +78,9 @@ def arms(task: str, suite: str) -> tuple[tuple[str, str, str, dict], ...]:
             ("gat_complete", "gat_qmix", "complete", {"gnn_layers": 2, **repaired}),
             ("dgn_complete", "dgn_qmix", "complete", {"gnn_layers": 2, **repaired}),
             ("gat_true", "gat_qmix", true_g, {"gnn_layers": 2, **repaired}),
+            # dgn_true: the multi-head "not under-trained" control (mirrors gat_true),
+            # so dgn_complete's floor is defended against "DGN just didn't learn".
+            ("dgn_true", "dgn_qmix", true_g, {"gnn_layers": 2, **repaired}),
         )
     raise ValueError(f"unknown suite {suite!r}")
 

@@ -1194,12 +1194,13 @@ fixed structure. We add single-head (GAT) and multi-head (DGN/G2ANet-style)
 attention arms, \textbf{stabilisation-matched} to the GCN (the same
 residual$+$LayerNorm), $N{=}6$, 12 seeds---so the earlier confound, attention
 arms lacking the GCN's stabilisation, is removed. Two facts settle the
-question. \emph{(i) The attention arms are not under-trained:} given the
-\emph{right} graph, learned attention is statistically indistinguishable from
-the GCN (\texttt{gat\_true} $\SCgatTrue$ vs.\ \gtrue\ at \SCtrueN; the gap
-$\SCgatTrueGap$ nominally favours attention but is not significant, Welch
-$p=\SCgatTrueP$). \emph{(ii) Over
-all-to-all, learned attention still floors:} \gtrue\ beats
+question. \emph{(i) The attention arms are emphatically not under-trained:} given the
+\emph{right} graph, learned attention is at least as good as the GCN---single-head
+GAT is statistically indistinguishable (\texttt{gat\_true} $\SCgatTrue$ vs.\
+\gtrue\ at \SCtrueN; gap $\SCgatTrueGap$, n.s., Welch $p=\SCgatTrueP$), and
+multi-head DGN actually \emph{exceeds} it (\texttt{dgn\_true} $71.50$, $+5.4$ over
+\gtrue, Welch $p_{\text{Holm}}=0.007$). \emph{(ii) Over
+all-to-all, both attention mechanisms still floor:} \gtrue\ beats
 \texttt{gat\_complete} ($\SCgatComplete$) and \texttt{dgn\_complete}
 ($\SCdgnComplete$) by $\SCtrueGatCompGap$ and $\SCtrueDgnCompGap$
 respectively (Cohen's $d{\approx}\SCtrueAttCompD$, $p<10^{-4}$). So even an

@@ -94,18 +94,22 @@ matched** to the GCN (residual+LayerNorm), N=6, 12 seeds:
 | arm | aggregator / comm graph | return |
 |-----|--------------------------|--------|
 | `gnn_true` | GCN / true matching | 66.10 |
-| `gat_true` | **attention / true matching** | **67.03** (n.s. vs gnn_true: −0.9, p=0.64) |
+| `gat_true` | attention / true matching | 67.03 (n.s. vs gnn_true: −0.9, p=0.64) |
+| **`dgn_true`** | **multi-head attention / true matching** | **71.50** (beats gnn_true: +5.4, p=0.007) |
 | `gat_complete` | attention / all-to-all | 50.19 (floor) |
 | `dgn_complete` | multi-head attention / all-to-all | 50.45 (floor) |
 
 This is now cleanly identified (the earlier confound — attention arms lacking the GCN's
 stabilization — is removed). Two facts: (i) given the **right** graph, learned attention
-trains *as well as* the GCN (`gat_true` 67.0 ≈ `gnn_true` 66.1, not significant) — so the
-attention arms are not under-trained; (ii) over **all-to-all**, learned attention still
-**floors** (`gnn_true` beats `gat_complete`/`dgn_complete` by +15.9/+15.7, *d*≈5.5,
-p<1e-4). **So even an expressive, well-trained attention aggregator does not recover the
-result from the wrong structure — it needs the right graph too.** The advantage is the
-structure, not the channel, the capacity, *or* the aggregator's expressiveness.
+trains *at least as well as* the GCN — single-head GAT ties it (`gat_true` 67.0 ≈
+`gnn_true` 66.1, n.s.) and multi-head DGN actually *exceeds* it (`dgn_true` 71.5, +5.4,
+p=0.007) — so the attention arms are emphatically not under-trained; (ii) over
+**all-to-all**, *both* attention mechanisms still **floor** (`gnn_true` beats
+`gat_complete`/`dgn_complete` by +15.9/+15.7, *d*≈5.5, p<1e-4). **So even the most
+expressive, well-trained learned aggregator does not recover the result from the wrong
+structure — it needs the right graph too.** The advantage is the structure, not the
+channel, the capacity, *or* the aggregator's expressiveness. (If anything, attention is
+*more* effective once it is given the right edges — which only sharpens the point.)
 
 ## 5. Effect vs team size N — significant at every N, but non-monotone (H-N not supported)
 

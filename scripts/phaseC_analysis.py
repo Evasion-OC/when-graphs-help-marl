@@ -36,7 +36,7 @@ from gnnmarl.utils.stats import holm_correct, mean_with_ci  # noqa: E402
 KEY = "gnn_true"
 # Preferred display order; any extra arms are appended in first-seen order.
 ARM_ORDER = ["mlp", "gnn_true", "gnn_wrong", "gnn_complete",
-             "gcn_complete", "gat_complete", "dgn_complete", "gat_true"]
+             "gcn_complete", "gat_complete", "dgn_complete", "gat_true", "dgn_true"]
 
 
 def cohens_d(a: np.ndarray, b: np.ndarray) -> float:
