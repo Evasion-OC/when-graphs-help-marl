@@ -16,6 +16,7 @@ the negative-result → positive-boundary arc.
 | `literature-scholar` | related work, citations, novelty positioning (web access) | opus |
 | `results-analyst` | manifests → tables & publication figures | sonnet |
 | `academic-writer` | abstract/intro/results prose, LaTeX, claim discipline | opus |
+| `latex-engineer` | .tex → clean PDF: zero errors/warnings/overfull, journal format + count audit | sonnet |
 | `theory-propositions-advisor` | propositions (not theorems), mechanism/ceiling checks | opus |
 
 ## Review panel (different personalities)
@@ -38,6 +39,8 @@ the negative-result → positive-boundary arc.
   synthesizes a decision.
 - **Pre-submission:** `reproducibility-engineer` + `reviewer-methodologist`, then
   `academic-writer` tightens claims to survive `reviewer-adversarial`.
+- **Final production:** `academic-writer` (prose final) → `latex-engineer` drives the
+  build to a clean, journal-conformant PDF and audits all counts vs the venue limits.
 
 Models are a sensible default (opus for judgment/writing/review, sonnet for
 execution); override per call or edit the frontmatter. Move any file to
