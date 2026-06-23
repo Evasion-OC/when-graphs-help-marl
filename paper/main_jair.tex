@@ -576,6 +576,29 @@ difficult to attribute observed gains to any single component; our study
 isolates the GNN encoder by inserting it into an otherwise-identical \qmix\
 architecture.
 
+\paragraph{Recent coordination-graph and relational MARL (2023--2026).} The
+learned-topology line has continued past \algoname{CASEC}. \algoname{GACG}
+\citep{duan_2024_gacg} infers \emph{group-level} (higher-order) coordination
+edges, and \algoname{LTS-CG} \citep{duan_2024_ltscg} learns a latent
+\emph{temporally sparse} graph; both report gains from sparser learned topology
+and so inherit the same attribution gap we target---sparsity, learned selection,
+and capacity move together, so a return improvement cannot be credited to
+topology alone. \algoname{ExpoComm} \citep{li_2025_expocomm} reaches a conclusion
+adjacent to our headline from the opposite direction: small-diameter
+\emph{exponential} communication graphs scale better than all-to-all broadcast,
+reinforcing that \emph{which} edges exist matters more than how many---though it
+designs the topology for scalability rather than isolating topology-correctness
+against a wrong-graph control. Closest in spirit,
+\citet{utke_2025_relabstraction} ask directly when \emph{relational} state
+abstraction helps cooperative agents and find it improves sample efficiency on
+spatially structured tasks; they use a learned relational critic and measure
+return, however, and run neither a density-matched wrong-graph nor a
+parameter-matched no-graph control. To our knowledge, no published work---through
+2026---isolates the contribution of graph \emph{structure} as we do: fixing the
+topology and contrasting a task-matched graph against a density-matched wrong
+graph and all-to-all at byte-identical parameters and observations. That is the
+gap this study fills.
+
 \paragraph{Communication under partial observability.} A parallel line of
 work motivates inter-agent message passing precisely by partial
 observability: when an agent cannot see what it needs, a learned channel can
