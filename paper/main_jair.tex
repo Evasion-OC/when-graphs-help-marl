@@ -249,12 +249,13 @@
 \newcommand{\TMtmGap}{+45.7}          % gnn_true - mlp
 
 % --- Title block. ---------------------------------------------------------
-\title{When Does Graph Structure Help in Multi-Agent\\
-       Reinforcement Learning? A Controlled Boundary}
+% Single \title declared in the preamble so hyperref captures the full title for
+% the PDF metadata (pdftitle). The short form feeds running heads; the long form
+% feeds the title page. No line break (\\) in the title, so hyperref emits no
+% "token not allowed in PDF string" warning; acmart wraps the long title itself.
+\title[Graph Structure in Multi-Agent RL]{When Does Graph Structure Help in Multi-Agent Reinforcement Learning? A Controlled Boundary}
 
 \begin{document}
-
-\title[Graph Structure in Multi-Agent RL]{When Does Graph Structure Help in Multi-Agent Reinforcement Learning? A Controlled Boundary}
 
 %% TODO(authors): JAIR is single-blind -- replace the placeholders below with the
 %% full author list, affiliations, and ORCIDs before submission.
@@ -1258,6 +1259,8 @@ edges carry messages, not how many.
   ceiling of the mechanism---on the navigation-free \tokenmatch\
   (\S\ref{sec:structure:tokenmatch}) the matched graph captures ${\sim}96\%$.}
   \label{tab:structure}
+  \setlength{\tabcolsep}{4pt}%
+  \resizebox{\linewidth}{!}{%
   \begin{tabular}{llr}
     \toprule
     Arm & comm.\ graph & final return [95\% CI] \\
@@ -1272,7 +1275,7 @@ edges carry messages, not how many.
     \gtrue$-$\gwrong\ {\footnotesize(a-priori: wrong matching carries no partner info)} & \multicolumn{2}{l}{$\SCtwGap$,\; $d=\SCtwD$,\; $p_{\text{Holm}}\SCpHolm$,\; MWU $<10^{-4}$} \\
     \gtrue$-$\mlpc\ {\footnotesize(a-priori: no channel)} & \multicolumn{2}{l}{$\SCtmGap$,\; $d=\SCtmD$,\; $p_{\text{Holm}}\SCpHolm$,\; MWU $<10^{-4}$} \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}}%
 \end{table}
 
 \textbf{The decisive contrast.} The headline rests on \gtrue\ vs.\
@@ -1744,7 +1747,7 @@ the \mlpqmix\ control to make such measurements cheaper.
 \section{Training loop}
 \label{app:trainloop}
 
-\begin{algorithm}[h!]
+\begin{algorithm}[!ht]
 \caption{Shared training loop (CTDE, off-policy, Double-DQN). For \iql,
 the team-loss line is replaced by a per-agent Huber sum (see
 Section~\ref{sec:algos}).}
@@ -1786,7 +1789,7 @@ Section~\ref{sec:algos}).}
 \section{Hyperparameters and compute}
 \label{app:hparams}
 
-\begin{table}[h!]
+\begin{table}[!ht]
   \centering
   \small
   \caption{Shared training hyperparameters across all algorithms and
@@ -1840,7 +1843,7 @@ scripts under \texttt{scripts/phase\{1,2,4\}\_analysis.py}.
 \section{Compute scaling decisions}
 \label{app:budget}
 
-\begin{table}[h!]
+\begin{table}[!ht]
   \centering
   \caption{Compute budget per phase: pre-registered vs.\ actually executed.
   Wall-clock totals are measured on a single commodity CPU (PyTorch CPU
@@ -1878,7 +1881,7 @@ held fixed within it (Section~\ref{sec:results:mpe}); the trainer reads it
 once per episode exactly as for \coordgrid.
 
 
-\begin{table}[h!]
+\begin{table}[!ht]
   \centering
   \small
   \caption{Phase 3 graph-vs-capacity decomposition on MPE
@@ -1903,7 +1906,7 @@ once per episode exactly as for \coordgrid.
   \end{tabular}
 \end{table}
 
-\begin{table}[h!]
+\begin{table}[!ht]
   \centering
   \small
   \caption{Full Phase 3 results: final-window return (mean [95\% CI] over
@@ -1982,7 +1985,7 @@ on \coordgrid\ (Appendix~\ref{app:scaling}).
   \end{tabular}
 \end{table}
 
-\paragraph{StarCraft~II (\texttt{3m}), preliminary.} As a single-seed check on
+\paragraph{StarCraft~II (\textup{\texttt{3m}}), preliminary.} As a single-seed check on
 the benchmark where graph-based methods are most often credited with gains
 \citep{samvelyan_2019_smac}, we trained the same trio on SMAC \texttt{3m}
 ($2\times10^6$ steps) and evaluated each over 100 test episodes. \qmix\ and the
@@ -2021,7 +2024,7 @@ significant under Holm correction over the three-contrast family and under
 the non-parametric Mann--Whitney test ($p=\PEmwuP$). As on the ring,
 \gnnqmix\ also carries the largest seed-to-seed variance.
 
-\begin{table}[h!]
+\begin{table}[!ht]
   \centering
   \small
   \caption{Capacity control on the \texttt{line} topology (mean
@@ -2061,7 +2064,7 @@ decisive cells under the identical protocol (\PEseeds\ seeds, \PEsteps\
 steps).
 
 
-\begin{table}[h!]
+\begin{table}[!ht]
   \centering
   \small
   \caption{Attention variants vs the QMIX family (mean final-window return,
@@ -2102,7 +2105,7 @@ from Table~\ref{tab:phase8}. Figure~\ref{fig:scaling} and
 Table~\ref{tab:scaling} give the result.
 
 
-\begin{table}[h!]
+\begin{table}[!ht]
   \centering
   \small
   \caption{Larger-$N$ scaling on CoordGrid \texttt{ring} (mean final-window
@@ -2133,7 +2136,7 @@ hypothesis tests. The Phase 1 pilot curves, the per-algorithm Phase 1
 summary, the full Phase 2 per-condition returns, and the Phase 1 pairwise
 sanity check are collected here.
 
-\begin{figure}[h!]
+\begin{figure}[!ht]
   \centering
   \includegraphics[width=0.5\linewidth]{figures/phase1__learning_curves.pdf}
   \caption{Phase 1 pilot learning curves on \coordgrid\ ($N=4$, ring),
@@ -2144,7 +2147,7 @@ sanity check are collected here.
   \label{fig:phase1_curves}
 \end{figure}
 
-\begin{table}[h!]
+\begin{table}[!ht]
   \centering
   \small
   \caption{Phase 1 final-window mean return ($N=4$, ring, 10 seeds).
@@ -2164,7 +2167,7 @@ GNN-QMIX & 10 & 66.015 & [57.11, 74.92] & 1552 \\
   \end{tabular}
 \end{table}
 
-\begin{table}[h!]
+\begin{table}[!ht]
   \centering
   \small
   \caption{Phase 2 final-window mean return by condition. Edge density is
@@ -2194,7 +2197,7 @@ ring & 8 & VDN & 70.53 & [59.12, 81.94] & 908 \\
   \end{tabular}
 \end{table}
 
-\begin{table}[h!]
+\begin{table}[!ht]
   \centering
   \small
   \caption{Phase 1 sanity check: IQL vs.\ each coordinated baseline on
@@ -2212,7 +2215,7 @@ IQL vs.\ GNN-QMIX & 31.39 & $<0.001$ & $<0.001$ \\
   \end{tabular}
 \end{table}
 
-\begin{table}[h!]
+\begin{table}[!ht]
   \centering
   \small
   \caption{H1 (within-condition): GNN-QMIX minus QMIX in mean final-window
@@ -2232,7 +2235,7 @@ IQL vs.\ GNN-QMIX & 31.39 & $<0.001$ & $<0.001$ \\
   \end{tabular}
 \end{table}
 
-\begin{table}[h!]
+\begin{table}[!ht]
   \centering
   \small
   \caption{H2 (difference-of-differences): the GNN-QMIX vs.\ QMIX gap on
@@ -2257,7 +2260,7 @@ This appendix collects the per-condition depth--diameter curves that
 accompany the Phase 4 heatmap (Figure~\ref{fig:phase4_heatmap}) in the main
 text.
 
-\begin{table}[h!]
+\begin{table}[!ht]
   \centering
   \small
   \caption{Phase 8 final-window return (mean over \PEseeds\ seeds) on the
@@ -2281,7 +2284,7 @@ text.
 \end{table}
 
 
-\begin{figure}[h!]
+\begin{figure}[!ht]
   \centering
   \includegraphics[width=0.62\textwidth]{figures/phase4__depth_diameter_curves.pdf}
   \caption{Phase 4 depth--diameter curves (companion to the heatmap in
