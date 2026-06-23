@@ -1222,7 +1222,8 @@ full-information greedy \emph{oracle} reaches ${\approx}\SCoracle$
 policy, and the achievable routing headroom is ${\sim}\SCfloor\to{\sim}\SCoracle$.
 
 \textbf{More communication did not help; the right communication did.}
-Table~\ref{tab:structure} foregrounds the controls.
+Table~\ref{tab:structure} foregrounds the controls; Figure~\ref{fig:structure}
+shows the same result at a glance.
 The no-graph control (\mlpc), the wrong graph (\gwrong), and
 \emph{all-to-all} communication (\gcomplete) all sit at the random
 floor---\SCmlp, \SCwrong, and \SCcomplete\ respectively, i.e.\ within roughly
@@ -1278,6 +1279,26 @@ edges carry messages, not how many.
   \end{tabular}}%
 \end{table}
 
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{figures/phaseC_structure.pdf}
+  \caption{\textbf{It is the structure, not the channel.} Final-window mean
+  return (95\% CI, 12 seeds) on the pair-routing task ($N{=}6$, ego
+  observations, 30k steps). Only the \emph{task-matched} graph rises above the
+  random floor (${\sim}50$): the no-graph control (\mlpc), a density-matched
+  wrong graph, and the all-to-all graph (the \emph{most} communication) all sit
+  at the floor, while the task-matched graph reaches $66$--$71$ depending on the
+  aggregator ($d{\approx}5$ vs.\ the floor). Learned attention (GAT, DGN) helps
+  only \emph{on} the matched graph; over all-to-all it floors like the fixed
+  GCN---more communication does not help, the right communication does.}
+  \Description{Grouped bar chart with four x-axis groups: no graph, wrong graph,
+  all-to-all graph, and task-matched graph. The first three groups sit on a
+  dashed horizontal floor line near 50. The task-matched group has three bars
+  for the GCN, GAT, and DGN aggregators rising to about 66, 67, and 71, well
+  above the floor, annotated with an effect size of d about 5.}
+  \label{fig:structure}
+\end{figure}
+
 \textbf{The decisive contrast.} The headline rests on \gtrue\ vs.\
 \gcomplete\ (all-to-all): $\SCtcGap$ ($d=\SCtcD$, $p_{\text{Holm}}\SCpHolm$,
 Mann--Whitney $p<10^{-4}$). This is the only contrast in which the partner's
@@ -1308,7 +1329,8 @@ task:} \gtrue\ captures only ${\sim}\SCfrac\%$ of the routing headroom
 \label{sec:structure:N}
 
 We pre-registered that the advantage would \emph{grow} with $N$ (a
-dose-response). It does not. Sweeping $N\in\{4,6,8,10\}$ (ego, 12 seeds,
+dose-response). It does not (Figure~\ref{fig:scaling-replication}, left).
+Sweeping $N\in\{4,6,8,10\}$ (ego, 12 seeds,
 30k), the task-matched advantage over the no-graph control is significant at
 \emph{every} $N$ under both tests and Holm correction---and the
 structure-isolating \gtrue\ vs.\ \gwrong/\gcomplete\ contrasts are likewise
@@ -1338,6 +1360,27 @@ directly comparable across columns. We lean on Cohen's $d$ (scale-invariant)
 as the primary attenuation evidence; the non-monotone conclusion holds under
 either.
 
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{figures/phaseC_scaling_replication.pdf}
+  \caption{\textbf{Left: the advantage holds across team size but is
+  non-monotone.} Task-matched \gtrue\ (solid line) stays above the control
+  floor (shaded band: \mlpc/wrong/all-to-all 95\% CI) at every
+  $N\in\{4,6,8,10\}$; the gap over the no-graph floor (labelled) peaks near
+  $N{=}8$ rather than growing monotonically. \textbf{Right: out-of-harness
+  replication.} On \tokenmatch, a non-spatial referential game with no grid or
+  movement, the task-matched graph ($57.6$) separates completely from all-to-all
+  ($24.5$), the wrong graph ($12.0$), and no graph ($11.9$)---so the effect is
+  not a gridworld artefact. All bars/points are 95\% CIs over 12 seeds.}
+  \Description{Two panels. Left: a line for the task-matched graph rising with
+  team size N from 4 to 10, staying above a shaded floor band, with gap labels
+  plus 11.6, 15.7, 16.1, and 11.2 showing a non-monotone advantage that peaks at
+  N equals 8. Right: a bar chart on the TokenMatch game where the task-matched
+  bar reaches about 58 while the all-to-all, wrong-graph, and no-graph bars sit
+  at about 24, 12, and 12.}
+  \label{fig:scaling-replication}
+\end{figure}
+
 \subsection{Robustness to observability}
 \label{sec:structure:obs}
 
@@ -1364,7 +1407,7 @@ $p_{\text{Holm}}<\SCnbrPHolm$ and Mann--Whitney $p<0.005$. So the
 structure/topology effect \emph{survives} when the receptive field is a
 neighbourhood set rather than a single partner---but at the pre-registered 30k
 budget it is about $\SCnbrShrink\times$ smaller than at degree-1 ($+2.4$ /
-${\sim}5\%$ vs.\ $+16$ / ${\sim}33\%$). We treat $\SCnbrShrink\times$ as an
+${\sim}5\%$ vs.\ $+16$ / ${\sim}33\%$; Figure~\ref{fig:robustness}). We treat $\SCnbrShrink\times$ as an
 \emph{upper bound} on the attenuation: as the footnote records, exploratory
 longer-budget runs widen the degree-2 gap, so the genuine-topology effect may be
 materially less attenuated than the 30k cell shows. A fixed mean-aggregating GCN
@@ -1374,6 +1417,25 @@ routing.\footnote{Exploratory (non-confirmatory) 3-seed runs at 80k steps show
 the same arm ordering with a larger gap (${\sim}+5$), suggesting the 30k
 confirmatory cell is not at plateau; only the pre-registered 12-seed / 30k cell
 above is treated as the measurement.}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{figures/phaseC_robustness.pdf}
+  \caption{\textbf{The advantage is robust across conditions.} Task-matched
+  \gtrue\ (orange) versus the control floor (gray: no/wrong/all-to-all graph),
+  95\% CI over 12 seeds at $N{=}6$ (30k steps). The structure advantage holds
+  under ego observations (${+}16.3$) and is \emph{larger} under full
+  observability (${+}22.6$); at genuine degree-2 topology it survives but
+  shrinks sharply (${+}2.4$), consistent with a fixed mean-aggregator exploiting
+  a neighbourhood-set (centroid) task far less efficiently than single-partner
+  routing.}
+  \Description{Grouped bar chart with three conditions: pair-routing ego
+  observations, pair-routing full observations, and degree-2 topology. In each,
+  a gray floor bar near 50 sits beside an orange task-matched bar. The orange
+  bar exceeds the floor by about 16 for ego, 23 for full observability, and only
+  about 2 for degree-2.}
+  \label{fig:robustness}
+\end{figure}
 
 \subsection{Learned attention does not substitute for structure either}
 \label{sec:structure:attention}
@@ -1439,7 +1501,8 @@ holds a token and must \emph{output its partner's token}, which can reach it
 only over the graph. The structure-isolating arms carry over unchanged (only
 \texttt{env.adjacency()} differs): \gtrue\ (the matching), \gwrong\ (a wrong
 matching), \gcomplete\ (all-to-all), and the no-communication \mlpc\ control.
-With $N{=}6$, $K{=}5$ tokens, and 12 seeds (Table~\ref{tab:tokenmatch}),
+With $N{=}6$, $K{=}5$ tokens, and 12 seeds (Table~\ref{tab:tokenmatch};
+Figure~\ref{fig:scaling-replication}, right),
 \gtrue\ \emph{near-solves} the task ($\TMtrue$ of a maximum $\TMmax$, ${\approx}\TMfrac\%$)
 and is completely separated from every rival---it beats the wrong matching by
 $\TMtwGap$, all-to-all by $\TMtcGap$, and no communication by $\TMtmGap$
