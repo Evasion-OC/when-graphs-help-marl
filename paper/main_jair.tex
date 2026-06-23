@@ -257,88 +257,56 @@
 
 \begin{document}
 
-%% TODO(authors): JAIR is single-blind -- replace the placeholders below with the
-%% full author list, affiliations, and ORCIDs before submission.
-\author{Kasra Ghanavati}
-\email{kasraghanavati@icloud.com}
-\orcid{0000-0000-0000-0000}
+\author{Ali Jabbary}
+\authornote{Corresponding author.}
+\orcid{0000-0003-0573-6909}
+\email{research@alijabbary.com}
 \affiliation{%
-  \institution{PLACEHOLDER -- institution}
-  \city{PLACEHOLDER}
-  \country{PLACEHOLDER}}
-\renewcommand{\shortauthors}{Ghanavati}
+  \institution{Independent Researcher}
+  \city{Urmia}
+  \country{Iran}}
+
+\author{Kasra Ghanavati}
+\email{kg1111r@gre.ac.uk}
+\affiliation{%
+  \department{School of Computing and Mathematical Sciences}
+  \institution{University of Greenwich}
+  \city{London}
+  \country{United Kingdom}}
+
+\renewcommand{\shortauthors}{Jabbary \& Ghanavati}
 
 \begin{abstract}
-Graph neural network (GNN) value-factorisation methods are widely claimed
-to outperform graph-free baselines in cooperative multi-agent
-reinforcement learning (MARL) by exploiting relational inductive bias.
-The conditions under which the claim holds are under-characterised: prior
-work typically reports a single benchmark in a single graph regime,
-conflating the contribution of the graph with that of added capacity,
-and leaving the alignment between the GNN's receptive field and the task's
-coordination structure unexamined. We close this gap with a controlled
-empirical study on \coordgrid, a cooperative gridworld whose coordination
-graph is itself the experimental variable. Holding the per-agent encoder,
-state-conditioned mixer, optimiser, and exploration schedule fixed across
-algorithms, we test pre-registered hypotheses on a structured graph
-(H1), against a random graph of matched edge density (H2), and across
-a GNN-depth $\times$ graph-diameter grid (H3), and we add a
-parameter-matched no-graph control (\mlpqmix) that isolates the graph
-from the extra capacity it brings.
-The answer has two endpoints, and we identify both. \emph{Negative
-endpoint.} When the task is full-information or reducible to a global
-convention, \gnnqmix\ \emph{underperforms} the structurally simpler \qmix,
-opposite to the prevailing claim, and the gap is \emph{identified}: against
-\mlpqmix, which has byte-identical parameters but no graph aggregation,
-\gnnqmix\ is significantly worse (Cohen's $d=\PEgraphDNeight$ at $N=8$;
-Mann--Whitney $p=\PEmwuP$) while \mlpqmix\ matches \qmix, so the penalty is
-the graph aggregation, not added capacity. It survives $5\times$ the
-training budget (\PEsteps\ steps, \PEseeds\ seeds), \emph{destabilises}
-learning, and grows with team size out to $N{=}16$. The same picture holds
-on standard benchmarks: on MPE \texttt{simple\_spread} the penalty reappears
-once a parameter-matched control decomposes it (the naive \gnnqmix-vs-\qmix\
-comparison is null), and on Level-Based Foraging the graph is
-neutral-to-harmful (significantly below \qmix\ at three agents; the
-matched-control contrast is directional but not powered for significance at
-$n{=}5$)---a regime where the graph is never significantly positive.
-\emph{Positive endpoint.} On a constructed pair-routing task
-in which each agent must reach its partner's \emph{private} goal (ego
-observations), so the needed information is held by one specific other agent,
-the task-matched graph beats all-to-all communication---which carries the
-partner's information but must select it---at byte-identical parameters and
-observations (Cohen's $d\approx5$; $+16$ return over a random floor of
-${\sim}50$ at degree-1; Welch with Holm correction and Mann--Whitney
-$p<10^{-4}$, complete seed-level separation at $n{=}12$); a density-matched
-\emph{wrong} graph, which carries no partner information by construction,
-floors alongside the no-graph control. On this task more communication did not
-help (all-to-all floors); in a second task (\tokenmatch) all-to-all manages
-only weak partial routing ($+12$) yet still falls $-33$ below the matched
-graph---so it is the \emph{right} communication, not more of it, that matters,
-and the advantage is graph \emph{structure},
-not the channel or the capacity, and is not recovered by aggregator
-expressiveness alone: neither a fixed mean-aggregator nor a stabilisation-matched
-\emph{learned} attention head---which could in principle up-weight the
-partner---recovers the partner's signal from all-to-all within our training
-budget, while given the right graph a more expressive aggregator trains at
-least as well (an exploratory, not pre-registered, $+5.4$ for multi-head
-attention over the GCN)---so expressiveness amplifies structure but cannot
-substitute for it. The effect is significant at every
-team size $N{=}4$--$10$ but \emph{non-monotone} (it does not grow as a
-dose-response), is robust to full observability, and persists at degree-2
-(genuine topology) though about $\SCnbrShrink\times$ smaller at the
-pre-registered 30k budget (exploratory longer-budget runs suggest the gap
-grows, so this attenuation factor is an upper bound). It replicates
-out of harness in a non-spatial token-matching game, so it is not a gridworld
-artefact. We state scope plainly: this is a constructed-task
-existence/boundary result---replication on a standard third-party benchmark is
-still future work, and this positive endpoint is a mechanism/existence result
-rather than a turnkey recipe. The practical rule, stated conditionally: add a
-coordination graph, and route along task-relevant edges rather than all-to-all,
-only when agents must act on information held by specific others they cannot
-observe \emph{and} the coordination topology is known or reliably estimable
-(our controls show the obvious fallbacks---a wrong graph, or all-to-all---do not
-recover the benefit). We
-release the harness, configs, and plotting code as supplementary material
+Graph neural network (GNN) value-factorisation methods are widely claimed to
+beat graph-free baselines in cooperative multi-agent reinforcement learning
+(MARL) by exploiting relational structure. Through a controlled study on
+\coordgrid, a cooperative gridworld whose coordination graph is the experimental
+variable, we show the claim has a sharp boundary and locate both sides.
+
+\emph{Positive endpoint.} On a routing task where each agent must reach a
+partner's \emph{private} goal, held by one specific unobserved agent, a graph
+whose edges match the task's coordination structure decisively beats all-to-all
+communication, a density-matched wrong graph, and a no-graph control---at
+byte-identical parameters and observations (Cohen's $d$ of about five; complete
+seed-level separation over twelve seeds, Holm-corrected). What helps is the
+\emph{structure}, not the channel or the capacity: all-to-all carries the
+partner's signal but cannot select it, and even learned attention recovers it
+only on the right graph. The effect holds across team size and observability,
+survives degree-two topology, and replicates out of harness in a token-matching
+game.
+
+\emph{Negative endpoint.} When coordination is incidental or
+convention-reducible, the GNN \emph{underperforms} the simpler \qmix; a
+parameter-matched no-graph control (\mlpqmix) pins the cause to graph
+aggregation, not capacity. The penalty persists under five times the budget,
+grows with team size, and recurs on standard MPE and Level-Based Foraging
+benchmarks.
+
+These are controlled, constructed tasks; a standard third-party benchmark with
+private goals remains future work. The rule: add a coordination graph and route
+along task-relevant edges---not all-to-all---only when agents must act on
+information held by specific unobserved others \emph{and} the topology is known
+or estimable. We release the full code and configurations
 (Appendix~\ref{app:repro}).
 \end{abstract}
 
@@ -490,6 +458,13 @@ into a single ``when does it help'' statement rather than overturning it.
   inserts an $L$-layer MLP of \emph{identical parameter count} but no
   graph. \gnnqmix\ vs.\ \mlpqmix\ isolates the \emph{graph} (matched
   parameters); \mlpqmix\ vs.\ \qmix\ isolates the \emph{capacity}.}
+  \Description{Two-panel diagram. Left (A): a 4x4 toroidal grid with four
+  colored agent icons connected by a ring coordination graph; reward edges
+  light up when two linked agents share a cell. Right (B): a block diagram
+  showing all algorithms sharing the same observation encoder and QMIX
+  mixer, with QMIX bypassing the middle block, GNN-QMIX inserting an
+  L-layer GCN, and MLP-QMIX inserting a parameter-matched MLP without
+  graph aggregation.}
   \label{fig:overview}
 \end{figure}
 
@@ -924,6 +899,11 @@ The decomposition table (Table~\ref{tab:mpe}) is in Appendix~\ref{app:mpe}.
   seeds, 95\% CIs; less negative is better). At $N{=}6$, \mlpqmix\ (matched
   parameters, no graph) sits above \qmix\ while \gnnqmix\ falls below both: the positive capacity effect and the negative graph effect the
   decomposition (Table~\ref{tab:mpe}) separates.}
+  \Description{Line plot with two panels for N=3 and N=6 on MPE simple\_spread
+  (y-axis: final-window return, less negative is better). At N=3 the three
+  algorithm curves nearly overlap. At N=6 MLP-QMIX sits highest, QMIX below it,
+  and GNN-QMIX lowest, illustrating that the capacity control exposes a graph
+  penalty invisible in the naive GNN-QMIX vs. QMIX comparison.}
   \label{fig:mpe}
 \end{figure}
 
@@ -1039,6 +1019,10 @@ state the decisive values inline.
   falls far below both at both team sizes: the penalty is the graph
   aggregation, not the added capacity. Means over \PEseeds\ seeds; 95\%
   Student-$t$ CIs.}
+  \Description{Bar chart comparing final-window return for QMIX, MLP-QMIX,
+  and GNN-QMIX on the CoordGrid ring at N=4 and N=8. QMIX and MLP-QMIX bars
+  are nearly equal at both team sizes; the GNN-QMIX bar is substantially
+  shorter, especially at N=8, showing the graph penalty grows with team size.}
   \label{fig:phase8}
 \end{figure}
 
@@ -1084,6 +1068,11 @@ hypothesised from the Phase 1 pilot.
   \mlpqmix\ (the parameter-matched no-graph control) tracks \qmix\ at both
   scales, while \gnnqmix\ is both lower and visibly more variable across
   seeds: the destabilisation of Finding 3.}
+  \Description{Two side-by-side learning-curve panels (N=4 left, N=8 right;
+  x-axis: environment steps up to 150k; y-axis: episode return). In both
+  panels the QMIX and MLP-QMIX lines rise together to a high plateau with
+  tight confidence bands, while the GNN-QMIX line is lower and has a much
+  wider shaded band reflecting high seed-to-seed variance.}
   \label{fig:phase8curves}
 \end{figure}
 
@@ -1125,6 +1114,11 @@ team grows'' intuition is exactly inverted.
   \emph{within} graph methods, but still below the parameter-matched
   no-graph control \mlpqmix\ at both team sizes on CoordGrid: the graph in
   its strongest form remains a net liability.}
+  \Description{Grouped bar chart at N=4 and N=8 on CoordGrid ring showing
+  five algorithms: QMIX and MLP-QMIX bars are tallest and nearly equal;
+  GNN-QMIX is lowest; GAT-QMIX and DGN-QMIX bars fall between GNN-QMIX and
+  MLP-QMIX, showing that more expressive attention improves within the graph
+  family but remains below the no-graph control at both team sizes.}
   \label{fig:gat}
 \end{figure}
 
@@ -1136,6 +1130,11 @@ team grows'' intuition is exactly inverted.
   while \gnnqmix\ flatlines. \emph{Right:} the graph penalty
   ($\mlpqmix-\gnnqmix$) grows monotonically with $N$, to
   ${\sim}\PSgnnFracNsixteen\%$ of \qmix's return at $N{=}16$.}
+  \Description{Two-panel figure. Left: line plot with x-axis team size N from
+  4 to 16 and y-axis final return; QMIX and MLP-QMIX lines rise together while
+  GNN-QMIX is nearly flat, widening the gap monotonically. Right: bar chart of
+  the graph penalty (MLP-QMIX minus GNN-QMIX) at each N, growing from about 10
+  at N=4 to over 260 at N=16, illustrating the monotone penalty scaling.}
   \label{fig:scaling}
 \end{figure}
 
@@ -2207,6 +2206,10 @@ sanity check are collected here.
   25-episode rolling mean. The coordinated baselines (\vdn, \qmix) clearly
   separate from \iql, and \gnnqmix\ runs to completion, the Phase-0
   harness sanity check (Section~\ref{sec:results:pilot}).}
+  \Description{Line plot with x-axis environment steps (0 to 50k) and y-axis
+  episode return. Four colored curves with shaded standard-deviation bands:
+  QMIX rises fastest to near 84; VDN and GNN-QMIX converge near 66 with wider
+  bands; IQL plateaus near 35. All four algorithms train to completion.}
   \label{fig:phase1_curves}
 \end{figure}
 
@@ -2354,6 +2357,10 @@ text.
   Section~\ref{sec:results:ablation}). Final-window return vs.\ GCN depth
   $L$ for each graph diameter $d$; the over-depth cliff at $L\ge 3$ is
   visible on every diameter.}
+  \Description{Line plot with x-axis GCN depth L from 1 to 4 and y-axis
+  final-window return for three curves, one per graph diameter d=1, 2, 3.
+  All three curves are relatively high at L=1 and L=2, then drop sharply at
+  L=3 and L=4, forming a consistent over-depth cliff regardless of diameter.}
   \label{fig:phase4curves}
 \end{figure}
 

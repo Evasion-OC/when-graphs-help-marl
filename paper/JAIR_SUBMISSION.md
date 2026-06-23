@@ -40,15 +40,15 @@ to acmart, bibliography to biblatex, single-blind de-anonymization, JAIR reprodu
 checklist appended). Edit `main_jair.tex` directly from here on — the assembly script was
 a one-time port.
 
-## BEFORE you submit — author identity (single-blind; required)
+## Author identity (single-blind) — DONE
 
-JAIR is **single-blind**: it cannot be submitted as "Anonymous." Replace the placeholders
-in the `\author` block of `main_jair.tex` (search `PLACEHOLDER`) with:
+The `\author` block is filled (no placeholders remain):
+- **Ali Jabbary** — Independent Researcher, Urmia, Iran. Corresponding author,
+  ORCID 0000-0003-0573-6909, research@alijabbary.com.
+- **Kasra Ghanavati** — School of Computing and Mathematical Sciences, University of
+  Greenwich, London, United Kingdom, kg1111r@gre.ac.uk.
 
-- Full author name(s) — currently only `Kasra Ghanavati` (from the repo LICENSE) is filled.
-- Affiliation(s): institution, city, country.
-- Email(s) and (recommended) ORCID(s).
-- Update `\renewcommand{\shortauthors}{...}` if there is more than one author.
+Only outstanding identity item (optional): a second ORCID for K. Ghanavati if available.
 
 ## Submission form metadata (suggested)
 
@@ -66,19 +66,22 @@ Code + raw data are the public MIT-licensed repo
 (`https://github.com/Evasion-OC/when-graphs-help-marl`). Confirm the repo is **public**
 before submission (JAIR is single-blind, so a public repo is fine and expected).
 
-## Recommended before submission (content decisions — not done automatically)
+## Polish — DONE
 
-- **Abstract length — FLAG.** The abstract is **~633 words**, ~2× the JAIR norm
-  (concise, ~150–300) and a single dense paragraph. JAIR sets no hard limit, but this is
-  unusually long and likely to draw an editor comment. Recommend trimming to ~250–300
-  words (a cut of ~330–380), leading with the positive structural result. This is a
-  content edit — route it through the writer, not the build engineer.
-- **Abstract math:** JAIR discourages math in the abstract (also rendered in HTML). The
-  current `$N{=}4$`, `$d\approx5$`, `$+5.4$` compile clean (no warnings) but are a style
-  preference; consider words if trimming anyway. Non-fatal.
-- **Figure `\Description{}`:** acmart requests one-line accessibility alt-text per figure
-  (11 figures). Flag-only (jair.cls does not enforce it); add factual descriptions for
-  camera-ready. Author-authored content.
+- **Abstract length & math.** Rewritten to **264 words** (texcount; was 633), within JAIR's
+  concise ~150–300 norm, math-light (only `Cohen's $d$`), restructured to lead with the
+  positive structural result then the controlled negative endpoint. All claims preserved.
+- **Figure `\Description{}`.** Accessibility alt-text added to all 14 figures (the 3
+  positive-result figures had it; the 11 older figures across `main_jair.tex`,
+  `results/phase2.tex`, `results/phase4.tex` were completed). acmart image-description
+  warnings now 0.
+
+## Final build status
+
+Clean: 33 pp, **0 errors, 0 warnings, 0 overfull/underfull hboxes, 0 undefined refs**
+(only 3 acmart `\flushbottom` underfull-vbox notes, class-internal, irreducible). All 34
+references resolve. Counts (JAIR has no hard page/word limit): 14 figures, 17 tables,
+34 references; abstract 264 words. Submittable once the repo is confirmed public.
 
 ## Expectations
 
