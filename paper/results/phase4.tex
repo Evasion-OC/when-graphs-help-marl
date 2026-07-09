@@ -1,12 +1,13 @@
 \begin{figure}[t]
   \centering
   \includegraphics[width=0.5\linewidth]{figures/phase4__heatmap_final_return.pdf}
-  \caption{Phase 4: GNN-QMIX final-window mean return as a function of GNN depth $L$ and coordination graph diameter $d$. Cells along the diagonal correspond to depth--diameter alignment ($L \approx d$), the H3 prediction.}
+  \caption{Phase 4: GNN-QMIX final-window mean return as a function of GNN depth $L$ and coordination graph diameter $d$. Cells along the diagonal correspond to depth--diameter alignment ($L \approx d$), the H3 prediction. Outcome: H3 is \emph{not} confirmed at the family level (1/3 diameters pass); on the structured diameters ($d=2,3$) the two rightmost columns ($L=3,4$) collapse---an over-depth cliff---while the complete graph ($d=1$) is flat in $L$.}
   \Description{Heat map with GNN depth L on the x-axis (1 to 4) and graph
   diameter d on the y-axis (1, 2, 3); cell color encodes final-window mean
-  return from low (dark) to high (bright). The two leftmost columns (L=1,2)
-  are bright across all diameters; the two rightmost columns (L=3,4) are
-  uniformly dark, showing a sharp over-depth cliff independent of diameter.}
+  return from low (dark) to high (bright). On the structured diameters (d=2
+  and d=3) the two leftmost columns (L=1,2) are bright and the two rightmost
+  columns (L=3,4) are dark, showing a sharp over-depth cliff; the d=1 row is
+  uniformly dim and flat across depths.}
   \label{fig:phase4_heatmap}
 \end{figure}
 

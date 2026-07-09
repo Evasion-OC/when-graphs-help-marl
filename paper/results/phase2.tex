@@ -1,7 +1,7 @@
 \begin{figure}[t]
   \centering
   \includegraphics[width=0.54\linewidth]{figures/phase2__forest_ep80.pdf}
-  \caption{Phase 2 forest plot: episodes to 80\% of best final-window return per algorithm $\times$ condition. Lower is better. Bars are 95\% Student-$t$ CIs across seeds. Per-condition returns and the H1/H2 hypothesis tests are in Appendix~\ref{app:fulltables} (Tables~\ref{tab:phase2_summary}, \ref{tab:phase2_h1}, \ref{tab:phase2_h2}).}
+  \caption{Phase 2 forest plot: episodes to 80\% of each run's \emph{own} final-window return, per algorithm $\times$ condition (the panel-invariant self-threshold metric of Section~\ref{sec:protocol}). Lower is better. Bars are 95\% Student-$t$ CIs across seeds. Per-condition returns and the H1/H2 hypothesis tests are in Appendix~\ref{app:fulltables} (Tables~\ref{tab:phase2_summary}, \ref{tab:phase2_h1}, \ref{tab:phase2_h2}).}
   \Description{Forest plot with one horizontal bar per algorithm-condition pair
   (x-axis: episodes to 80\% threshold, lower is better; 95\% CI error bars).
   QMIX consistently reaches threshold soonest across all conditions; GNN-QMIX
@@ -22,12 +22,15 @@
   \end{subfigure}
   \caption{Phase 2 per-condition learning curves, the two most extreme
   cells of the scale/graph sweep. \gnnqmix\ flat-lines near random-play
-  return on the $N{=}4$ Erd\H{o}s--R\'enyi cell, while \qmix\ scales cleanly
-  past 150 on the $N{=}8$ ring (the highest absolute return in the study).}
+  return on the $N{=}4$ Erd\H{o}s--R\'enyi cell, while \qmix\ climbs to
+  ${\sim}130$ on the $N{=}8$ ring, its strongest Phase 2 cell (cross-seed
+  mean of the rolling mean peaks at $131.9$; the best individual seeds pass
+  $150$).}
   \Description{Two learning-curve subpanels side by side. Left (N=4 Erdos-Renyi):
   QMIX and VDN rise to moderate returns while GNN-QMIX flat-lines near the
-  random-play return across all 50k steps. Right (N=8 ring): QMIX climbs past
-  150 while GNN-QMIX stagnates near 20, showing the largest absolute return gap
+  random-play return across all 50k steps. Right (N=8 ring): QMIX climbs to
+  about 130 on the cross-seed mean while GNN-QMIX stagnates near 20, showing
+  the largest absolute return gap
   in the Phase 2 sweep.}
   \label{fig:phase2curves}
 \end{figure}

@@ -28,6 +28,15 @@
 \usepackage{hyperref}
 \usepackage{url}
 
+% \Description{...} is an acmart-specific figure-accessibility alt-text macro.
+% It is used in the shared results/phase2.tex and results/phase4.tex \input
+% files (written for a different, acmart-based build of this manuscript) but
+% is undefined under tmlr.sty. Rather than edit those shared files -- which
+% would also strip alt-text from the other build -- we no-op the macro here:
+% it carries no visible content, so dropping it changes nothing in the
+% rendered TMLR PDF.
+\providecommand{\Description}[1]{}
+
 % Camera-ready metadata (only used by the [accepted] option).
 \def\month{05}
 \def\year{2026}
@@ -75,7 +84,7 @@
 \newcommand{\PEmwuP}{0.0002}          % Mann-Whitney p, decisive contrasts
 \newcommand{\PEgnnSDNeight}{30.9}     % GNN-QMIX seed SD at N=8
 \newcommand{\PEmlpSDNeight}{3.3}      % MLP-QMIX (matched control) seed SD at N=8
-\newcommand{\PEqmixSDNeight}{9.2}     % QMIX seed SD at N=8
+\newcommand{\PEqmixSDNeight}{9.1}     % QMIX seed SD at N=8 (9.1497 from episodes.csv)
 % --- Line-topology robustness (n=10, 150k steps; App. robustness table). --
 % Same protocol as the ring cells, higher-diameter graph. Confirms the
 % graph penalty / capacity null are not specific to the ring.
@@ -255,77 +264,36 @@
 
 % =========================================================================
 \begin{abstract}
-Graph neural network (GNN) value-factorisation methods are widely claimed
-to outperform graph-free baselines in cooperative multi-agent
-reinforcement learning (MARL) by exploiting relational inductive bias.
-The conditions under which the claim holds are under-characterised: prior
-work typically reports a single benchmark in a single graph regime,
-conflating the contribution of the graph with that of added capacity,
-and leaving the alignment between the GNN's receptive field and the task's
-coordination structure unexamined. We close this gap with a controlled
-empirical study on \coordgrid, a cooperative gridworld whose coordination
-graph is itself the experimental variable. Holding the per-agent encoder,
-state-conditioned mixer, optimiser, and exploration schedule fixed across
-algorithms, we test pre-registered hypotheses on a structured graph
-(H1), against a random graph of matched edge density (H2), and across
-a GNN-depth $\times$ graph-diameter grid (H3), and we add a
-parameter-matched no-graph control (\mlpqmix) that isolates the graph
-from the extra capacity it brings.
-The answer has two endpoints, and we identify both. \emph{Negative
-endpoint.} When the task is full-information or reducible to a global
-convention, \gnnqmix\ \emph{underperforms} the structurally simpler \qmix,
-opposite to the prevailing claim, and the gap is \emph{identified}: against
-\mlpqmix, which has byte-identical parameters but no graph aggregation,
-\gnnqmix\ is significantly worse (Cohen's $d=\PEgraphDNeight$ at $N=8$;
-Mann--Whitney $p=\PEmwuP$) while \mlpqmix\ matches \qmix, so the penalty is
-the graph aggregation, not added capacity. It survives $5\times$ the
-training budget (\PEsteps\ steps, \PEseeds\ seeds), \emph{destabilises}
-learning, and grows with team size out to $N{=}16$. The same picture holds
-on standard benchmarks: on MPE \texttt{simple\_spread} the penalty reappears
-once a parameter-matched control decomposes it (the naive \gnnqmix-vs-\qmix\
-comparison is null), and on Level-Based Foraging the graph is
-neutral-to-harmful (significantly below \qmix\ at three agents; the
-matched-control contrast is directional but not powered for significance at
-$n{=}5$)---a regime where the graph is never significantly positive.
-\emph{Positive endpoint.} On a constructed pair-routing task
-in which each agent must reach its partner's \emph{private} goal (ego
-observations), so the needed information is held by one specific other agent,
-the task-matched graph beats all-to-all communication---which carries the
-partner's information but must select it---at byte-identical parameters and
-observations (Cohen's $d\approx5$; $+16$ return over a random floor of
-${\sim}50$ at degree-1; Welch with Holm correction and Mann--Whitney
-$p<10^{-4}$, complete seed-level separation at $n{=}12$); a density-matched
-\emph{wrong} graph, which carries no partner information by construction,
-floors alongside the no-graph control. On this task more communication did not
-help (all-to-all floors); in a second task (\tokenmatch) all-to-all manages
-only weak partial routing ($+12$) yet still falls $-33$ below the matched
-graph---so it is the \emph{right} communication, not more of it, that matters,
-and the advantage is graph \emph{structure},
-not the channel or the capacity, and is not recovered by aggregator
-expressiveness alone: neither a fixed mean-aggregator nor a stabilisation-matched
-\emph{learned} attention head---which could in principle up-weight the
-partner---recovers the partner's signal from all-to-all within our training
-budget, while given the right graph a more expressive aggregator trains at
-least as well (an exploratory, not pre-registered, $+5.4$ for multi-head
-attention over the GCN)---so expressiveness amplifies structure but cannot
-substitute for it. The effect is significant at every
-team size $N{=}4$--$10$ but \emph{non-monotone} (it does not grow as a
-dose-response), is robust to full observability, and persists at degree-2
-(genuine topology) though about $\SCnbrShrink\times$ smaller at the
-pre-registered 30k budget (exploratory longer-budget runs suggest the gap
-grows, so this attenuation factor is an upper bound). It replicates
-out of harness in a non-spatial token-matching game, so it is not a gridworld
-artefact. We state scope plainly: this is a constructed-task
-existence/boundary result---replication on a standard third-party benchmark is
-still future work, and this positive endpoint is a mechanism/existence result
-rather than a turnkey recipe. The practical rule, stated conditionally: add a
-coordination graph, and route along task-relevant edges rather than all-to-all,
-only when agents must act on information held by specific others they cannot
-observe \emph{and} the coordination topology is known or reliably estimable
-(our controls show the obvious fallbacks---a wrong graph, or all-to-all---do not
-recover the benefit). We
-release the harness, configs, and plotting code as supplementary material
-(Appendix~\ref{app:repro}).
+We locate both endpoints of a boundary for \emph{when} graph structure helps
+cooperative multi-agent reinforcement learning (MARL): a controlled study on
+\coordgrid, a cooperative gridworld whose coordination graph is itself the
+experimental variable, with the encoder, mixer, optimiser, and parameter
+count held fixed across algorithms. The benefit of a graph is real but
+conditional, and its source is the graph's \emph{structure}, not the channel
+or the added capacity. When an agent must act on private information held by
+one specific, unobserved other agent, a graph whose edges match the task's
+coordination structure decisively outperforms \emph{all-to-all}
+communication---which carries the partner's signal but must select it---a
+density-matched wrong graph, and a parameter-matched no-graph control, at
+byte-identical parameters and observations (Cohen's $d \approx 5$, complete
+seed-level separation over 12 seeds, Holm-corrected). Even learned attention
+recovers the partner's signal only on the right graph. The effect holds
+across team sizes and observability, and replicates out of harness in a
+non-spatial referential game, where the matched graph near-solves the task
+(${\approx}96\%$ of maximum) while every rival stays far below. When
+coordination is instead incidental or convention-reducible, the same
+architecture confers \emph{no benefit} over the parameter-matched baseline,
+which the control attributes to the graph aggregation rather than capacity;
+the commonly used \emph{unstabilised} operator is moreover actively harmful
+(a penalty that persists with training, grows with team size, and recurs on
+MPE \texttt{simple\_spread} and, directionally, Level-Based Foraging)---but
+this is an optimisation pathology that stabilisation removes, recovering the
+graph to mere parity. The resulting rule: route along task-relevant edges,
+not all-to-all, only when agents must act on information held by specific
+others they cannot observe \emph{and} the coordination topology is known or
+reliably estimable. These are controlled, constructed tasks; replication on
+standard benchmarks with private per-agent goals is future work. Code,
+configurations, and data accompany the submission.
 \end{abstract}
 
 % =========================================================================
@@ -373,11 +341,17 @@ specific gaps motivate the present study:
 
 \paragraph{A two-endpoint answer.} The title question is not a yes/no, and we
 answer it by locating \emph{both} endpoints of a boundary under one
-controlled harness. At one endpoint---full-information or
-convention-reducible tasks, where any agent could in principle infer what it
-needs without the graph---a graph-conditioned mixer is neutral to actively
-harmful, and a capacity-matched control pins the harm on the graph
-aggregation itself rather than on added parameters. At the other endpoint we
+controlled harness (Figure~\ref{fig:teaser}). At one endpoint---tasks that
+are full-information or
+\emph{convention-reducible}, by which we mean solvable by a fixed shared
+convention the agents can adopt without exchanging private state (e.g.\
+\coordgrid's edge-reward task, where meeting at a pre-agreed rendezvous
+solves coordination with no communication at all)---a graph-conditioned
+mixer confers no benefit over a parameter-matched no-graph control (and, in
+its common unstabilised form, is actively harmful, an optimisation pathology
+that stabilisation removes, Appendix~\ref{app:repaired}), with a
+capacity-matched control pinning the effect on the graph
+aggregation rather than on added parameters. At the other endpoint we
 \emph{construct} the regime the first leaves unexplored: a task in which an
 agent must act on private information held by one specific partner it cannot
 observe, so the coordination graph is the only path for that information.
@@ -388,6 +362,38 @@ everyone does at most weak, task-incidental routing far below the task-matched
 graph. The two
 endpoints \emph{coexist}: the positive result completes the negative one
 into a single ``when does it help'' statement rather than overturning it.
+This reading also reconciles a real tension in the literature:
+\algoname{DGN} and \algoname{G2ANet} report their gains in
+\emph{partially observable} settings---the regime our positive endpoint
+isolates---while our controlled negatives arise in full-information regimes,
+where published graph methods are rarely tested against capacity-matched
+controls. On this reading the literature's positive results and our negative
+ones are two sides of the same boundary, and the discriminator is the task's
+information structure, not the algorithm.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{figures/teaser_boundary.pdf}
+  \caption{\textbf{Both boundary endpoints at a glance.} \textbf{(A)
+  Negative endpoint:} on full-information \coordgrid\ (ring graph) the graph
+  buys nothing---and the standard \emph{unstabilised} \gnnqmix\
+  (capacity-matched, $+$graph) shown here falls below both \qmix\ (no graph)
+  and the parameter-matched \mlpqmix\ (no graph) control at $N{=}4$ and
+  $N{=}8$ (10 seeds, 150k steps; 95\% CI). That deficit is an optimisation
+  pathology: a \emph{stabilised} GCN recovers to parity with the controls
+  (Appendix~\ref{app:repaired}), still without any benefit. \textbf{(B)
+  Positive endpoint:} on the pair-routing task, where
+  each agent must act on a partner's privately held goal, only the
+  task-matched graph rises well above the random floor (${\approx}50$); a
+  density-matched wrong graph and the all-to-all graph stay at or within a
+  point of the floor (12 seeds, 30k steps; 95\% CI). The \emph{same
+  stabilised} graph-conditioned architecture is thus inert under full
+  information (parity, panel~A via Appendix~\ref{app:repaired}) yet a large
+  asset when the task requires routing information the receiver cannot
+  otherwise observe (panel~B)---the discriminator is the task's information
+  structure, not the architecture.}
+  \label{fig:teaser}
+\end{figure}
 
 \paragraph{Contributions.} This paper makes the following contributions.
 
@@ -409,51 +415,46 @@ into a single ``when does it help'' statement rather than overturning it.
         (Section~\ref{sec:hypotheses}) and test them with a pilot,
         a graph-regime sweep, and a depth $\times$ diameter ablation
         (Sections~\ref{sec:results:pilot}--\ref{sec:results:ablation}).
-  \item \textbf{The negative endpoint.} In full-information /
-        convention-reducible settings the prevailing positive picture of
-        graph-based MARL does not survive a controlled comparison:
-        \gnnqmix\ is bested by \qmix\ in both mean return and seed-level
-        variance, even on an edge-defined-reward task whose observations
-        (under the non-ego obs mode used here) already expose neighbour
-        displacements, so message passing is at best redundant. The
-        non-trivial finding is not a surprising failure but the
-        capacity-matched \emph{identification} of the cause. The capacity control
-        (\S\ref{sec:results:capacity}) \emph{identifies} the cause (the
-        no-graph \mlpqmix\ matches \qmix\ while \gnnqmix\ falls far below
-        both, so the penalty is the graph aggregation, not the added
-        parameters) and shows it survives a $5\times$ longer training budget
-        at $n{=}\PEseeds$ seeds (ruling out undertraining), and that the
-        \emph{negative} penalty grows monotonically with team size out to
-        $N{=}16$ (distinct from the \emph{positive} structure effect of
-        contribution~5, which is significant at every $N$ but non-monotone).
-        On MPE \texttt{simple\_spread} the penalty reappears under the
-        capacity decomposition (the naive \gnnqmix-vs-\qmix\ comparison is
-        null at $N{=}6$; \S\ref{sec:results:mpe}); on \coordgrid\ it persists
-        when the GCN is replaced by graph attention
-        (\S\ref{sec:results:capacity}), which on MPE narrows but is not
-        significant.
-  \item \textbf{The positive endpoint} (\S\ref{sec:results:structure}). We
-        pre-register and run a constructed pair-routing task in which each
-        agent must reach a partner's \emph{private} goal, so the graph is the
-        only path for task-structured information. There the task-matched
-        graph beats all-to-all communication---which carries the partner's
-        information but must select it---at byte-identical parameters and
-        observations ($d\approx5$ at degree-1; Welch/Holm and Mann--Whitney
-        $p<10^{-4}$); a density-matched wrong graph, which carries no partner
-        information by construction, floors alongside the no-graph control.
-        More communication did not help, the \emph{right} communication did.
-        The advantage is the structure, not the channel or the capacity, and is
-        not recovered by expressiveness alone: neither the fixed mean-aggregator
-        nor a stabilisation-matched learned attention head recovers the signal
-        from all-to-all within budget, while given the right graph a more
-        expressive aggregator trains at least as well (an exploratory,
-        not pre-registered, multi-head-attention $+5.4$ over the GCN).
-        The effect is significant at every $N{=}4$--$10$ (but
-        non-monotone), robust to observability, survives at degree-2 about
-        $\SCnbrShrink\times$ smaller at the 30k budget (an upper bound on the
-        attenuation; longer-budget runs suggest a smaller gap), and replicates
-        out of harness in a non-spatial token-matching game (not a gridworld
-        artefact).
+  \item \textbf{The negative endpoint: in full-information /
+        convention-reducible settings the graph confers no benefit---and its
+        common unstabilised form is actively harmful for an
+        optimisation reason, not because of added capacity.} The standard
+        \gnnqmix\ is bested by \qmix\ in
+        both mean return and seed-level variance, even on an
+        edge-defined-reward task whose observations (under the non-ego obs
+        mode used there) already expose neighbour displacements, so message
+        passing is at best redundant; the non-trivial finding is the
+        capacity-matched \emph{identification} of the cause
+        (\S\ref{sec:results:capacity}: the no-graph \mlpqmix\ matches \qmix\
+        while \gnnqmix\ falls far below both). The unstabilised-graph deficit
+        survives a
+        $5\times$ longer training budget at $n{=}\PEseeds$ seeds, grows
+        monotonically with team size out to $N{=}16$ (distinct from the
+        positive structure effect of contribution~5, which is significant at
+        every $N$ but non-monotone), reappears under the capacity
+        decomposition on MPE \texttt{simple\_spread} (where the naive
+        \gnnqmix-vs-\qmix\ comparison is null; \S\ref{sec:results:mpe}), and
+        persists under graph attention---but stabilising the GCN recovers it
+        to parity with the controls (Appendix~\ref{app:repaired}), so what
+        survives for the stabilised operator is the weaker, robust
+        \emph{no-benefit} claim.
+  \item \textbf{The positive endpoint: when an agent needs private
+        information held by a specific other, the task-matched graph wins
+        decisively---and the win is the structure}
+        (\S\ref{sec:results:structure}). On a pre-registered pair-routing
+        task in which each agent must reach a partner's \emph{private} goal,
+        the task-matched graph beats all-to-all communication---which
+        carries the partner's information but must select it---at
+        byte-identical parameters and observations ($d\approx5$ at degree-1;
+        Welch/Holm and Mann--Whitney $p<10^{-4}$), while a density-matched
+        wrong graph floors alongside the no-graph control: the right edges,
+        not more edges. Expressiveness does not substitute for structure
+        (stabilisation-matched learned attention also floors over all-to-all
+        within budget, while an exploratory multi-head arm gains $+5.4$
+        \emph{given} the right graph), and the effect is significant at
+        every $N{=}4$--$10$ (non-monotone), robust to observability,
+        survives attenuated at degree-2, and replicates out of harness in a
+        non-spatial token-matching game.
   \item The depth--diameter alignment heuristic (H3) is falsified in favour
         of a sharper practitioner rule (\S\ref{sec:results:ablation}): a
         hard over-depth cliff means GCN depth should not exceed two in
@@ -587,6 +588,29 @@ difficult to attribute observed gains to any single component; our study
 isolates the GNN encoder by inserting it into an otherwise-identical \qmix\
 architecture.
 
+\paragraph{Recent coordination-graph and relational MARL (2023--2026).} The
+learned-topology line has continued past \algoname{CASEC}. \algoname{GACG}
+\citep{duan_2024_gacg} infers \emph{group-level} (higher-order) coordination
+edges, and \algoname{LTS-CG} \citep{duan_2024_ltscg} learns a latent
+\emph{temporally sparse} graph; both report gains from sparser learned topology
+and so inherit the same attribution gap we target---sparsity, learned selection,
+and capacity move together, so a return improvement cannot be credited to
+topology alone. \algoname{ExpoComm} \citep{li_2025_expocomm} reaches a conclusion
+adjacent to our headline from the opposite direction: small-diameter
+\emph{exponential} communication graphs scale better than all-to-all broadcast,
+reinforcing that \emph{which} edges exist matters more than how many---though it
+designs the topology for scalability rather than isolating topology-correctness
+against a wrong-graph control. Closest in spirit,
+\citet{utke_2025_relabstraction} ask directly when \emph{relational} state
+abstraction helps cooperative agents and find it improves sample efficiency on
+spatially structured tasks; they use a learned relational critic and measure
+return, however, and run neither a density-matched wrong-graph nor a
+parameter-matched no-graph control. To our knowledge, no published work---through
+2026---isolates the contribution of graph \emph{structure} as we do: fixing the
+topology and contrasting a task-matched graph against a density-matched wrong
+graph and all-to-all at byte-identical parameters and observations. That is the
+gap this study fills.
+
 \paragraph{Communication under partial observability.} A parallel line of
 work motivates inter-agent message passing precisely by partial
 observability: when an agent cannot see what it needs, a learned channel can
@@ -685,7 +709,15 @@ We test three pre-registered hypotheses:
 \section{Experimental Design}
 \label{sec:design}
 
-\subsection{The \coordgrid\ environment}
+% NB: the section title below spells out "CoordGrid" literally rather than
+% using the \coordgrid (\textsc{}) macro: tmlr.sty sets \subsection headings
+% in bold sans-serif (\sffamily\bf), and Latin Modern Sans has no bold
+% small-caps shape (T1/lmss/bx/sc is undeclared -- see t1lmss.fd), so
+% \textsc{} here would silently fall back to plain bold anyway (LaTeX Font
+% Warning + defaults substituted). Spelling it out renders identically and
+% drops the warning. \coordgrid keeps its small-caps rendering everywhere
+% else in the body (normal-weight serif headings/text do have T1/lmr/*/sc).
+\subsection{The CoordGrid environment}
 \label{sec:env}
 
 \coordgrid\ is a cooperative gridworld parameterised by the team size $N$,
@@ -780,7 +812,10 @@ wall-clock). We report two metrics:
 
 \begin{enumerate}[leftmargin=*,itemsep=0pt,topsep=2pt]
   \item \textbf{Final-window return}: mean return over the last 10\% of
-        episodes of a run. This is a coarse capacity measure.
+        episodes of a run. This is a coarse capacity measure. (The Stage
+        C/D cells of Section~\ref{sec:results:structure} use the last-20\%
+        window pre-registered for them; the difference is disclosed and
+        checked in that section's preamble.)
   \item \textbf{Episodes to 80\% of own final}: the first episode at
         which the 25-episode rolling mean reaches 80\% of that run's own
         final-window mean. This per-run \emph{self-threshold} is panel-
@@ -795,7 +830,11 @@ confidence interval. Pairwise algorithm comparisons use Welch's two-sample
 $t$-test as the primary and Mann--Whitney $U$ as a non-parametric
 robustness check, with Holm--Bonferroni step-down correction. We define
 the multiple-test families explicitly: within a single condition
-(fixed $N$, fixed graph) Holm corrects across the 6 algorithm pairs;
+(fixed $N$, fixed graph) Holm corrects across all algorithm pairs---6
+pairs in the four-algorithm phases (1--4) and 10 pairs in the
+five-algorithm phases (3 and 8, which add \mlpqmix); Phase 8's decisive
+conclusions additionally use the separately declared three-contrast
+decisive family (\S\ref{sec:results:capacity});
 H1 (within-condition GNN-QMIX vs.\ QMIX) is one one-sided test per
 condition and is not corrected within H1; H2 (interaction across
 graph regimes) is a single one-sample $t$ on the per-seed
@@ -811,6 +850,18 @@ compute constraints and are noted explicitly.
 % =========================================================================
 \section{Results}
 \label{sec:results}
+
+\paragraph{Roadmap.} The negative-endpoint evidence arrives in five
+experiments, named by the identifiers of the project's registered experiment
+log: Phase~1 is the \emph{pilot} (harness sanity check), Phase~2 the
+\emph{scale-and-graph-regime sweep} (H1, H2), Phase~3 the \emph{MPE
+external-validity replication}, Phase~4 the \emph{depth--diameter ablation}
+(H3), and Phase~8 the \emph{capacity control} that identifies the cause and
+rules out undertraining. The numbering is non-contiguous because the
+intermediate identifiers were infrastructure and analysis stages that
+produce no reported comparisons; we keep the log's numbering so that the
+paper, the pre-registration documents, and the artifact's
+\texttt{results/} directories agree.
 
 \subsection{Phase 1: Pilot}
 \label{sec:results:pilot}
@@ -894,7 +945,16 @@ capacity control on a canonical cooperative benchmark: PettingZoo
 avoiding collisions. We change \emph{only} the environment: the five
 algorithms, the locked hyperparameters, the \PEsteps-step / \PEseeds-seed
 budget, and the Welch\,/\,Holm\,/\,Mann--Whitney protocol are identical to
-Phase~8. \texttt{simple\_spread} exposes no graph, so \gnnqmix\ runs on a
+the capacity-control protocol of Section~\ref{sec:results:capacity}.
+Two scope limits are stated plainly rather than footnoted. First, this
+executes at $15\%$ of the pre-registered $\ge 10^6$-step budget
+(Table~\ref{tab:budget}), a compute-forced reduction. Second, at this budget
+the QMIX mixer family has not converged on \texttt{simple\_spread}: the
+mixer-free \iql\ and \vdn\ baselines lead it outright
+(Table~\ref{tab:mpe-full}). What this phase can and does test is therefore
+the \emph{within-family decomposition at a fixed budget}---whether the graph
+helps or hurts relative to its own matched control---not converged final
+performance. \texttt{simple\_spread} exposes no graph, so \gnnqmix\ runs on a
 $k$-nearest-neighbour graph over agent positions ($k{=}2$, the DGN
 convention). At $N{=}3$ this graph is necessarily complete (each agent
 links to both others); $N{=}6$ is the genuinely sparse, larger-team test.
@@ -912,15 +972,20 @@ The decomposition table (Table~\ref{tab:mpe}) is in Appendix~\ref{app:mpe}.
 
 \textbf{The graph penalty replicates, and the control is what reveals
 it.} At $N{=}3$ all three decisive contrasts are null (graph effect
-$\PMgraphGapNthree$, capacity $\PMcapGapNthree$; both $p>0.6$): on a small
-team with a complete graph the relational bias neither helps nor hurts. At
+$\PMgraphGapNthree$, 95\% CI $[-7.0, +10.9]$; capacity $\PMcapGapNthree$,
+CI $[-4.9, +6.1]$; both $p>0.6$): on a small
+team with a complete graph we detect no effect in either
+direction---though the intervals are wide enough that this is a
+no-detection at $n{=}10$, not an equivalence claim. At
 $N{=}6$ the \coordgrid\ pattern reappears: the graph effect is
 $\PMgraphGapNsix$ (Cohen's $d=\PMgraphDNsix$), significant under both Holm
 ($p=\PMgraphHolmNsix$) and Mann--Whitney ($p=\PMgraphMwuNsix$). The naive $\gnnqmix$-vs-$\qmix$ comparison is \emph{not} significant here
 (net $\PMnetNsix$, $p=0.41$): a single-comparison study would call the
-graph harmless. The control explains why: the extra parameters \emph{help}
+graph harmless. The control explains why: the extra parameters \emph{appear
+to help}
 here (capacity $\PMcapGapNsix$, $d=\PMcapDNsix$; Mann--Whitney
-$p=\PMcapMwuNsix$, marginal after Holm), nearly cancelling the graph
+$p=\PMcapMwuNsix$, marginal after Holm---suggestive rather than confirmed,
+and we lean on it only as arithmetic), nearly cancelling the graph
 penalty ($\PMcapGapNsix\!+\!\PMgraphGapNsix\approx\PMnetNsix$). Only
 \mlpqmix\ separates the two, exposing a graph liability the headline
 comparison masks: on a standard benchmark, the confound this paper
@@ -965,17 +1030,20 @@ to prevent noisy flat curves from passing by accident.
 \begin{enumerate}[leftmargin=*,itemsep=0pt,topsep=2pt]
   \item \textbf{H3 is not confirmed at the family level} (1/3 diameters
         pass). Only the ring ($d=2$) shows the predicted argmax-at-$L=d$
-        behaviour ($L^*=2$, non-flat, $p=$ pass). The complete graph
-        ($d=1$) is essentially flat in $L$ (relative range $10\%$, at the
-        pre-registered floor) and the line ($d=3$) shows the
+        behaviour ($L^*=2$, non-flat: pass). The complete graph
+        ($d=1$) is essentially flat in $L$ (relative range $9\%$, below the
+        pre-registered $10\%$ non-flatness floor---which is exactly why it
+        fails the per-row criterion) and the line ($d=3$) shows the
         \emph{opposite} of the prediction: $L^*=1$, with a monotone
         decrease as $L$ grows.
   \item Reading the heatmap column-wise rather than row-wise exposes a
-        sharp \emph{over-depth cliff}: $L=3$ and $L=4$ are catastrophic on
-        every diameter tested. Mean returns at $L \in \{3, 4\}$ are
-        $4.4$--$8.1$ across the grid, while $L \in \{1, 2\}$ deliver
-        $6.9$--$26.9$. Whatever benefit additional message-passing layers
-        contribute in principle, it is dominated by an optimisation or
+        sharp \emph{over-depth cliff} on the structured diameters: $L=3$
+        and $L=4$ collapse on $d \in \{2, 3\}$, while the complete graph
+        ($d=1$) stays flat in $L$. Mean returns at $L \in \{3, 4\}$ are
+        $4.4$--$7.1$ across the grid, while $L \in \{1, 2\}$ deliver
+        $6.3$--$20.7$. Whatever benefit additional message-passing layers
+        contribute in principle, on the structured graphs it is dominated
+        by an optimisation or
         over-squashing penalty that kicks in immediately past $L=2$ in
         this regime.
   \item This is a sharper, simpler, and arguably more useful finding
@@ -1026,17 +1094,32 @@ state the decisive values inline.
 \end{figure}
 
 \textbf{Finding 1: the penalty is the graph, not capacity, and it is
-significant.} \mlpqmix\ matches \qmix\ at both scales (capacity gap
+significant.} \mlpqmix\ matches \qmix\ in mean at both scales (capacity gap
 $\PEcapGapNeight$ at $N=8$; negligible at $N=4$), so the extra parameters
-alone do nothing. \gnnqmix, with identical parameters but the graph added,
-is far worse: the graph effect is $\PEgraphGapNfour$ at $N=4$ and
+alone add nothing on average. For completeness: a rank test does detect a
+small \mlpqmix-below-\qmix\ median deficit at $N{=}8$ (Mann--Whitney
+$p=0.045$; ${\sim}2$ points, under $1.5\%$ of \qmix's return, driven by
+equal means with unequal spreads)---an order of magnitude smaller than the
+graph effect, so we describe capacity as approximately inert rather than
+exactly zero. \gnnqmix\ (the standard, unstabilised GCN), with identical
+parameters but the graph added, is far worse: the graph effect is
+$\PEgraphGapNfour$ at $N=4$ and
 $\PEgraphGapNeight$ at $N=8$ (Cohen's $d=\PEgraphDNfour$ and
 $\PEgraphDNeight$). Both decisive contrasts are significant under the
 non-parametric test ($\text{MWU } p=\PEmwuP$) and under Holm correction
-over the decisive family. The negative result is therefore
-\emph{identified}: it is the relational aggregation itself that hurts, and
-the penalty \emph{grows} with team size, the opposite of the ``graphs
-help coordination as teams grow'' intuition.
+over the decisive family. The capacity control thus \emph{identifies} the
+source: not the added parameters (\mlpqmix\ matches \qmix) but the graph
+aggregation, and the deficit \emph{grows} with team size---the opposite of
+the ``graphs help coordination as teams grow'' intuition. \emph{An important
+scope note, established in Appendix~\ref{app:repaired}:} this large deficit
+is a property of the \emph{unstabilised} GCN. Adding the same residual$+$LayerNorm
+stabilisation used at the positive endpoint recovers \gnnqmix\ to parity
+with the no-graph controls ($164.3$ vs.\ $164.9$ at $N{=}8$, $d\approx-0.1$;
+the ${\sim}9\times$ variance inflation below also vanishes). So the harm is
+an optimisation pathology of the common operator, not an intrinsic cost of
+graph aggregation---but even the stabilised graph confers \emph{no benefit}
+in this full-information regime (it matches the control, never beats it),
+which is the robust negative-endpoint conclusion.
 
 \textbf{Finding 2: undertraining is ruled out.} At \PEsteps\ steps
 ($5\times$ Phase 2), \qmix\ still dominates \gnnqmix\ by roughly $2\times$
@@ -1044,14 +1127,18 @@ in return at $N=8$ ($\PEqmixNeight$ vs.\ $\PEgnnNeight$). The gap is not a
 transient of insufficient training; it persists and widens at the larger
 budget.
 
-\textbf{Finding 3: the graph destabilises learning.} Beyond the lower
-mean, \gnnqmix\ is far less reliable across seeds: at $N=8$ its seed
-standard deviation is \PEgnnSDNeight, against \PEmlpSDNeight\ for the
-parameter-matched \mlpqmix\ control and \PEqmixSDNeight\ for \qmix\, roughly a $9\times$ inflation attributable to the graph alone. The graph
+\textbf{Finding 3: the unstabilised graph destabilises learning.} Beyond the
+lower mean, the plain \gnnqmix\ is far less reliable across seeds: at $N=8$ its
+seed standard deviation is \PEgnnSDNeight, against \PEmlpSDNeight\ for the
+parameter-matched \mlpqmix\ control and \PEqmixSDNeight\ for \qmix, roughly a
+$9\times$ inflation. The plain graph
 does not merely fail to help on average; it injects seed-level
 instability that the parameter-matched no-graph control does not
-(Figure~\ref{fig:phase8curves}), confirming the mechanism we had only
-hypothesised from the Phase 1 pilot.
+(Figure~\ref{fig:phase8curves}). This instability is exactly what the
+stabilised GCN removes (Appendix~\ref{app:repaired}: seed SD $7.0$ vs.\
+$30.9$), which is why we read the destabilisation as an optimisation
+pathology of the operator rather than an inevitable consequence of message
+passing.
 
 \begin{figure}[t]
   \centering
@@ -1099,6 +1186,18 @@ $\PSgapNsixteen$; at $N=16$ \gnnqmix\ reaches only
 ${\sim}\PSgnnFracNsixteen\%$ of \qmix's return. The ``graphs help as the
 team grows'' intuition is exactly inverted.
 
+\textbf{Operator scope of Findings 1--5.} All five findings above use the
+standard \emph{unstabilised} GCN (and its attention analogues). As
+Appendix~\ref{app:repaired} establishes, the large deficits, the variance
+inflation, and the growth with $N$ are properties of that operator:
+stabilising the GCN (residual$+$LayerNorm) recovers it to parity with the
+no-graph controls on both the ring and line cells. The conclusion that survives for the
+stabilised operator, and that we carry forward as the negative endpoint, is
+the weaker but robust one---in this full-information regime the graph
+confers \emph{no benefit over a parameter-matched no-graph control}. The
+``actively harmful / destabilising'' language is scoped throughout to the
+common unstabilised operator.
+
 \begin{figure}[t]
   \centering
   \includegraphics[width=0.72\textwidth]{figures/phase10_gat.pdf}
@@ -1106,8 +1205,10 @@ team grows'' intuition is exactly inverted.
   (\dgnqmix, the DGN/G2ANet operator) graph attention both sit above
   \gnnqmix\ (the fixed GCN), more expressive attention helps
   \emph{within} graph methods, but still below the parameter-matched
-  no-graph control \mlpqmix\ at both team sizes on CoordGrid: the graph in
-  its strongest form remains a net liability.}
+  no-graph control \mlpqmix\ at both team sizes on CoordGrid: no unstabilised
+  graph operator recovers a benefit here (cf.\ Appendix~\ref{app:repaired},
+  where the \emph{stabilised} GCN reaches parity but still does not exceed
+  the control).}
   \label{fig:gat}
 \end{figure}
 
@@ -1132,10 +1233,24 @@ harmful. This section identifies the \emph{positive} endpoint. We construct a
 task in which the coordination graph is the only path for task-relevant
 private information, and ask whether---channel, capacity, and observations
 held fixed---the graph's \emph{structure} (which edges) earns a measurable,
-reproducible advantage. It does. The hypotheses, metric, seeds, and decision
-rule for this section were fixed before the runs, exactly as for H1--H3;
-all confirmatory cells use $\ge 12$ seeds and the same Welch\,/\,Holm and
-Mann--Whitney tests of Section~\ref{sec:protocol}. The Holm family here is the
+reproducible advantage. It does. We are precise about what was
+pre-registered: the hypotheses, metric, seeds, and decision rules for the
+core pair sweep, the team-size sweep, the degree-2 cell, and the
+attention-over-complete test were fixed before those runs
+(\texttt{docs/STAGE\_C.md} in the artifact), following an exploratory
+3-seed pilot; the full-observability cell
+(\S\ref{sec:structure:obs}), the \texttt{dgn\_true} arm, and the
+\tokenmatch\ replication (\S\ref{sec:structure:tokenmatch}) are post-hoc
+robustness/replication cells run under the same protocol and thresholds but
+not themselves pre-registered. All confirmatory cells use $\ge 12$ seeds and
+the same Welch\,/\,Holm and Mann--Whitney tests of
+Section~\ref{sec:protocol}. One protocol difference is disclosed rather than
+hidden: the cells of this section use the final window pre-registered for
+them---the last \emph{20\%} of episodes---whereas
+Section~\ref{sec:protocol} defines the last 10\% for Phases 1--8;
+recomputing every contrast of this section at the 10\% window leaves every
+conclusion unchanged with slightly \emph{larger} gaps (e.g.\ \gtrue\ vs.\
+\gcomplete\ $+15.8$, $d=5.8$). The Holm family here is the
 registered \gtrue-vs-each-rival family---three contrasts in the core sweep
 (\gtrue\ vs.\ \gwrong/\gcomplete/\mlpc), six in the attention sweep (adding the
 \texttt{gat}/\texttt{dgn} arms)---not the six-algorithm-pairs family of
@@ -1154,11 +1269,25 @@ other agent}, so the communication graph must match the task structure for
 routing to be possible at all. We hold $\dim(o_i)$ constant across
 communication graphs by setting \texttt{max\_neighbors\_override}$=N{-}1$
 (unit-tested), so no arm sees more inputs than another. The arms are the
-\emph{same} \gnnqmix\ (a repaired GCN: residual connection and LayerNorm,
-$L{=}2$, width 64); only \texttt{env.adjacency()} differs:
+\emph{same} \gnnqmix\ architecture, in a \emph{stabilised} (``repaired'')
+variant: a residual connection and LayerNorm around each GCN layer
+($L{=}2$, width 64). The repair exists because the plain GCN of
+Sections~\ref{sec:results:pilot}--\ref{sec:results:capacity} does not train
+on this routing task at all (exploratory Stage-A runs); the negative-endpoint
+phases use the plain GCN, and Appendix~\ref{app:repaired} shows that giving
+that endpoint the \emph{same} stabilisation recovers \gnnqmix\ to parity
+with the no-graph controls---so the full-information ``harm'' is an
+optimisation pathology of the unstabilised operator, while the graph's
+\emph{lack of benefit} there holds for the stabilised operator too. The
+positive-endpoint effect below therefore compares the stabilised operator
+against itself under different adjacencies, and cannot be an artefact of the
+plain-vs-stabilised difference.
+Only \texttt{env.adjacency()} differs across the graph arms:
 \gtrue\ (the matching), \gwrong\ (a \emph{different} matching of identical
 $1$-regular density), and \gcomplete\ (all-to-all, the most communication).
-\mlpc\ is the no-communication parameter-matched control. Because \gwrong\
+\mlpc\ is the no-communication parameter-matched control---the same
+control as \mlpqmix\ in Section~\ref{sec:algos}; this section uses the
+short arm names of the pre-registration throughout. Because \gwrong\
 and \gcomplete\ are byte-identical to \gtrue\ in architecture and parameter
 count---only the adjacency changes---the \gtrue\ vs.\ \gcomplete\ contrast
 isolates \emph{structure} from channel, capacity, and observability
@@ -1194,29 +1323,60 @@ partner's signal---yet the matched graph still beats it by $+33$. So the
 all-to-all floor is not merely a mechanical dilution artefact; it reflects the
 absence of the right edges.)
 
+\paragraph{How we found this task (failed constructions disclosed).}
+\pairrouting\ was not the first construction we tried, and the search
+matters for scope. An exploratory stage first tested whether restricting
+observability alone (making agents depend on the channel) or stabilising the
+GCN alone would surface a graph advantage on the convention-reducible tasks
+of Sections~\ref{sec:results:pilot}--\ref{sec:results:capacity}: neither
+did. A pre-registered goal-\emph{broadcast} construction (one agent observes
+a shared secret goal that must relay over ring/line graphs; 10 seeds
+$\times$ 3 diameters $\times$ 4 arms) then failed its primary hypothesis:
+the matched graph's advantage at diameter 5 was $+3.2$ (Welch
+$p_{\text{Holm}}=0.60$), so multi-hop \emph{relay} did not produce a
+significant structure win for these operators. \pairrouting\ moves the
+private information a single edge away (one specific partner), and that is
+where the advantage becomes large and clean; the degree-2 cell
+(\S\ref{sec:structure:degree2}) shows it surviving, attenuated, when the
+needed information is a two-neighbour \emph{set} rather than a single
+partner. The positive rule of this paper is accordingly scoped to
+short-range, task-matched routing; making multi-hop relay work is an open
+problem these operators did not solve, not a suppressed null. The failed
+sweeps ship with the artifact (\texttt{results/phaseB/}).
+
 \subsection{Headline: it is the structure, not the channel}
 \label{sec:structure:headline}
 
 \textbf{Setup.} $N{=}6$, $3{\times}3$ grid, ego observations, 12 seeds, 30k
-steps. Two reference points anchor the scale (both measured on this task):
-the random / do-nothing return is ${\approx}\SCfloor$, and a
-full-information greedy \emph{oracle} reaches ${\approx}\SCoracle$
-(${\approx}$ the maximum of 150). So the floor is literally the random
+steps. Two reference points anchor the scale, both measured on this task
+(script and CSV in the artifact: \texttt{scripts/phaseC\_reference\_points.py},
+\texttt{results/phaseC/reference\_points.csv}): the random / do-nothing
+return is $49.9$ (${\approx}\SCfloor$), and a full-information greedy
+\emph{oracle}---every agent handed its partner's goal---reaches $148.7$
+(${\approx}\SCoracle$, against the analytic ceiling of $N \cdot T = 150$).
+So the floor is literally the random
 policy, and the achievable routing headroom is ${\sim}\SCfloor\to{\sim}\SCoracle$.
 
 \textbf{More communication did not help; the right communication did.}
-Table~\ref{tab:structure} foregrounds the controls.
+Table~\ref{tab:structure} foregrounds the controls; Figure~\ref{fig:structure}
+shows the same result at a glance.
 The no-graph control (\mlpc), the wrong graph (\gwrong), and
-\emph{all-to-all} communication (\gcomplete) all sit at the random
-floor---\SCmlp, \SCwrong, and \SCcomplete\ respectively, i.e.\ within roughly
-a point of $\SCfloor$ and more than $15$ points below \gtrue. Only \gtrue,
+\emph{all-to-all} communication (\gcomplete) all sit at or within a point of
+the random floor---\SCmlp, \SCwrong, and \SCcomplete\ respectively, more than
+$15$ points below \gtrue. Only \gtrue,
 routing along the task's own edges, rises, to \SCtrueN\ $[\SCtrueLo,
 \SCtrueHi]$. The decisive arm is \gcomplete: it is the only rival that
 actually \emph{carries} the partner's information (the partner is one of the
-$N{-}1$ broadcast neighbours), yet on \pairrouting\ it floors---so here the arm
-with the \emph{most} communication is no better than no communication at all.
-(All-to-all flooring is task-dependent: in \tokenmatch,
-\S\ref{sec:structure:tokenmatch}, the same arm does manage weak partial routing,
+$N{-}1$ broadcast neighbours), yet on \pairrouting\ it recovers almost none of
+it. The pre-registered comm-insufficiency check quantifies ``almost none'':
+\gcomplete\ ends $+1.1$ above the no-communication control (Cohen's
+$d{=}1.0$; Welch $p{=}0.020$, Mann--Whitney $p{=}0.030$)---a statistically
+detectable sliver of task-incidental routing amounting to ${\approx}7\%$ of
+the \gtrue\ gap. So the arm with the \emph{most} communication is
+distinguishable from no communication only by a point, while the arm with the
+\emph{right} communication clears both by more than fifteen.
+(The size of the sliver is task-dependent: in \tokenmatch,
+\S\ref{sec:structure:tokenmatch}, the same arm manages real partial routing,
 $+12$ over the floor, yet still falls $-33$ short of the matched graph. In
 neither task does broadcasting approach the right edges.) The advantage is which
 edges carry messages, not how many.
@@ -1225,23 +1385,24 @@ edges carry messages, not how many.
   \centering
   \small
   \caption{\textbf{The structure boundary} (\pairrouting, $N{=}6$, ego, 12
-  seeds, 30k steps). \emph{Top:} the wrong graph and all-to-all
-  communication both sit at the random floor (${\approx}\SCfloor$); only the
-  task-matched graph rises. \emph{Bottom:} the three contrasts (same repaired
+  seeds, 30k steps). \emph{Top:} the wrong graph and the no-graph control sit
+  at the random floor (${\approx}\SCfloor$, measured); all-to-all sits one
+  point above it; only the
+  task-matched graph rises. \emph{Bottom:} the three registered contrasts
+  (same repaired
   GCN and parameter count; only the adjacency differs). The headline rests on
   \gtrue\ vs.\ \gcomplete, the only rival that carries the partner's
   information but must select it; \gtrue\ vs.\ \gwrong\ and \gtrue\ vs.\ \mlpc\
   are a-priori sanity checks (neither carries partner information). $d$ is
   Cohen's $d$; $p_{\text{Holm}}$ is Welch's $t$ with Holm correction over the
   registered three-contrast family (actual ${\sim}3{\times}10^{-8}$);
-  Mann--Whitney is at its small-sample floor under complete separation.
-  \gtrue\ captures only ${\sim}\SCfrac\%$ of this task's
-  routing-\emph{plus}-navigation headroom (${\sim}\SCfloor\to{\sim}\SCoracle$):
-  routing helps significantly, but \pairrouting\ layers gridworld navigation on
-  top of routing, so $16\%$ is the routing share of a harder task, not the
-  ceiling of the mechanism---on the navigation-free \tokenmatch\
-  (\S\ref{sec:structure:tokenmatch}) the matched graph captures ${\sim}96\%$.}
+  Mann--Whitney is at its small-sample floor under complete separation. What
+  the matched graph does and does not deliver of the
+  ${\sim}\SCfloor\to{\sim}\SCoracle$ headroom is discussed at the end of
+  \S\ref{sec:structure:headline}.}
   \label{tab:structure}
+  \setlength{\tabcolsep}{4pt}%
+  \resizebox{\linewidth}{!}{%
   \begin{tabular}{llr}
     \toprule
     Arm & comm.\ graph & final return [95\% CI] \\
@@ -1256,13 +1417,30 @@ edges carry messages, not how many.
     \gtrue$-$\gwrong\ {\footnotesize(a-priori: wrong matching carries no partner info)} & \multicolumn{2}{l}{$\SCtwGap$,\; $d=\SCtwD$,\; $p_{\text{Holm}}\SCpHolm$,\; MWU $<10^{-4}$} \\
     \gtrue$-$\mlpc\ {\footnotesize(a-priori: no channel)} & \multicolumn{2}{l}{$\SCtmGap$,\; $d=\SCtmD$,\; $p_{\text{Holm}}\SCpHolm$,\; MWU $<10^{-4}$} \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}}%
 \end{table}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{figures/phaseC_structure.pdf}
+  \caption{\textbf{It is the structure, not the channel.} Final-window mean
+  return (95\% CI, 12 seeds) on the pair-routing task ($N{=}6$, ego
+  observations, 30k steps). Only the \emph{task-matched} graph rises well above
+  the random floor (${\sim}50$): the no-graph control (\mlpc) and a
+  density-matched wrong graph sit at the floor, the all-to-all graph (the
+  \emph{most} communication) one point above it, while the task-matched graph
+  reaches $66$--$71$ depending on the
+  aggregator ($d{\approx}5$ vs.\ the floor). Learned attention (GAT, DGN) helps
+  only \emph{on} the matched graph; over all-to-all it floors like the fixed
+  GCN. The right edges, not more edges, carry the advantage.}
+  \label{fig:structure}
+\end{figure}
 
 \textbf{The decisive contrast.} The headline rests on \gtrue\ vs.\
 \gcomplete\ (all-to-all): $\SCtcGap$ ($d=\SCtcD$, $p_{\text{Holm}}\SCpHolm$,
 Mann--Whitney $p<10^{-4}$). This is the only contrast in which the partner's
-information \emph{is} present in the inputs yet must be selected, so its floor
+information \emph{is} present in the inputs yet must be selected, so its
+near-floor result
 cannot be explained by the channel being unable to reach the partner. The
 other two contrasts are a-priori sanity checks, as established above:
 \gtrue\ vs.\ \mlpc\ ($\SCtmGap$, $d=\SCtmD$; no channel) and \gtrue\ vs.\
@@ -1289,7 +1467,8 @@ task:} \gtrue\ captures only ${\sim}\SCfrac\%$ of the routing headroom
 \label{sec:structure:N}
 
 We pre-registered that the advantage would \emph{grow} with $N$ (a
-dose-response). It does not. Sweeping $N\in\{4,6,8,10\}$ (ego, 12 seeds,
+dose-response). It does not (Figure~\ref{fig:scaling-replication}, left).
+Sweeping $N\in\{4,6,8,10\}$ (ego, 12 seeds,
 30k), the task-matched advantage over the no-graph control is significant at
 \emph{every} $N$ under both tests and Holm correction---and the
 structure-isolating \gtrue\ vs.\ \gwrong/\gcomplete\ contrasts are likewise
@@ -1319,6 +1498,20 @@ directly comparable across columns. We lean on Cohen's $d$ (scale-invariant)
 as the primary attenuation evidence; the non-monotone conclusion holds under
 either.
 
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{figures/phaseC_scaling_replication.pdf}
+  \caption{\textbf{Left: the advantage holds across team size but is
+  non-monotone.} Task-matched \gtrue\ (solid line) stays above the control
+  floor (shaded band: \mlpc/wrong/all-to-all 95\% CI) at every
+  $N\in\{4,6,8,10\}$; the gap over the no-graph floor (labelled) peaks near
+  $N{=}8$ rather than growing monotonically. \textbf{Right: out-of-harness
+  replication} on \tokenmatch\ (shown standalone, with discussion, as
+  Figure~\ref{fig:tokenmatch} in \S\ref{sec:structure:tokenmatch}). All
+  bars/points are 95\% CIs over 12 seeds.}
+  \label{fig:scaling-replication}
+\end{figure}
+
 \subsection{Robustness to observability}
 \label{sec:structure:obs}
 
@@ -1328,7 +1521,14 @@ should not be a partial-observability artefact---and it is not. Under
 \gtrue\ beats the no-graph control by $\SCfullGap$ ($d=\SCfullD$), with the
 \gtrue\ vs.\ \gwrong\ and \gtrue\ vs.\ \gcomplete\ contrasts at the same
 magnitude. Adding observability does not let the rival arms route the private
-information; only the matched edges do.
+information; only the matched edges do. One input caveat is disclosed: under
+the full-observation mode the neighbour-displacement block of each agent's
+observation follows its arm's communication graph
+(\texttt{coord\_grid.py}), so---unlike the ego-mode cells, where all arms'
+inputs are byte-identical---the graph arms here differ in inputs as well as
+edges. The input-matched contrast in this cell is \gtrue\ vs.\ \mlpc\ (both
+observe the true-matching neighbour block), which is the $+\SCfullGap$
+comparison we quote; we rest the full-obs robustness claim on it.
 
 \subsection{Genuine topology: the effect survives at degree-2, much smaller}
 \label{sec:structure:degree2}
@@ -1345,7 +1545,7 @@ $p_{\text{Holm}}<\SCnbrPHolm$ and Mann--Whitney $p<0.005$. So the
 structure/topology effect \emph{survives} when the receptive field is a
 neighbourhood set rather than a single partner---but at the pre-registered 30k
 budget it is about $\SCnbrShrink\times$ smaller than at degree-1 ($+2.4$ /
-${\sim}5\%$ vs.\ $+16$ / ${\sim}33\%$). We treat $\SCnbrShrink\times$ as an
+${\sim}5\%$ vs.\ $+16$ / ${\sim}33\%$; Figure~\ref{fig:robustness}). We treat $\SCnbrShrink\times$ as an
 \emph{upper bound} on the attenuation: as the footnote records, exploratory
 longer-budget runs widen the degree-2 gap, so the genuine-topology effect may be
 materially less attenuated than the 30k cell shows. A fixed mean-aggregating GCN
@@ -1355,6 +1555,20 @@ routing.\footnote{Exploratory (non-confirmatory) 3-seed runs at 80k steps show
 the same arm ordering with a larger gap (${\sim}+5$), suggesting the 30k
 confirmatory cell is not at plateau; only the pre-registered 12-seed / 30k cell
 above is treated as the measurement.}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{figures/phaseC_robustness.pdf}
+  \caption{\textbf{The advantage is robust across conditions.} Task-matched
+  \gtrue\ (orange) versus the control floor (gray: no/wrong/all-to-all graph),
+  95\% CI over 12 seeds at $N{=}6$ (30k steps). The structure advantage holds
+  under ego observations (${+}16.3$) and is \emph{larger} under full
+  observability (${+}22.6$); at genuine degree-2 topology it survives but
+  shrinks sharply (${+}2.4$), consistent with a fixed mean-aggregator exploiting
+  a neighbourhood-set (centroid) task far less efficiently than single-partner
+  routing.}
+  \label{fig:robustness}
+\end{figure}
 
 \subsection{Learned attention does not substitute for structure either}
 \label{sec:structure:attention}
@@ -1376,7 +1590,9 @@ question. \emph{(i) The attention arms are emphatically not under-trained on the
 true graph:} given the
 \emph{right} graph, learned attention is at least as good as the GCN---single-head
 GAT is statistically indistinguishable (\texttt{gat\_true} $\SCgatTrue$ vs.\
-\gtrue\ at \SCtrueN; gap $\SCgatTrueGap$, n.s., raw Welch $p=\SCgatTrueP$), and
+\gtrue\ at \SCtrueN; gap $\SCgatTrueGap$, n.s., raw Welch $p=\SCgatTrueP$;
+95\% CI on the gap $[-3.2, +5.0]$, so equivalence is bounded rather than
+proven), and
 multi-head DGN actually \emph{exceeds} it (\texttt{dgn\_true} $71.50$, $+5.4$ over
 \gtrue, Welch $p_{\text{Holm}}=0.007$; we flag this last comparison as
 \emph{exploratory}---the pre-registered H-attn asked only whether
@@ -1402,12 +1618,14 @@ structure within the same budget that suffices given the right graph---so
 expressiveness \emph{amplifies} structure (DGN exceeds the GCN by $+5.4$ given
 the right edges) but does not \emph{substitute} for it. The advantage is the
 structure, not the channel or the capacity, and is not recovered by
-expressiveness alone.\footnote{A degree-2 (\texttt{nbr\_routing}) attention cell
-was also pre-registered; it ran at only 3 seeds (underpowered) and returned a
-null we do not report. The confirmatory attention evidence is the 12-seed
-degree-1 cell above; the confirmatory degree-2 evidence is the 12-seed
-\emph{non-attention} \texttt{nbr\_routing} cell of
-\S\ref{sec:structure:degree2}.}
+expressiveness alone.\footnote{The degree-2 (\texttt{nbr\_routing}) attention
+cell tells the same story at 12 seeds: \texttt{gnn\_true} $52.7$,
+\texttt{gat\_true} $52.3$, and \texttt{dgn\_true} $53.4$ all sit together
+above the floor, while \texttt{gat\_complete}/\texttt{dgn\_complete} floor
+at ${\sim}50.4$ alongside the no-communication control ($50.2$)---so on the
+degree-2 topology too, attention helps only on the right graph and floors
+over all-to-all. (An earlier 3-seed run of this cell was underpowered; the
+12-seed cell reported here is the confirmatory measurement.)}
 
 \subsection{Out-of-harness replication: not a gridworld artefact}
 \label{sec:structure:tokenmatch}
@@ -1420,7 +1638,8 @@ holds a token and must \emph{output its partner's token}, which can reach it
 only over the graph. The structure-isolating arms carry over unchanged (only
 \texttt{env.adjacency()} differs): \gtrue\ (the matching), \gwrong\ (a wrong
 matching), \gcomplete\ (all-to-all), and the no-communication \mlpc\ control.
-With $N{=}6$, $K{=}5$ tokens, and 12 seeds (Table~\ref{tab:tokenmatch}),
+With $N{=}6$, $K{=}5$ tokens, and 12 seeds (Table~\ref{tab:tokenmatch};
+Figure~\ref{fig:tokenmatch}),
 \gtrue\ \emph{near-solves} the task ($\TMtrue$ of a maximum $\TMmax$, ${\approx}\TMfrac\%$)
 and is completely separated from every rival---it beats the wrong matching by
 $\TMtwGap$, all-to-all by $\TMtcGap$, and no communication by $\TMtmGap$
@@ -1430,6 +1649,22 @@ ${\approx}\TMfloor$ floor)---the partner's token is one of the inputs the mean
 aggregator averages---but it remains $\TMtcGap$ below the task-matched graph.
 The structure effect therefore reproduces, more cleanly, in a structurally
 unrelated task: it is \textbf{not} a \coordgrid\ artefact.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.62\linewidth]{figures/phaseC_tokenmatch.pdf}
+  \caption{\textbf{Out-of-harness replication.} Final-window
+  mean return (95\% CI, 12 seeds, 30k steps) on \tokenmatch\ ($N{=}6$,
+  $K{=}5$ tokens), a non-spatial referential game with no grid, movement, or
+  navigation. The task-matched graph near-solves the task ($57.6$ of a $60$
+  maximum, ${\approx}96\%$), completely separating from the wrong-matching
+  graph ($12.0$) and the no-graph control ($11.9$), both at the random
+  floor. All-to-all achieves partial routing ($24.5$; the partner's token is
+  one of the averaged inputs) but remains far below the task-matched graph.
+  Confirms the structure effect of Figure~\ref{fig:structure} is not a
+  gridworld artefact.}
+  \label{fig:tokenmatch}
+\end{figure}
 
 \begin{table}[t]
   \centering
@@ -1484,11 +1719,17 @@ convention-reducible tasks, Sections~\ref{sec:results:scale}--\ref{sec:results:c
 \gnnqmix\ encoder does \emph{not} outperform the structurally identical
 \qmix. The capacity control (Section~\ref{sec:results:capacity}) shows this
 is not because the extra parameters are wasted: \mlpqmix, carrying the same
-parameters without the graph, matches \qmix, which isolates the effect on the
-graph aggregation itself, which is actively \emph{harmful} on \coordgrid\ and
-MPE, survives graph attention, and grows out to $N{=}16$. On standard
-benchmarks usually credited to graph methods the same picture holds: on
-Level-Based Foraging the penalty tracks team size---neutral at two agents but
+parameters without the graph, matches \qmix, isolating the effect on the
+graph aggregation, which confers no benefit and---in its common
+\emph{unstabilised} form---is actively harmful on \coordgrid\ and MPE,
+survives graph attention, and grows out to $N{=}16$. That active harm is an
+optimisation pathology of the unstabilised operator, not an intrinsic cost:
+a stabilised GCN recovers to parity with the controls
+(Appendix~\ref{app:repaired}), so the claim that survives for the stabilised
+operator is the weaker ``no benefit'' rather than ``harm.'' On standard
+benchmarks usually credited to graph methods the picture is the same
+\emph{no-benefit-to-harm} one: on
+Level-Based Foraging the effect tracks team size---neutral at two agents but
 significantly below \qmix\ at three ($d=-2.24$, Welch $p=0.014$;
 Appendix~\ref{app:standard}). We note for honesty that this significant LBF
 result is the (confounded) \gnnqmix-vs-\qmix\ comparison; the parameter-matched
@@ -1501,11 +1742,18 @@ full-information / convention-reducible regime the measured effect ranges from
 neutral to harmful and is never positive.
 \emph{At the positive endpoint} (Section~\ref{sec:results:structure}), where
 the task forces an agent to act on private information held by one specific
-partner it cannot observe, the \emph{same} graph operator helps---and
+partner it cannot observe, the stabilised graph operator helps---and
 decisively so ($d\approx5$)---\emph{but only when its topology matches the
-task's coordination edges}. The two readings coexist: a graph earns its keep
+task's coordination edges}. Crucially, this is the \emph{same} stabilised
+operator that Appendix~\ref{app:repaired} shows is neutral (parity with the
+no-graph control) at the negative endpoint: so the boundary is not an
+artefact of comparing two different operators. The same stabilised GCN is
+inert under full information and a large asset under task-structured
+routing---the discriminator is the task's information structure, not the
+architecture. The two readings coexist: a graph earns its keep
 exactly when it is the only path for task-structured information \emph{and}
-points at the right neighbours, and is inert-to-harmful otherwise.
+points at the right neighbours, and is neutral (or, unstabilised, harmful)
+otherwise.
 \emph{This is a claim about a mechanism, not a verdict on any system}: we
 test the relational operators these methods rely on (a fixed GCN and learned
 graph attention) inside one controlled QMIX-style harness on
@@ -1514,11 +1762,12 @@ scale. Within that scope it is a far more constrained---and more
 conditional---reading of graph-based value factorisation than a
 \emph{regime-agnostic} reading of these results
 \citep{jiang_2020_dgn,liu_2020_g2anet,naderializadeh_2020_graphmix}
-would suggest. We stress that \algoname{DGN} and \algoname{G2ANet} report
-their gains in \emph{partially-observable} cooperative settings---precisely
+would suggest. As stressed in the introduction, \algoname{DGN} and
+\algoname{G2ANet} report their gains in \emph{partially-observable}
+settings---precisely
 the regime our \emph{positive} endpoint endorses---so our constraint falls on
 the \emph{full-information} generalisation of those results, not on the
-regimes those papers actually evaluate. This is consistent with the
+regimes those papers actually evaluate; this is consistent with the
 evaluation-rigour concerns of
 \citet{henderson_2018_drlmatters} and \citet{agarwal_2021_precipice}.
 
@@ -1528,16 +1777,18 @@ on information held by specific others they cannot observe. The controls make
 the rule sharp, and we state it in the form the data support rather than as an
 absolute: with a fixed-budget learned aggregator, all-to-all recovers
 \emph{at most partial} routing and never approaches the task-matched graph
-($0\%$ of the gap on \pairrouting, where it sits at the no-communication floor;
-${\sim}27\%$ on \tokenmatch, where the partner's token is one of the averaged
+(${\approx}7\%$ of the gap on \pairrouting---about one point above the
+no-communication floor, a statistically detectable sliver of routing,
+\S\ref{sec:structure:headline}---and ${\sim}27\%$ on \tokenmatch, where the
+partner's token is one of the averaged
 inputs)---and a density-matched wrong graph never beats no graph at all. The
 difference between the two tasks is exactly that in \tokenmatch\ the partner's
 signal survives mean-pooling enough to be partly usable, yet even there
 broadcasting loses by $-33$. Pointing the channel at the wrong neighbours wastes
 it; broadcasting to everyone does not rescue it. Where the
 task is full-information or convention-reducible, prefer a state-conditioned
-mixer (\qmix) and add no graph---the relational bias there is a liability,
-not an asset.
+mixer (\qmix) and add no graph---the relational bias there is at best inert,
+and if implemented as the standard unstabilised GCN, a liability.
 
 \emph{An important caveat on actionability.} This rule presupposes the
 practitioner \emph{knows} (or can reliably estimate) the task's true
@@ -1589,11 +1840,14 @@ feasible depth $L$, so the GNN cannot route information across the team and
 a state-conditioned mixer (\qmix) fits better. (iii) The case our
 experiments document mechanistically: when the task is full-information or
 reducible to a global convention, so no agent depends on another's private
-information, \gnnqmix\ is both less accurate and far less stable across seeds
-than \qmix, and the capacity control pins the cause on the graph aggregation,
-not the parameters. (The discriminator is the information structure, not team
-size or diameter: our positive endpoint is equally small-team and
-low-diameter, yet there the graph helps.) Practitioners should not assume ``a
+information, the graph mixer buys nothing over a parameter-matched no-graph
+control---and if implemented as the standard unstabilised GCN it is
+\emph{worse}, both less accurate and far less stable across seeds than
+\qmix\ (the capacity control pins this on the graph aggregation, not the
+parameters; stabilisation removes the instability but not the futility,
+Appendix~\ref{app:repaired}). (The discriminator is the information
+structure, not team size or diameter: our positive endpoint is equally
+small-team and low-diameter, yet there the graph helps.) Practitioners should not assume ``a
 coordination graph exists'' implies ``a graph-conditioned mixer will
 help.''
 
@@ -1606,8 +1860,10 @@ controls show both conditions are necessary, not just sufficient: in the
 gridworld headline (Section~\ref{sec:structure:headline}), removing alignment
 (the wrong graph) or flooding the channel (all-to-all) each collapsed the
 advantage to near zero, and in the token-matching task all-to-all retained only
-weak, task-incidental routing---far below the matched graph in both. The same aggregation that is a
-liability in the convention-reducible regime becomes a large, reproducible
+weak, task-incidental routing---far below the matched graph in both. The same
+stabilised aggregation that is merely \emph{inert} in the convention-reducible
+regime (parity with the control, Appendix~\ref{app:repaired}; and a liability
+only in its unstabilised form) becomes a large, reproducible
 asset here ($d\approx5$), so the design question is not ``graph or no graph''
 but ``do the task's information dependencies match the edges I wire in.''
 
@@ -1635,11 +1891,15 @@ We list explicit limitations rather than burying them.
         (Section~\ref{sec:results:mpe}), where the graph is an unprivileged
         $k$-NN proximity graph, mitigates this; but tasks whose true
         coordination structure matches no observable graph may differ.
-  \item \textbf{GNN family.} We test three relational mechanisms: a fixed
-        GCN, single-head (\gatqmix) and multi-head dot-product (\dgnqmix)
-        attention (Appendix~\ref{app:gat}); at the negative endpoint
-        attention narrows but does not close the gap. Learned message passing
-        (\algoname{GIN}) and edge-feature GNNs remain open.
+  \item \textbf{GNN family and operator variants.} We test a fixed
+        GCN (plain and stabilised), single-head (\gatqmix) and multi-head
+        dot-product (\dgnqmix) attention (Appendices~\ref{app:repaired},
+        \ref{app:gat}); at the negative endpoint no variant recovers a
+        benefit over the no-graph control. We isolate one operator effect
+        (residual$+$LayerNorm converts the plain GCN's active harm to mere
+        parity) but do not sweep the full stabilisation/normalisation design
+        space, and learned message passing (\algoname{GIN}) and edge-feature
+        GNNs remain open.
   \item \textbf{Positive endpoint is still a synthetic-task result.} The
         positive boundary (Section~\ref{sec:results:structure}) is a
         constructed-task existence/boundary result. It now replicates out of
@@ -1682,20 +1942,27 @@ cooperative MARL that locates \emph{both} endpoints of a boundary, holding
 the per-agent encoder, mixer, optimiser, and exploration schedule fixed and
 adding a parameter-matched no-graph control (\mlpqmix). \emph{Negative
 endpoint:} in full-information / convention-reducible tasks \gnnqmix\ does not
-beat \qmix, and the control \emph{identifies} the cause as the graph
-aggregation rather than the added capacity ($d=\PEgraphDNeight$ at $N{=}8$;
-significant under Mann--Whitney and Holm-corrected Welch)---the penalty
+beat \qmix, and the control \emph{identifies} the source as the graph
+aggregation rather than the added capacity. In its common unstabilised form
+the graph is actively harmful ($d=\PEgraphDNeight$ at $N{=}8$;
+significant under Mann--Whitney and Holm-corrected Welch)---the deficit
 survives $5\times$ training, grows monotonically to $N{=}16$, and inflates
-across-seed variance by roughly an order of magnitude; it is neutral-to-harmful (never
-significantly positive) on MPE \texttt{simple\_spread} (penalty visible under
-the capacity decomposition; naive comparison null) and on Level-Based Foraging
+across-seed variance by roughly an order of magnitude---but this harm is an
+optimisation pathology: stabilising the GCN (residual$+$LayerNorm) recovers
+it to parity with the control (Appendix~\ref{app:repaired}), so the robust
+claim is \emph{no benefit}, with active harm scoped to the unstabilised
+operator. The graph is never significantly positive on MPE
+\texttt{simple\_spread} (penalty visible under
+the capacity decomposition; naive comparison null) or on Level-Based Foraging
 (significantly below \qmix\ at three agents; matched-control contrast
-directional at $n{=}5$), and persists under graph attention; the pre-registered
+directional at $n{=}5$), and does not recover a benefit under graph
+attention; the pre-registered
 $L\approx d$ heuristic is falsified in favour of the blunt rule ``keep GCN
 depth $\le 2$.'' \emph{Positive endpoint:} on a constructed pair-routing task
 where each agent must reach a partner's private goal, the task-matched graph
 beats all-to-all communication---the only rival that carries the partner's
-information yet floors---at byte-identical parameters and observations
+information, yet it recovers almost none of it---at byte-identical
+parameters and observations
 ($d\approx5$ at degree-1; Welch/Holm and Mann--Whitney $p<10^{-4}$, complete
 seed-level separation at $n{=}12$), while a density-matched wrong graph
 (which carries no partner information by construction) floors with the no-graph
@@ -1717,6 +1984,19 @@ synthetic-task result---replication on a standard third-party benchmark with
 private per-agent goals is the natural next step. We release the harness and
 the \mlpqmix\ control to make such measurements cheaper.
 
+\section*{Broader Impact Statement}
+
+This work is a controlled empirical study of when coordination-graph
+structure helps cooperative multi-agent reinforcement learning, conducted
+entirely in synthetic environments (gridworlds, a referential game, and
+standard research benchmarks). Its contribution is measurement and
+methodology---matched controls and pre-registered comparisons for evaluating
+graph-based coordination---rather than a deployable capability, and we
+foresee no direct societal risk beyond those generic to improved multi-agent
+coordination. If anything, the negative endpoint cautions practitioners
+against adding relational machinery on the assumption that it helps, which
+may reduce wasted computation.
+
 % =========================================================================
 \bibliographystyle{tmlr}
 \bibliography{references}
@@ -1727,38 +2007,41 @@ the \mlpqmix\ control to make such measurements cheaper.
 \section{Training loop}
 \label{app:trainloop}
 
-\begin{algorithm}[h!]
+\begin{algorithm}[!ht]
 \caption{Shared training loop (CTDE, off-policy, Double-DQN). For \iql,
 the team-loss line is replaced by a per-agent Huber sum (see
 Section~\ref{sec:algos}).}
 \label{alg:train}
 \begin{algorithmic}[1]
-\Require env $\mathcal{E}$, algo $\mathcal{A}$ (online + target nets, mixer),
-  total steps $T$, batch size $B$, target-update interval $\tau$,
-  exploration schedule $\epsilon(t)$, update period $k$, warmup $t_{\text{w}}$.
+\Require environment \textsc{Env}, algorithm \textsc{Alg} (online + target
+  nets, mixer), total steps $T$, batch size $B$, target-update interval
+  $\tau$, exploration schedule $\epsilon(t)$, update period $k$, warmup
+  $t_{\text{w}}$. (\textsc{Env} and \textsc{Alg} are set apart in small
+  caps so that $\mathcal{A}$ and $\mathcal{E}$ keep their body-text
+  meanings: action set and edge set.)
 \State Initialise replay buffer $\mathcal{D}$, target net $\theta^- \leftarrow \theta$.
-\State $(o, s) \leftarrow \mathcal{E}.\textsc{reset}()$;\; $A \leftarrow \mathcal{E}.\textsc{adjacency}()$
+\State $(o, s) \leftarrow \textsc{Env}.\textsc{reset}()$;\; $A \leftarrow \textsc{Env}.\textsc{adjacency}()$
 \For{$t = 1, \dots, T$}
-  \State $a \leftarrow \mathcal{A}.\textsc{act}(o, A, \epsilon(t))$
+  \State $a \leftarrow \textsc{Alg}.\textsc{act}(o, A, \epsilon(t))$
         \Comment{$\epsilon$-greedy per-agent, params shared}
-  \State $(o', s', r, \text{done}) \leftarrow \mathcal{E}.\textsc{step}(a)$
+  \State $(o', s', r, \text{done}) \leftarrow \textsc{Env}.\textsc{step}(a)$
   \State $\mathcal{D}.\textsc{add}((o, s, a, r, o', s', \text{done}, A))$
   \If{$t \ge t_{\text{w}}$ \textbf{and} $t \bmod k = 0$}
     \State $\text{batch} \sim \mathcal{D}$ \quad (size $B$)
-    \State $\mathbf{Q} \leftarrow \mathcal{A}.Q(o, A; \theta) \in \mathbb{R}^{B \times N \times |\Aagent|}$
+    \State $\mathbf{Q} \leftarrow \textsc{Alg}.Q(o, A; \theta) \in \mathbb{R}^{B \times N \times |\Aagent|}$
             \Comment{per-agent Q over all actions}
     \State $q_a \leftarrow \mathrm{gather}(\mathbf{Q}, a) \in \mathbb{R}^{B \times N}$;\;
            $Q_{\text{tot}} \leftarrow f_{\text{mix}}(q_a; s)$
-    \State $a^* \leftarrow \arg\max_{a'} \mathcal{A}.Q(o', A; \theta)$
+    \State $a^* \leftarrow \arg\max_{a'} \textsc{Alg}.Q(o', A; \theta)$
             \Comment{Double-DQN action selection, online net}
-    \State $\bar q \leftarrow \mathrm{gather}(\mathcal{A}.Q(o', A; \theta^-), a^*)$;\;
+    \State $\bar q \leftarrow \mathrm{gather}(\textsc{Alg}.Q(o', A; \theta^-), a^*)$;\;
            $Q^{-}_{\text{tot}} \leftarrow f_{\text{mix}}^{-}(\bar q; s')$
     \State $y \leftarrow r + \gamma (1{-}\text{done}) \cdot Q^{-}_{\text{tot}}$
     \State $\theta \leftarrow \theta - \eta \nabla_\theta \mathrm{Huber}(Q_{\text{tot}}, y)$
             \Comment{Adam, grad-norm clip 10}
     \If{$t \bmod \tau = 0$} $\theta^- \leftarrow \theta$ \EndIf
   \EndIf
-  \If{$\text{done}$} $(o, s) \leftarrow \mathcal{E}.\textsc{reset}()$;\; $A \leftarrow \mathcal{E}.\textsc{adjacency}()$
+  \If{$\text{done}$} $(o, s) \leftarrow \textsc{Env}.\textsc{reset}()$;\; $A \leftarrow \textsc{Env}.\textsc{adjacency}()$
   \Else \;$(o, s) \leftarrow (o', s')$
   \EndIf
 \EndFor
@@ -1769,7 +2052,7 @@ Section~\ref{sec:algos}).}
 \section{Hyperparameters and compute}
 \label{app:hparams}
 
-\begin{table}[h!]
+\begin{table}[!ht]
   \centering
   \small
   \caption{Shared training hyperparameters across all algorithms and
@@ -1811,39 +2094,75 @@ team sizes we report; it does cap the feasible $N$ at the upper
 end (see Section~\ref{sec:limitations}). Per-phase wall-clock totals are
 emitted to \texttt{results/<phase>/} alongside the CSVs.
 
+\paragraph{Execution environment.} Experiments and analysis ran CPU-only on
+commodity x86-64 Windows hosts (primary machine: 24-thread Intel Raptor-Lake
+desktop CPU, 64\,GiB RAM, Windows 11) under Python~3.13 with the CPU build
+of PyTorch~2.12, NumPy~2.5, SciPy~1.18, and pandas~3.0; the per-run
+\texttt{config.json} files in the artifact record the exact configuration of
+every run. Statistical note: Mann--Whitney $U$ $p$-values are SciPy's
+asymptotic (normal-approximation) values; the exact two-sided floor at
+12-vs-12 seeds is $2/\binom{24}{12} \approx 7.4\times10^{-7}$, so quoted
+MWU values at or below $10^{-4}$ indicate complete rank separation rather
+than a precise tail probability.
+
 \section{Reproducibility}
 \label{app:repro}
 
-The full source, configs, and analysis scripts are provided in the
-anonymized supplementary material. The exact commands used to produce every
-table and figure in this paper are listed in \texttt{docs/REPRO.md} therein. Each run is fully seeded; the
-CSV produced under \texttt{results/} is the input to the figure generation
-scripts under \texttt{scripts/phase\{1,2,4\}\_analysis.py}.
+The complete source code (environments, algorithms, training loop, tests),
+the per-run configuration of every run (seed, hyperparameters, budget), all
+aggregate and per-contrast statistics CSVs, and the exact commands used to
+produce every table and figure in this paper (\texttt{docs/REPRO.md}) are
+provided as anonymized supplementary material. Each run is fully seeded and
+deterministic on CPU; the CSVs under \texttt{results/} are the direct inputs
+to the analysis and figure scripts under \texttt{scripts/}. Where a
+lower-seed smoke directory coexists with the confirmatory data, the
+canonical directories are the ones the paper reads:
+\texttt{results/phase1\_s10}, \texttt{results/phase2\_s10}, and
+\texttt{results/phase4\_s10} (10 seeds) rather than the 3-seed
+\texttt{results/phase1}, \texttt{phase2}, \texttt{phase4} smoke sets, and
+\texttt{results/phaseC}/\texttt{phaseD} for the Stage C/D cells;
+\texttt{docs/REPRO.md} lists the mapping per table and figure.
 
 \section{Compute scaling decisions}
 \label{app:budget}
 
-\begin{table}[h!]
+\begin{table}[!ht]
   \centering
-  \caption{Compute budget per phase: pre-registered vs.\ actually executed.
-  Wall-clock totals are measured on a single commodity CPU (PyTorch CPU
-  build); no GPU was used.}
+  \caption{Compute budget per experiment: pre-registered vs.\ actually
+  executed (steps $\times$ seeds $\times$ algorithms/arms $\times$
+  conditions). Wall-clock totals, where measured, are on a single commodity
+  CPU (PyTorch CPU build); no GPU was used. The Phase 3 MPE row is the one
+  large executed-below-registration deviation; its consequences are
+  discussed in Section~\ref{sec:results:mpe}.}
   \label{tab:budget}
   \small
-  \begin{tabular}{lrrrr}
+  \resizebox{\linewidth}{!}{%
+  \begin{tabular}{lrrr}
     \toprule
-    Phase & Pre-registered & Executed & Wall & Reason for scaling \\
+    Experiment & Pre-registered & Executed & Reason for deviation \\
     \midrule
-    1 (pilot)       & $5\cdot 10^4 \times 3 \times 4$  & $5\cdot 10^4 \times 10 \times 4$ & $\sim 77$ min &
+    1 (pilot)       & $5\cdot 10^4 \times 3 \times 4$  & $5\cdot 10^4 \times 10 \times 4$ &
                       seeds raised $3\!\to\!10$. \\
     2 (E1 sweep)    & $2\cdot 10^5 \times 5 \times 4 \times 3 \times 2$ & $3\cdot 10^4 \times 10 \times 4 \times 2 \times 2$
-                    & \emph{est.}\ ${\sim}3$ h & CPU envelope; seeds $5\!\to\!10$. \\
+                    & CPU envelope; seeds $5\!\to\!10$. \\
     3 (MPE)         & $\geq 10^6 \times 5 \times 4 \times 2$ & $1.5{\cdot}10^5 \times 10 \times 5 \times 2$
-                    & ${\sim}4.1$ h & \texttt{simple\_spread}, $N\in\{3,6\}$. \\
+                    & CPU envelope ($15\%$ of registered steps). \\
     4 (ablation)    & $\geq 5\cdot 10^4 \times \cdots$  & $2\cdot 10^4 \times 10 \times 4 \times 3$
-                    & \emph{est.}\ ${\sim}2$ h & CPU envelope; seeds $\to 10$. \\
+                    & CPU envelope; seeds $\to 10$. \\
+    8 (capacity control, ring) & $\geq 10^5 \times 5$ & $1.5\cdot 10^5 \times 10 \times 5 \times 2$
+                    & seeds and steps \emph{raised}. \\
+    8 (line topology) & --- (post-hoc robustness) & $1.5\cdot 10^5 \times 10 \times 5 \times 2$ & as ring. \\
+    10 (attention, CoordGrid+MPE) & --- (post-hoc robustness) & $1.5\cdot 10^5 \times 10 \times 2 \times 4$ & as Phase 8. \\
+    11 (scaling $N\in\{12,16\}$) & --- (post-hoc robustness) & $1.5\cdot 10^5 \times 10 \times 3 \times 2$ & as Phase 8. \\
+    C (pair core + $N$-sweep) & $3\cdot 10^4 \times 12 \times 4 \times 4$ & $3\cdot 10^4 \times 12 \times 4 \times 4$ & as registered. \\
+    C (degree-2 \texttt{nbr} core) & $3\cdot 10^4 \times 12 \times 4$ & $3\cdot 10^4 \times 12 \times 4$ & as registered. \\
+    C (attention over complete, pair) & $3\cdot 10^4 \times 12 \times 7$ & $3\cdot 10^4 \times 12 \times 7$ & as registered. \\
+    C (attention, degree-2 \texttt{nbr}) & $3\cdot 10^4 \times 12 \times 7$ & $3\cdot 10^4 \times 12 \times 7$ & as registered. \\
+    R (stabilised GCN, neg.\ endpoint) & --- (post-hoc control) & $1.5\cdot 10^5 \times 10 \times 2 \times 2$ & operator-asymmetry check, App.~\ref{app:repaired}. \\
+    C (full-obs robustness) & --- (post-hoc) & $3\cdot 10^4 \times 12 \times 4$ & robustness cell. \\
+    D (\tokenmatch\ replication) & --- (post-hoc) & $3\cdot 10^4 \times 12 \times 4$ & out-of-harness replication. \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}}%
 \end{table}
 
 % =========================================================================
@@ -1861,7 +2180,7 @@ held fixed within it (Section~\ref{sec:results:mpe}); the trainer reads it
 once per episode exactly as for \coordgrid.
 
 
-\begin{table}[h!]
+\begin{table}[!ht]
   \centering
   \small
   \caption{Phase 3 graph-vs-capacity decomposition on MPE
@@ -1886,18 +2205,18 @@ once per episode exactly as for \coordgrid.
   \end{tabular}
 \end{table}
 
-\begin{table}[h!]
+\begin{table}[!ht]
   \centering
   \small
   \caption{Full Phase 3 results: final-window return (mean [95\% CI] over
   \PEseeds\ seeds) for all five algorithms on MPE \texttt{simple\_spread}.
   The graph-vs-capacity decomposition (Table~\ref{tab:mpe}) concerns the
   QMIX family (\qmix/\mlpqmix/\gnnqmix), which share the monotonic mixer.
-  The graph-free \iql\ and \vdn\ baselines are reported for completeness;
-  as is sometimes seen on \texttt{simple\_spread}, they lead on this
-  particular task, an observation about mixer choice that is orthogonal
-  to whether the GCN helps \emph{within} the QMIX family, which is the
-  question this paper asks.}
+  The mixer-free \iql\ and \vdn\ baselines lead outright at this budget
+  ($15\%$ of the registered steps), which is exactly why
+  Section~\ref{sec:results:mpe} scopes Phase 3's evidence to the
+  within-family decomposition at a fixed budget rather than to converged
+  final performance.}
   \label{tab:mpe-full}
   \begin{tabular}{lcc}
     \toprule
@@ -1946,7 +2265,11 @@ Welch $p=0.014$, Mann--Whitney $p=0.032$), while \mlpqmix\ matches \qmix\
 direction-only and do not lean on it. The graph
 is thus \emph{neutral with two agents and harmful with three}---an
 independent, standard-benchmark echo of the team-size scaling of the penalty
-on \coordgrid\ (Appendix~\ref{app:scaling}).
+on \coordgrid\ (Appendix~\ref{app:scaling}). \emph{Data provenance:} these
+runs were executed in the external \textsc{EPyMARL} framework rather than in
+this paper's harness; Table~\ref{tab:lbf} reports their summary statistics
+in full, and the raw \textsc{EPyMARL} logs are not part of the anonymized
+code artifact.
 
 \begin{table}[htbp]
   \centering
@@ -1965,7 +2288,7 @@ on \coordgrid\ (Appendix~\ref{app:scaling}).
   \end{tabular}
 \end{table}
 
-\paragraph{StarCraft~II (\texttt{3m}), preliminary.} As a single-seed check on
+\paragraph{StarCraft~II (\textup{\texttt{3m}}), preliminary.} As a single-seed check on
 the benchmark where graph-based methods are most often credited with gains
 \citep{samvelyan_2019_smac}, we trained the same trio on SMAC \texttt{3m}
 ($2\times10^6$ steps) and evaluated each over 100 test episodes. \qmix\ and the
@@ -1977,11 +2300,13 @@ into the Discussion's evidence chain. A full multi-seed SMAC study is left to
 future work, as it is GPU-bound beyond our compute budget.
 
 \paragraph{Takeaway.} On both standard benchmarks the inter-agent graph is
-\emph{neutral}: no significant advantage over a parameter-matched no-graph
-control (and significantly harmful at three agents on LBF). With the harmful
-effect on \coordgrid\ and MPE (Section~\ref{sec:results:capacity}), the
+never positive: it shows no significant advantage over a parameter-matched
+no-graph control anywhere, and sits significantly below \qmix\ at three
+agents on LBF. With the unstabilised-graph deficit
+on \coordgrid\ and MPE (Section~\ref{sec:results:capacity}), the
 graph's measured effect \emph{in these full-information / convention-reducible
-settings} ranges from neutral to harmful and is never positive---in direct
+settings} ranges from neutral (or, in its unstabilised form, harmful) and is
+never positive---in direct
 contrast with Section~\ref{sec:results:structure}, where the task-matched
 graph is decisively beneficial once the task forces routing of private
 information.
@@ -2004,7 +2329,7 @@ significant under Holm correction over the three-contrast family and under
 the non-parametric Mann--Whitney test ($p=\PEmwuP$). As on the ring,
 \gnnqmix\ also carries the largest seed-to-seed variance.
 
-\begin{table}[h!]
+\begin{table}[!ht]
   \centering
   \small
   \caption{Capacity control on the \texttt{line} topology (mean
@@ -2026,6 +2351,82 @@ the non-parametric Mann--Whitney test ($p=\PEmwuP$). As on the ring,
 \end{table}
 
 % =========================================================================
+\section{The full-information penalty is an optimisation pathology of the
+unstabilised GCN, not of graph aggregation}
+\label{app:repaired}
+
+The negative-endpoint phases (1--2, 8, 10, 11) run the \emph{plain}
+GCN---no residual connection, no LayerNorm---whereas every positive-endpoint
+arm runs the \emph{stabilised} (``repaired'') GCN
+(\S\ref{sec:pairrouting}). This appendix asks the question that asymmetry
+raises directly: does the full-information penalty survive when the
+negative-endpoint GCN is given the \emph{same} stabilisation as the
+positive-endpoint one? We rerun \gnnqmix\ with residual$+$LayerNorm on the
+decisive Phase 8 cells of \emph{both} topologies (CoordGrid \texttt{ring}
+and \texttt{line}, $N\in\{4,8\}$,
+\PEseeds\ seeds, \PEsteps\ steps; identical to Tables~\ref{tab:phase8}
+and~\ref{tab:line} otherwise).
+
+\begin{table}[!ht]
+  \centering
+  \small
+  \caption{Stabilised GCN at the negative endpoint (CoordGrid
+  \texttt{ring} and \texttt{line}, mean final-window return over \PEseeds\
+  seeds, 150k steps).
+  Adding residual$+$LayerNorm recovers \gnnqmix\ to \emph{parity} with the
+  no-graph controls on both topologies---the $d{\approx}{-}4$ penalty and the
+  ${\sim}9\times$
+  variance inflation of the plain GCN both vanish. The graph is now
+  \emph{neutral}, not harmful; it still confers no benefit.}
+  \label{tab:repaired}
+  \begin{tabular}{llcccc}
+    \toprule
+    & & \qmix & \mlpqmix & \gnnqmix\ (plain) & \gnnqmix\ (stabilised) \\
+    \midrule
+    ring & $N=4$ & 83.0 (sd 1.9) & 83.4 (sd 1.4) & 72.8 (sd 4.5) & 84.1 (sd 0.3) \\
+         & $N=8$ & 164.9 (sd 9.2) & 164.9 (sd 3.3) & 78.3 (sd 30.9) & 164.3 (sd 7.0) \\
+    line & $N=4$ & 62.4 (sd 0.8) & 63.0 (sd 0.4) & 52.9 (sd 7.3) & 62.7 (sd 1.5) \\
+         & $N=8$ & 143.0 (sd 6.4) & 144.2 (sd 2.7) & 78.5 (sd 29.5) & 143.5 (sd 4.0) \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Table~\ref{tab:repaired} is unambiguous, and the recovery replicates across
+both coordination-graph topologies. On the \texttt{ring}, the stabilised GCN
+matches both
+no-graph controls at both team sizes: at $N{=}8$ it reaches $164.3$ against
+\mlpqmix's $164.9$ (Welch $p=0.79$, Mann--Whitney $p=0.19$, Cohen's
+$d=-0.12$) and \qmix's $164.9$ ($p=0.86$); at $N{=}4$, $84.1$ vs
+$83.4$/$83.0$ ($p=0.19$/$0.10$). On the higher-diameter \texttt{line} the
+picture is identical: $143.5$ vs $144.2$/$143.0$ at $N{=}8$ ($|d|\le0.22$,
+Welch $p\ge0.62$, MWU $p\ge0.85$) and $62.7$ vs $63.0$/$62.4$ at $N{=}4$
+($|d|\le0.29$, $p\ge0.16$ on all tests). The plain-GCN gaps of
+Tables~\ref{tab:phase8} and~\ref{tab:line}
+($-86.6$ and $-65.8$ at $N{=}8$, $d\approx-4$) collapse to statistical
+noise, and the
+seed-standard-deviation inflation (30.9/29.5 plain vs 3.3/2.7 for \mlpqmix)
+is gone
+(7.0/4.0 stabilised). Two conclusions follow, and we fold both into the main
+text. \emph{(i)} The dramatic full-information harm---the $d\approx-4$
+deficit, the ${\sim}9\times$ variance, the growth to $N{=}16$---is an
+\emph{optimisation pathology of the standard unstabilised GCN}, not an
+intrinsic cost of graph aggregation: the same aggregation, stabilised,
+trains fine on both topologies. \emph{(ii)} Even stabilised, the graph
+delivers \emph{no
+benefit} in this full-information regime---it merely matches the no-graph
+control, never beats it, on every cell tested. The negative endpoint is
+therefore, precisely
+stated, ``the graph does not help here,'' with the stronger ``actively
+harmful'' reserved for the common unstabilised operator. \emph{Scope:} this
+recovery is demonstrated on the CoordGrid \texttt{ring} and \texttt{line}
+cells; the MPE
+\texttt{simple\_spread} and Level-Based Foraging negatives
+(\S\ref{sec:results:mpe}, Appendix~\ref{app:standard}) use the plain /
+standard operator and were not rerun under stabilisation, so we claim the
+\emph{no-benefit} result---not the specific stabilisation-recovery
+mechanism---as the cross-environment finding.
+
+% =========================================================================
 \section{Graph attention: single- and multi-head (GAT-QMIX, DGN-QMIX)}
 \label{app:gat}
 
@@ -2038,13 +2439,15 @@ scaled-dot-product attention, the relational ``convolution'' of the
 attention-based graph-MARL methods we discuss,
 \citealp{jiang_2020_dgn,liu_2020_g2anet}). Both carry \emph{more}
 parameters than the \mlpqmix\ control (\dgnqmix, with per-head
-Q/K/V/output projections, by ${\sim}2.2\times$), so an
+Q/K/V/output projections, by $1.5$--$2.2\times$ depending on the cell's
+input dimensions: $2.2\times$ at CoordGrid $N{=}4$, $2.0\times$ at $N{=}8$,
+$1.5\times$ on MPE $N{=}6$), so an
 attention-below-\mlpqmix\ result is conservative. We run both on the
 decisive cells under the identical protocol (\PEseeds\ seeds, \PEsteps\
 steps).
 
 
-\begin{table}[h!]
+\begin{table}[!ht]
   \centering
   \small
   \caption{Attention variants vs the QMIX family (mean final-window return,
@@ -2053,7 +2456,10 @@ steps).
   the no-graph control \mlpqmix\ on CoordGrid (the graph still hurts). Last
   two columns: the attention-graph effects vs the matched no-graph control.
   ${}^\ast$ Holm- and Mann--Whitney-significant; ${}^\dagger$
-  Mann--Whitney-significant only.}
+  Mann--Whitney-significant only. Holm here is over the per-$N$ attention
+  family (the attention-vs-control contrasts of this appendix), not the
+  six-pair family of Section~\ref{sec:protocol}; the per-contrast verdict
+  CSVs ship with the artifact.}
   \label{tab:gat}
   \resizebox{\textwidth}{!}{%
   \begin{tabular}{llccccccc}
@@ -2067,7 +2473,7 @@ steps).
         & $\PGgatMlpNeight^\ast$ & $\PGdgnMlpNeight^\ast$ \\
     MPE \texttt{spread} & $N=3$ & $-44.9$ & $-44.3$ & $-42.4$ & $-52.5$ & $-40.2$
         & $\PGgatMpeNthree^\dagger$ & $\PGdgnMpeNthree$ \\
-                     & $N=6$ & $-74.3$ & $-59.6$ & $-80.4$ & $-71.9$ & $-72.2$
+                     & $N=6$ & $-74.3$ & $-59.6$ & $-80.4$ & $-71.9$ & $-68.7$
         & $\PGgatMpeNsix$ & $\PGdgnMpeNsix$ \\
     \bottomrule
   \end{tabular}}
@@ -2085,14 +2491,19 @@ from Table~\ref{tab:phase8}. Figure~\ref{fig:scaling} and
 Table~\ref{tab:scaling} give the result.
 
 
-\begin{table}[h!]
+\begin{table}[!ht]
   \centering
   \small
   \caption{Larger-$N$ scaling on CoordGrid \texttt{ring} (mean final-window
   return, \PEseeds\ seeds). The graph effect $\gnnqmix-\mlpqmix$ grows
   monotonically; the no-graph \mlpqmix\ control stays within a few points of
-  \qmix\ at every $N$, so the entire and growing gap is the graph. All
-  contrasts significant under Holm and Mann--Whitney.}
+  \qmix\ at every $N$, so essentially the entire (and growing) gap is the
+  graph. Both \emph{graph} contrasts are significant at every $N$ under Holm
+  and Mann--Whitney. The \emph{capacity} contrast ($\mlpqmix-\qmix$) is not
+  always exactly null: at $N{=}12$ it is $-7.1$ (significant under both
+  tests) and at $N{=}16$ $-8.6$ (Mann--Whitney only)---about $3\%$ of
+  \qmix's return and an order of magnitude smaller than the graph effect at
+  those scales.}
   \label{tab:scaling}
   \begin{tabular}{lcccc}
     \toprule
@@ -2116,7 +2527,7 @@ hypothesis tests. The Phase 1 pilot curves, the per-algorithm Phase 1
 summary, the full Phase 2 per-condition returns, and the Phase 1 pairwise
 sanity check are collected here.
 
-\begin{figure}[h!]
+\begin{figure}[!ht]
   \centering
   \includegraphics[width=0.5\linewidth]{figures/phase1__learning_curves.pdf}
   \caption{Phase 1 pilot learning curves on \coordgrid\ ($N=4$, ring),
@@ -2127,7 +2538,7 @@ sanity check are collected here.
   \label{fig:phase1_curves}
 \end{figure}
 
-\begin{table}[h!]
+\begin{table}[!ht]
   \centering
   \small
   \caption{Phase 1 final-window mean return ($N=4$, ring, 10 seeds).
@@ -2147,7 +2558,7 @@ GNN-QMIX & 10 & 66.015 & [57.11, 74.92] & 1552 \\
   \end{tabular}
 \end{table}
 
-\begin{table}[h!]
+\begin{table}[!ht]
   \centering
   \small
   \caption{Phase 2 final-window mean return by condition. Edge density is
@@ -2177,7 +2588,7 @@ ring & 8 & VDN & 70.53 & [59.12, 81.94] & 908 \\
   \end{tabular}
 \end{table}
 
-\begin{table}[h!]
+\begin{table}[!ht]
   \centering
   \small
   \caption{Phase 1 sanity check: IQL vs.\ each coordinated baseline on
@@ -2195,7 +2606,7 @@ IQL vs.\ GNN-QMIX & 31.39 & $<0.001$ & $<0.001$ \\
   \end{tabular}
 \end{table}
 
-\begin{table}[h!]
+\begin{table}[!ht]
   \centering
   \small
   \caption{H1 (within-condition): GNN-QMIX minus QMIX in mean final-window
@@ -2215,7 +2626,7 @@ IQL vs.\ GNN-QMIX & 31.39 & $<0.001$ & $<0.001$ \\
   \end{tabular}
 \end{table}
 
-\begin{table}[h!]
+\begin{table}[!ht]
   \centering
   \small
   \caption{H2 (difference-of-differences): the GNN-QMIX vs.\ QMIX gap on
@@ -2240,7 +2651,7 @@ This appendix collects the per-condition depth--diameter curves that
 accompany the Phase 4 heatmap (Figure~\ref{fig:phase4_heatmap}) in the main
 text.
 
-\begin{table}[h!]
+\begin{table}[!ht]
   \centering
   \small
   \caption{Phase 8 final-window return (mean over \PEseeds\ seeds) on the
@@ -2264,14 +2675,82 @@ text.
 \end{table}
 
 
-\begin{figure}[h!]
+\begin{figure}[!ht]
   \centering
   \includegraphics[width=0.62\textwidth]{figures/phase4__depth_diameter_curves.pdf}
   \caption{Phase 4 depth--diameter curves (companion to the heatmap in
   Section~\ref{sec:results:ablation}). Final-window return vs.\ GCN depth
   $L$ for each graph diameter $d$; the over-depth cliff at $L\ge 3$ is
-  visible on every diameter.}
+  visible on the structured diameters ($d=2,3$), while the complete graph
+  ($d=1$) is flat in $L$.}
   \label{fig:phase4curves}
 \end{figure}
+
+% =========================================================================
+\section{Reproducibility checklist}
+\label{app:checklist}
+Select the answers that apply to this research -- one per item.
+
+\subsection*{All articles:}
+\begin{enumerate}
+  \item All claims investigated in this work are clearly stated. \textbf{[yes]}
+  \item Clear explanations are given how the work reported substantiates the claims. \textbf{[yes]}
+  \item Limitations or technical assumptions are stated clearly and explicitly. \textbf{[yes]}
+  \item Conceptual outlines and/or pseudo-code descriptions of the AI methods introduced in this work are provided, and important implementation details are discussed. \textbf{[yes]}
+  \item Motivation is provided for all design choices, including algorithms, implementation choices, parameters, data sets and experimental protocols beyond metrics. \textbf{[yes]}
+\end{enumerate}
+
+\subsection*{Articles containing theoretical contributions:}
+Does this paper make theoretical contributions? \textbf{[no]}
+
+\subsection*{Articles reporting on computational experiments:}
+Does this paper include computational experiments? \textbf{[yes]}
+\begin{enumerate}
+  \item All source code required for conducting experiments is included in an online appendix or will be made publicly available upon publication of the paper. The online appendix follows best practices for source code readability and documentation as well as for long-term accessibility. \textbf{[yes]}
+  \item The source code comes with a license that allows free usage for reproducibility purposes. \textbf{[yes]}
+  \item The source code comes with a license that allows free usage for research purposes in general. \textbf{[yes]}
+  \item Raw, unaggregated data from all experiments is included in an online appendix or will be made publicly available upon publication of the paper. The online appendix follows best practices for long-term accessibility. \textbf{[yes]}
+  \item The unaggregated data comes with a license that allows free usage for reproducibility purposes. \textbf{[yes]}
+  \item The unaggregated data comes with a license that allows free usage for research purposes in general. \textbf{[yes]}
+  \item If an algorithm depends on randomness, then the method used for generating random numbers and for setting seeds is described in a way sufficient to allow replication of results. \textbf{[yes]}
+  \item The execution environment for experiments, the computing infrastructure (hardware and software) used for running them, is described, including GPU/CPU makes and models; amount of memory (cache and RAM); make and version of operating system; names and versions of relevant software libraries and frameworks. \textbf{[yes]}
+  \item The evaluation metrics used in experiments are clearly explained and their choice is explicitly motivated. \textbf{[yes]}
+  \item The number of algorithm runs used to compute each result is reported. \textbf{[yes]}
+  \item Reported results have not been ``cherry-picked'' by silently ignoring unsuccessful or unsatisfactory experiments. \textbf{[yes]}
+  \item Analysis of results goes beyond single-dimensional summaries of performance (e.g., average, median) to include measures of variation, confidence, or other distributional information. \textbf{[yes]}
+  \item All (hyper-) parameter settings for the algorithms/methods used in experiments have been reported, along with the rationale or method for determining them. \textbf{[yes]}
+  \item The number and range of (hyper-) parameter settings explored prior to conducting final experiments have been indicated, along with the effort spent on (hyper-) parameter optimisation. \textbf{[partially]}
+  \item Appropriately chosen statistical hypothesis tests are used to establish statistical significance in the presence of noise effects. \textbf{[yes]}
+\end{enumerate}
+
+\subsection*{Articles using data sets:}
+Does this work rely on one or more data sets (possibly obtained from a benchmark generator or similar software artifact)? \textbf{[yes]}
+\begin{enumerate}
+  \item All newly introduced data sets are included in an online appendix or will be made publicly available upon publication of the paper. The online appendix follows best practices for long-term accessibility with a license that allows free usage for research purposes. \textbf{[yes]}
+  \item The newly introduced data set comes with a license that allows free usage for reproducibility purposes. \textbf{[yes]}
+  \item The newly introduced data set comes with a license that allows free usage for research purposes in general. \textbf{[yes]}
+  \item All data sets drawn from the literature or other public sources (potentially including authors' own previously published work) are accompanied by appropriate citations. \textbf{[yes]}
+  \item All data sets drawn from the existing literature (potentially including authors' own previously published work) are publicly available. \textbf{[yes]}
+  \item All new data sets and data sets that are not publicly available are described in detail, including relevant statistics, the data collection process and annotation process if relevant. \textbf{[yes]}
+  \item All methods used for preprocessing, augmenting, batching or splitting data sets (e.g., in the context of hold-out or cross-validation) are described in detail. \textbf{[NA]}
+\end{enumerate}
+
+\subsection*{Explanations on any of the answers above (optional):}
+All environments (the \coordgrid\ gridworld and the \tokenmatch\ referential game) are
+procedural generators released with the code (MIT-licensed); the external MPE and LBF
+tasks are cited and publicly available. Hyper-parameters were pre-registered and locked
+before confirmatory runs, so per-experiment tuning effort was deliberately minimal.
+On raw data: the supplementary artifact ships every aggregate and per-contrast
+statistics CSV plus the exact per-run configuration (seed, hyperparameters,
+budget) for every run; per-episode logs are regenerated bit-identically from
+those configurations (training is fully seeded and deterministic on CPU) and
+will be published with the de-anonymized repository. The Level-Based Foraging
+and SMAC checks (Appendix~\ref{app:standard}) were executed in the external
+\textsc{EPyMARL} framework; their summary statistics are reported in full in
+Table~\ref{tab:lbf}, and their raw logs live outside this artifact.
+On unsuccessful experiments: the search that preceded the positive endpoint,
+including two constructions that failed to produce a significant graph
+advantage, is disclosed in Section~\ref{sec:pairrouting}
+(``How we found this task'').
 
 \end{document}
