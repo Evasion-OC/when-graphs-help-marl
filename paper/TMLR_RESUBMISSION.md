@@ -64,8 +64,10 @@ contribution did not exist in the rejected version.
       reads "Under review as submission to TMLR / Anonymous authors / Paper under
       double-blind review". `\usepackage{tmlr}` with no option (verified line 14).
 - [x] Zero hits in PDF text for: Jabbary, Ghanavati, Kasra, Evasion-OC, alijabbary,
-      gre.ac.uk, Greenwich, Urmia, ORCID `0000-0003-0573-6909`, icloud, research@,
-      github.com, 4open.science (verified on the final build).
+      gre.ac.uk, Greenwich, Urmia, urmia.ac.ir, st_a.jabbary, 5756151818,
+      "Mechanical Engineering", "Independent Researcher", ORCID `0000-0003-0573-6909`,
+      ORCID `0009-0009-0888-3307`, icloud, research@, github.com, 4open.science
+      (re-verified 2026-07-11 on `paper/main.pdf` after the affiliation change).
 - [x] PDF Info dict clean: no pdfauthor; CreationDate/ModDate pinned to
       `D:19700101000000Z` (built with `SOURCE_DATE_EPOCH=0`).
 - [x] Embedded figure metadata scrubbed — no `+01'00'`/`+03'30'` timezone offsets or

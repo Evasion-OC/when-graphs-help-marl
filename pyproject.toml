@@ -10,7 +10,8 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = {file = "LICENSE"}
 authors = [
-    {name = "Kasra Ghanavati"},
+    {name = "Ali Jabbary", email = "st_a.jabbary@urmia.ac.ir"},
+    {name = "Kasra Ghanavati", email = "kg1111r@gre.ac.uk"},
 ]
 dependencies = [
     "torch>=2.2",

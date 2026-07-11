@@ -221,4 +221,4 @@ strengtheners §4/§7 to be folded in next).
   The H1–H3 negative becomes the full-obs/convention-reducible endpoint of the boundary.
 - **Status:** core reframe applied (e82b8fa). Remaining: fold §4 (attention now
   resolved: clean "needs structure too") and §7 (out-of-harness replication) into the
-  manuscript; rebuild. Targeting TMLR resubmission / JAIR (both free, no APC).
+  manuscript; rebuild. Targeting TMLR resubmission (JAIR dropped after 2026-07-02 desk rejection).
