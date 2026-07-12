@@ -82,11 +82,12 @@ contribution did not exist in the rejected version.
 - [x] Embedded figure metadata scrubbed — no `+01'00'`/`+03'30'` timezone offsets or
       2026 dates anywhere in the PDF (figure PDFs stripped with pikepdf).
 - [x] Build hygiene (re-verified 2026-07-12 after the 150k attention-robustness
-      integration): 0 errors, 0 overfull/underfull hbox, 0 undefined refs/cites,
-      38 references all resolved; 37pp, 16 figures, **19 tables** (new Table
-      `tab:attn150k`), abstract **316 words**. The only remaining log items are 9
-      underfull-vbox messages, an irreducible artifact of tmlr.sty's mandatory
-      `\flushbottom`.
+      integration + the "floor"-overstatement wording fix): **0 errors, 0
+      overfull/underfull hbox, 0 underfull vbox, 0 undefined refs/cites**,
+      38 references all resolved; **38pp**, 16 figures, **19 tables** (new Table
+      `tab:attn150k`), abstract **316 words**. Fixpoint-stable (no "labels may have
+      changed"). This pagination has zero underfull-vbox messages (cleaner than the
+      prior build).
 - [x] Dead code link removed from the manuscript (the Reproducibility appendix now
       points to the supplementary material, not the placeholder anonymous.4open URL).
 - [ ] **Upload the anonymized code zip as OpenReview supplementary material.** The zip
