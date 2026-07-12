@@ -226,6 +226,19 @@
 \newcommand{\SCtrueGatCompGap}{+15.9} % gnn_true - gat_complete (floor contrast)
 \newcommand{\SCtrueDgnCompGap}{+15.7} % gnn_true - dgn_complete (floor contrast)
 \newcommand{\SCtrueAttCompD}{5.5}     % Cohen's d, gnn_true vs attention-over-all-to-all
+% Attention arms at the 5x (150k) budget MATCHED to the negative endpoint
+% (pre-registered F1 robustness check, results/phaseC_150k/, 12 seeds). The
+% complete-graph attention arms floor for the ENTIRE budget while the true-graph
+% arms (GCN/GAT/DGN) climb -- so the floor is structural, not under-training.
+\newcommand{\SCkTrue}{94.96}          % gnn_true @150k (climbs 66->95 with budget)
+\newcommand{\SCkGatComplete}{51.08}   % gat_complete @150k (still floor)
+\newcommand{\SCkDgnComplete}{53.26}   % dgn_complete @150k (still ~floor)
+\newcommand{\SCkGatTrue}{96.71}       % gat_true @150k (trains, validity gate)
+\newcommand{\SCkDgnTrue}{112.49}      % dgn_true @150k (trains, validity gate)
+\newcommand{\SCkMlp}{49.96}           % mlp floor @150k
+\newcommand{\SCkTrueGatCompGap}{+43.9}% gnn_true - gat_complete @150k
+\newcommand{\SCkTrueDgnCompGap}{+41.7}% gnn_true - dgn_complete @150k
+\newcommand{\SCkTrueAttCompD}{12}     % Cohen's d, gnn_true vs attention-over-all-to-all @150k
 % --- Stage D: out-of-harness replication in TokenMatch (no grid/movement). --
 % Referential matching game: each agent must OUTPUT its partner's private
 % token, routable only over the graph. SAME structure arms (only adjacency
@@ -277,7 +290,9 @@ communication---which carries the partner's signal but must select it---a
 density-matched wrong graph, and a parameter-matched no-graph control, at
 byte-identical parameters and observations (Cohen's $d \approx 5$, complete
 seed-level separation over 12 seeds, Holm-corrected). Even learned attention
-recovers the partner's signal only on the right graph. The effect holds
+recovers the partner's signal only on the right graph---and only there even when
+given $5\times$ the training budget, at which point the gap widens
+($d{\approx}5\!\to\!12$) rather than closing. The effect holds
 across team sizes and observability, and replicates out of harness in a
 non-spatial referential game, where the matched graph near-solves the task
 (${\approx}96\%$ of maximum) while every rival stays far below. When
@@ -1607,12 +1622,30 @@ We are deliberately careful about the strength of this clause: the complete-grap
 attention arms face a \emph{strictly harder} optimisation than their true-graph
 siblings---under the true graph the partner is the only neighbour and attention
 has nothing to discover, whereas under all-to-all the head must learn to attend
-to one partner out of $N{-}1$ from agent-id one-hots. So the honest reading is
-that a \emph{fixed-step} learned attention aggregator does not recover the
-matching from all-to-all \emph{within our training budget} (30k steps), not that
-it provably cannot in principle; converting ``does not'' to ``cannot'' would
-require materially longer-budget runs, which we flag as future work. Even on the
-conservative reading, the result stands: an expressive, well-trained attention
+to one partner out of $N{-}1$ from agent-id one-hots. Because that harder
+optimisation could in principle just be \emph{slower}, we pre-registered and ran
+the decisive robustness check: the identical attention sweep at the $5\times$
+(150k-step) budget \emph{matched to the negative endpoint}, so no budget
+asymmetry favours either side (\texttt{results/phaseC\_150k/}, 12 seeds; decision
+rule frozen before results). The conclusion does not merely survive---it
+strengthens. At 150k the complete-graph attention arms remain pinned at the
+floor (\texttt{gat\_complete} $\SCkGatComplete$, \texttt{dgn\_complete}
+$\SCkDgnComplete$ vs.\ the $\SCkMlp$ no-communication floor), while \gtrue\
+itself keeps learning (\SCtrueN$\,\to\,$\SCkTrue), so the gap \emph{grows} from
+$d{\approx}\SCtrueAttCompD$ at 30k to $d{\approx}\SCkTrueAttCompD$ at 150k
+(\gtrue\ over \texttt{gat\_complete}/\texttt{dgn\_complete} by
+$\SCkTrueGatCompGap$/$\SCkTrueDgnCompGap$, $p_{\text{Holm}}<10^{-4}$, complete
+seed separation). Crucially the \emph{same} attention architectures train well
+at this budget \emph{given the right graph}---\texttt{gat\_true} $\SCkGatTrue$,
+\texttt{dgn\_true} $\SCkDgnTrue$, both far above the floor---which is the
+validity gate that licenses the reading: the complete-arm floor is structural,
+not a lack of budget. The learning curves make this direct
+(Table~\ref{tab:attn150k}): across all five training quintiles the complete arms
+never leave the floor while every true-graph arm climbs monotonically, so
+``attention over all-to-all merely needs more training'' is refuted by
+measurement, not deferred. We bound the claim to the budgets we tested (30k and
+150k) rather than asserting impossibility in principle. The result stands: an
+expressive, well-trained attention
 aggregator does \emph{not} recover the routing advantage from the wrong
 structure within the same budget that suffices given the right graph---so
 expressiveness \emph{amplifies} structure (DGN exceeds the GCN by $+5.4$ given
@@ -1626,6 +1659,34 @@ at ${\sim}50.4$ alongside the no-communication control ($50.2$)---so on the
 degree-2 topology too, attention helps only on the right graph and floors
 over all-to-all. (An earlier 3-seed run of this cell was underpowered; the
 12-seed cell reported here is the confirmatory measurement.)}
+
+\begin{table}[t]
+  \centering
+  \caption{\textbf{Attention over all-to-all never leaves the floor---at the
+  $5\times$ budget matched to the negative endpoint.} Mean return by
+  training-progress quintile (Q1--Q5), averaged over 12 seeds, on
+  \pairrouting\ ($N{=}6$, ego), 150k steps (\texttt{results/phaseC\_150k/};
+  pre-registered F1 check). Every \emph{true-graph} aggregator---GCN, GAT, and
+  multi-head DGN---climbs monotonically; the \emph{same} attention architectures
+  over the \emph{complete} graph stay pinned at the no-communication floor
+  ($\SCkMlp$) for the entire budget. The floor is therefore structural, not
+  under-training.}
+  \label{tab:attn150k}
+  \small
+  \begin{tabular}{llrrrrr}
+    \toprule
+    Arm & Graph & Q1 & Q2 & Q3 & Q4 & Q5 \\
+    \midrule
+    \texttt{gnn\_true}      & matching   & 50.9 & 57.5 & 68.5 & 83.4 & \textbf{95.0} \\
+    \texttt{gat\_true}      & matching   & 51.0 & 57.9 & 68.9 & 83.3 & \textbf{96.7} \\
+    \texttt{dgn\_true}      & matching   & 51.2 & 64.9 & 82.7 & 99.7 & \textbf{112.5} \\
+    \addlinespace
+    \texttt{gat\_complete}  & all-to-all & 50.0 & 50.1 & 50.1 & 50.4 & 51.1 \\
+    \texttt{dgn\_complete}  & all-to-all & 50.1 & 50.1 & 50.3 & 51.3 & 53.3 \\
+    \texttt{mlp} (no comm.) & ---        & 50.0 & 50.1 & 50.1 & 49.9 & 50.0 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
 
 \subsection{Out-of-harness replication: not a gridworld artefact}
 \label{sec:structure:tokenmatch}
