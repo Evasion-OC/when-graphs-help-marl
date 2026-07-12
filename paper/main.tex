@@ -277,38 +277,40 @@
 
 % =========================================================================
 \begin{abstract}
-We locate both endpoints of a boundary for \emph{when} graph structure helps
-cooperative multi-agent reinforcement learning (MARL): a controlled study on
-\coordgrid, a cooperative gridworld whose coordination graph is itself the
-experimental variable, with the encoder, mixer, optimiser, and parameter
-count held fixed across algorithms. The benefit of a graph is real but
-conditional, and its source is the graph's \emph{structure}, not the channel
-or the added capacity. When an agent must act on private information held by
-one specific, unobserved other agent, a graph whose edges match the task's
-coordination structure decisively outperforms \emph{all-to-all}
-communication---which carries the partner's signal but must select it---a
-density-matched wrong graph, and a parameter-matched no-graph control, at
-byte-identical parameters and observations (Cohen's $d \approx 5$, complete
-seed-level separation over 12 seeds, Holm-corrected). Even learned attention
-recovers the partner's signal only on the right graph---and only there even when
-given $5\times$ the training budget, at which point the gap widens
-($d{\approx}5\!\to\!12$) rather than closing. The effect holds
-across team sizes and observability, and replicates out of harness in a
-non-spatial referential game, where the matched graph near-solves the task
-(${\approx}96\%$ of maximum) while every rival stays far below. When
-coordination is instead incidental or convention-reducible, the same
-architecture confers \emph{no benefit} over the parameter-matched baseline,
-which the control attributes to the graph aggregation rather than capacity;
-the commonly used \emph{unstabilised} operator is moreover actively harmful
+Graph neural networks are widely used to add coordination structure to
+cooperative multi-agent reinforcement learning (MARL), but gains are
+rarely separated from the capacity they add. We contribute a
+controlled-attribution method that does. On \coordgrid, a cooperative gridworld
+whose coordination graph is itself the experimental variable, we fix the
+encoder, mixer, optimiser, and parameter count and add two
+isolators: a byte-identical no-graph control (structure vs.\ capacity) and a
+density-matched \emph{wrong}-graph control (the right edges vs.\ merely more
+edges). This reconciles a tension: graph-MARL methods such as
+\algoname{DGN} and \algoname{G2ANet} report gains in partially observable
+settings, rarely against capacity-matched controls; the
+discriminator between those positives and full-information negatives is the
+task's \emph{information structure}, not the algorithm. When an agent must act
+on private information held by one specific, unobserved partner, a graph whose
+edges match the task's coordination structure decisively outperforms
+\emph{all-to-all} communication---which carries the partner's signal but must
+select it---the wrong graph, and the no-graph control, at matched parameters and
+observations (Cohen's $d \approx 5$, complete seed-level separation over 12
+seeds, Holm-corrected). Learned attention recovers the signal only on the right
+graph, even given $5\times$ the training budget, where the gap
+widens ($d{\approx}5\!\to\!12$) rather than closes. The advantage holds across
+team sizes and observability, and replicates out of harness in a non-spatial
+referential game (matched graph ${\approx}96\%$ of maximum, rivals far below).
+When coordination is instead incidental or convention-reducible, the same
+architecture confers \emph{no benefit} over the parameter-matched baseline;
+the commonly used \emph{unstabilised} operator is actively harmful
 (a penalty that persists with training, grows with team size, and recurs on
 MPE \texttt{simple\_spread} and, directionally, Level-Based Foraging)---but
-this is an optimisation pathology that stabilisation removes, recovering the
-graph to mere parity. The resulting rule: route along task-relevant edges,
-not all-to-all, only when agents must act on information held by specific
-others they cannot observe \emph{and} the coordination topology is known or
-reliably estimable. These are controlled, constructed tasks; replication on
-standard benchmarks with private per-agent goals is future work. Code,
-configurations, and data accompany the submission.
+stabilisation removes this optimisation pathology, recovering the graph to
+parity. The rule: route along task-relevant edges, not all-to-all---and only
+when the coordination topology is known or reliably estimable. These are
+controlled, constructed tasks; replication on standard benchmarks with private
+per-agent goals is future work. Code, configurations, and data accompany the
+submission.
 \end{abstract}
 
 % =========================================================================
@@ -327,12 +329,10 @@ over an externally specified or learned coordination graph
 \citep{jiang_2020_dgn,liu_2020_g2anet,boehmer_2020_dcg,
        naderializadeh_2020_graphmix}.
 
-The intuition for graph-based MARL is straightforward: when agents form
-a coordination \emph{structure}, a model whose architecture mirrors that
-structure should generalise better and converge faster. This intuition
-is widely cited as motivation in the literature, yet the conditions
-under which it actually holds are surprisingly under-tested. Three
-specific gaps motivate the present study:
+The intuition for graph-based MARL is straightforward: a model whose
+architecture mirrors the agents' coordination \emph{structure} should
+generalise better and converge faster. Yet the conditions under which this
+holds are under-tested. Three specific gaps motivate the present study:
 
 \begin{enumerate}[leftmargin=*,itemsep=0pt,topsep=2pt]
   \item \textbf{Graph regime is rarely varied.} Most empirical comparisons
@@ -353,6 +353,23 @@ specific gaps motivate the present study:
         for a GNN inserted into a value-factorisation mixer (CTDE),
         specifically in the cooperative MARL setting.
 \end{enumerate}
+
+\paragraph{A reusable attribution method, and the tension it resolves.} A graph
+module changes a model's architecture and its capacity at once, so a measured
+win cannot be assigned to the graph's \emph{structure} without a control---which
+is why the intuition above is under-tested, and what our design targets. We make
+the coordination graph the experimental variable and hold the encoder, mixer,
+optimiser, and parameter count fixed, then read the graph's contribution off two
+matched controls: a byte-identical \emph{no-graph} control that isolates
+structure from capacity, and a density-matched \emph{wrong-graph} control that
+isolates the right edges from merely more edges. These two controls are the
+paper's reusable methodological contribution, and we apply the same design at
+both endpoints below. They also resolve a standing tension in the literature:
+\algoname{DGN} and \algoname{G2ANet} report gains in \emph{partially observable}
+settings but are rarely tested against capacity-matched controls, whereas
+controlled negatives arise in full-information regimes---two sides of one
+boundary whose discriminator, we argue, is the task's information structure, not
+the algorithm.
 
 \paragraph{A two-endpoint answer.} The title question is not a yes/no, and we
 answer it by locating \emph{both} endpoints of a boundary under one
@@ -377,14 +394,6 @@ everyone does at most weak, task-incidental routing far below the task-matched
 graph. The two
 endpoints \emph{coexist}: the positive result completes the negative one
 into a single ``when does it help'' statement rather than overturning it.
-This reading also reconciles a real tension in the literature:
-\algoname{DGN} and \algoname{G2ANet} report their gains in
-\emph{partially observable} settings---the regime our positive endpoint
-isolates---while our controlled negatives arise in full-information regimes,
-where published graph methods are rarely tested against capacity-matched
-controls. On this reading the literature's positive results and our negative
-ones are two sides of the same boundary, and the discriminator is the task's
-information structure, not the algorithm.
 
 \begin{figure}[t]
   \centering
@@ -1258,7 +1267,12 @@ attention-over-complete test were fixed before those runs
 (\S\ref{sec:structure:obs}), the \texttt{dgn\_true} arm, and the
 \tokenmatch\ replication (\S\ref{sec:structure:tokenmatch}) are post-hoc
 robustness/replication cells run under the same protocol and thresholds but
-not themselves pre-registered. All confirmatory cells use $\ge 12$ seeds and
+not themselves pre-registered. We flag one limit on how independently this
+ordering can be checked: only the F1 attention robustness check
+(\texttt{results/phaseC\_150k/PREREGISTRATION.md}) was committed to version
+control before any 150k-step result existed, so it alone is timestamp-verifiable
+as pre-committed; the earlier pre-registrations rest on the documented protocol
+rather than on commit-order evidence. All confirmatory cells use $\ge 12$ seeds and
 the same Welch\,/\,Holm and Mann--Whitney tests of
 Section~\ref{sec:protocol}. One protocol difference is disclosed rather than
 hidden: the cells of this section use the final window pre-registered for
@@ -1602,7 +1616,7 @@ own six-member family, the \gtrue\ vs.\ \gcomplete\ contrast's $p_{\text{Holm}}$
 here ($6.6\times10^{-8}$) differs slightly from the core three-contrast value in
 Table~\ref{tab:structure} ($3.3\times10^{-8}$); both are the correct per-family
 Holm value and the conclusion is identical. Two facts settle the
-question. \emph{(i) The attention arms are emphatically not under-trained on the
+question. \emph{(i) The attention arms are not under-trained on the
 true graph:} given the
 \emph{right} graph, learned attention is at least as good as the GCN---single-head
 GAT is statistically indistinguishable (\texttt{gat\_true} $\SCgatTrue$ vs.\
@@ -1619,7 +1633,7 @@ all-to-all, both attention mechanisms still floor within budget:} \gtrue\ beats
 \texttt{gat\_complete} ($\SCgatComplete$) and \texttt{dgn\_complete}
 ($\SCdgnComplete$) by $\SCtrueGatCompGap$ and $\SCtrueDgnCompGap$
 respectively (Cohen's $d{\approx}\SCtrueAttCompD$, $p_{\text{Holm}}<10^{-4}$).
-We are deliberately careful about the strength of this clause: the complete-graph
+One asymmetry qualifies this clause: the complete-graph
 attention arms face a \emph{strictly harder} optimisation than their true-graph
 siblings---under the true graph the partner is the only neighbour and attention
 has nothing to discover, whereas under all-to-all the head must learn to attend
@@ -1642,7 +1656,7 @@ seed separation). That the complete arms move \emph{at all}
 (\texttt{dgn\_complete} climbs $50.1\!\to\!53.3$ across quintiles) is itself
 informative: gradients do flow through the all-to-all path, so this is a
 \emph{live} control that plateaus far below---not a silently broken one---which
-rules out the ``the complete-graph arm never optimised'' objection. Crucially the
+rules out the ``the complete-graph arm never optimised'' objection. The
 \emph{same} attention architectures train well
 at this budget \emph{given the right graph}---\texttt{gat\_true} $\SCkGatTrue$,
 \texttt{dgn\_true} $\SCkDgnTrue$, both far above the floor---which is the
@@ -1801,7 +1815,7 @@ benchmarks usually credited to graph methods the picture is the same
 \emph{no-benefit-to-harm} one: on
 Level-Based Foraging the effect tracks team size---neutral at two agents but
 significantly below \qmix\ at three ($d=-2.24$, Welch $p=0.014$;
-Appendix~\ref{app:standard}). We note for honesty that this significant LBF
+Appendix~\ref{app:standard}). We note that this significant LBF
 result is the (confounded) \gnnqmix-vs-\qmix\ comparison; the parameter-matched
 \gnnqmix-vs-\mlpqmix\ contrast that our method relies on points the same way
 ($d=-1.11$) but is not powered for significance at $n{=}5$, so on LBF we treat
@@ -1814,7 +1828,7 @@ neutral to harmful and is never positive.
 the task forces an agent to act on private information held by one specific
 partner it cannot observe, the stabilised graph operator helps---and
 decisively so ($d\approx5$)---\emph{but only when its topology matches the
-task's coordination edges}. Crucially, this is the \emph{same} stabilised
+task's coordination edges}. This is the \emph{same} stabilised
 operator that Appendix~\ref{app:repaired} shows is neutral (parity with the
 no-graph control) at the negative endpoint: so the boundary is not an
 artefact of comparing two different operators. The same stabilised GCN is
@@ -1828,8 +1842,8 @@ otherwise.
 test the relational operators these methods rely on (a fixed GCN and learned
 graph attention) inside one controlled QMIX-style harness on
 small-to-moderate cooperative tasks, not the full published systems at SMAC
-scale. Within that scope it is a far more constrained---and more
-conditional---reading of graph-based value factorisation than a
+scale. Within that scope it is a far more constrained reading of graph-based
+value factorisation than a
 \emph{regime-agnostic} reading of these results
 \citep{jiang_2020_dgn,liu_2020_g2anet,naderializadeh_2020_graphmix}
 would suggest. As stressed in the introduction, \algoname{DGN} and

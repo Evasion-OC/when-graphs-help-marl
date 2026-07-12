@@ -81,13 +81,18 @@ contribution did not exist in the rejected version.
       `D:19700101000000Z` (built with `SOURCE_DATE_EPOCH=0`).
 - [x] Embedded figure metadata scrubbed — no `+01'00'`/`+03'30'` timezone offsets or
       2026 dates anywhere in the PDF (figure PDFs stripped with pikepdf).
-- [x] Build hygiene (re-verified 2026-07-12 after the 150k attention-robustness
-      integration + the "floor"-overstatement wording fix): **0 errors, 0
-      overfull/underfull hbox, 0 underfull vbox, 0 undefined refs/cites**,
-      38 references all resolved; **38pp**, 16 figures, **19 tables** (new Table
-      `tab:attn150k`), abstract **316 words**. Fixpoint-stable (no "labels may have
-      changed"). This pagination has zero underfull-vbox messages (cleaner than the
-      prior build).
+- [x] Build hygiene (re-verified 2026-07-12 after the 150k integration, the
+      "floor"-overstatement fix, AND the abstract/intro reframe + hedge-trim +
+      pre-registration honesty disclosure): **0 errors, 0 overfull/underfull hbox,
+      0 underfull vbox, 0 undefined refs/cites**, 38 references all resolved;
+      **38pp**, 16 figures, **19 tables**, abstract **~317 words**. Fixpoint-stable.
+      Abstract now leads with the controlled-attribution method + literature
+      reconciliation (not the finding); intro adds a "reusable attribution method"
+      framing paragraph; ~14 redundant hedges cut; honest note added that only the
+      F1 pre-registration is independently timestamp-verifiable. All load-bearing
+      scope caveats verified still present (constructed-tasks/future-work,
+      no-benefit-vs-unstabilised-harm, bounded-budget attention, H-N/H3 not
+      supported, pre-registered-vs-post-hoc, the one non-a-priori contrast).
 - [x] Dead code link removed from the manuscript (the Reproducibility appendix now
       points to the supplementary material, not the placeholder anonymous.4open URL).
 - [ ] **Upload the anonymized code zip as OpenReview supplementary material.** The zip
