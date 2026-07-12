@@ -1,0 +1,38 @@
+{
+  "algo": "gat_qmix",
+  "algo_kwargs": {
+    "batch_size": 32,
+    "buffer_capacity": 50000,
+    "gamma": 0.99,
+    "gnn_hidden": 64,
+    "gnn_layernorm": true,
+    "gnn_layers": 2,
+    "gnn_residual": true,
+    "lr": 0.0005,
+    "target_update_interval": 200
+  },
+  "device": "cpu",
+  "env": "coord_grid",
+  "env_kwargs": {
+    "episode_steps": 25,
+    "graph": "complete",
+    "grid_size": 3,
+    "max_neighbors_override": 5,
+    "n_agents": 6,
+    "obs_mode": "ego",
+    "pair_routing": true
+  },
+  "eps_anneal_steps": 120000,
+  "eps_end": 0.05,
+  "eps_start": 1.0,
+  "log_dir": "results\\phaseC_150k\\pair_N6_ego_attention",
+  "n_actions": 5,
+  "n_agents": 6,
+  "obs_dim": 21,
+  "run_id": "gat_complete__pair_N6_ego_attention__seed5",
+  "seed": 5,
+  "state_dim": 12,
+  "total_env_steps": 150000,
+  "update_every": 4,
+  "warmup_steps": 200
+}
