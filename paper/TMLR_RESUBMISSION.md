@@ -38,10 +38,19 @@ contribution did not exist in the rejected version.
    positive endpoint also replicates in a second, non-spatial environment
    (TokenMatch: referential matching with no grid or movement, ~96% of task maximum).
 
-3. **Attention controls close the "under-expressive GNN" alternative.** Matched GAT
-   and multi-head DGN controls (with residual + LayerNorm) train well *given* the
-   task-matched graph but collapse to the random floor over all-to-all — at degree-1
-   and degree-2 — so learned attention does not substitute for correct structure.
+3. **Attention controls close the "under-expressive GNN" alternative — now at a
+   budget-matched to the negative endpoint.** Matched GAT and multi-head DGN controls
+   (with residual + LayerNorm) train well *given* the task-matched graph but collapse
+   to the random floor over all-to-all — at degree-1 and degree-2 — so learned
+   attention does not substitute for correct structure. A pre-registered robustness
+   check reruns these controls at the **5× (150k-step) budget matched to the negative
+   endpoint**, removing any budget asymmetry: the all-to-all attention arms remain at
+   the floor across the *entire* budget while every task-matched arm climbs, so the
+   advantage *widens* (Cohen's d ≈ 5 → 12) rather than closing. A validity gate
+   (`gat_true`/`dgn_true` train to ≈97/112 given the right graph) confirms the floor
+   is structural, not a training-budget artifact — the claim is now bounded to the
+   tested budgets rather than asserted in principle (new Table + learning-curve
+   evidence; `results/phaseC_150k/`, pre-registration committed before results).
 
 4. **Honest scoping throughout.** Hypotheses H-N (advantage grows with N) and H3
    (depth ≈ diameter) are reported as *not supported*; the pre-registered vs.
@@ -72,21 +81,30 @@ contribution did not exist in the rejected version.
       `D:19700101000000Z` (built with `SOURCE_DATE_EPOCH=0`).
 - [x] Embedded figure metadata scrubbed — no `+01'00'`/`+03'30'` timezone offsets or
       2026 dates anywhere in the PDF (figure PDFs stripped with pikepdf).
-- [x] Build hygiene: 0 errors, 0 warnings, 0 overfull boxes, 0 undefined refs/cites,
-      38 references all resolved (the only remaining log items are 8 underfull-vbox
-      messages, an irreducible artifact of tmlr.sty's mandatory `\flushbottom`).
+- [x] Build hygiene (re-verified 2026-07-12 after the 150k attention-robustness
+      integration): 0 errors, 0 overfull/underfull hbox, 0 undefined refs/cites,
+      38 references all resolved; 37pp, 16 figures, **19 tables** (new Table
+      `tab:attn150k`), abstract **316 words**. The only remaining log items are 9
+      underfull-vbox messages, an irreducible artifact of tmlr.sty's mandatory
+      `\flushbottom`.
 - [x] Dead code link removed from the manuscript (the Reproducibility appendix now
       points to the supplementary material, not the placeholder anonymous.4open URL).
 - [ ] **Upload the anonymized code zip as OpenReview supplementary material.** The zip
-      is prepared at `scratchpad/supplementary.zip` (~1 MB; source, configs, aggregate
-      + per-contrast CSVs, per-run configs; author-scrubbed). Regenerate it after
-      submission-day if code changed.
+      is prepared at `scratchpad/supplementary.zip` **and** `submission_tmlr/supplementary.zip`
+      (~1.3 MB; source, configs, aggregate + per-contrast CSVs, per-run configs;
+      author-scrubbed — re-verified 0 identity hits across 1,875 files on 2026-07-12).
+      Now includes the pre-registered 150k attention-robustness results
+      (`results/phaseC_150k/`: prereg, aggregate CSVs, 84 per-run configs, trajectory
+      script; no `episodes.csv`, excluded for size). Regenerate it after submission-day
+      if code changed.
 - [ ] **Fill the OpenReview form:** link to the previously rejected TMLR submission +
       the changes statement above (replace the one placeholder). Confirm all authors'
       OpenReview profiles are complete (affiliations, publication history, conflicts).
       Declare funding / competing interests / IRB status (N/A here — state so).
-- [ ] Confirm the private GitHub repo `Evasion-OC/when-graphs-help-marl` is still
-      **private** on submission day (double-blind).
+- [x] Confirm the private GitHub repo `Evasion-OC/when-graphs-help-marl` is still
+      **private** (double-blind). Verified 2026-07-12: unauthenticated GitHub API
+      request returns HTTP 404 (repo exists — we push to it — so 404 = not publicly
+      visible). Re-confirm on submission day if that is later than 2026-07-12.
 - [ ] Confirm not under review elsewhere (JAIR decision was final 2026-07-02 — clear).
 
 ## Notes
