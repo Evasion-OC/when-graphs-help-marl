@@ -234,3 +234,66 @@ direct s–t shortcut is pre-registered as expected and illuminating, not a
 failure of the design. Scope rule: "up to 150k steps," never "in
 principle"; "a deep coordination graph (DCG)," not "all payoff
 propagation."
+
+## ADDENDUM (2026-07-31) — cell R: relay-addendum (gnn_wrong + gnn_complete)
+
+**Written and git-committed BEFORE cell R's smoke or confirmatory result was
+observed.** Appended, not a rewrite of sections 0–7 above, which remain the
+frozen record of cell C's already-committed result. Freezes
+`docs/EXTERNAL_VALIDITY_DESIGN.md` section 11 (the relay-cell completion
+addendum) as implemented in `scripts/phaseD_external_sweep.py`'s `_run_cell_r`
+/ `_CELL_R_ARMS` / `merge_into_cellc`.
+
+**What this adds.** `gnn_wrong` and `gnn_complete` (12 seeds, 150k env steps
+— frozen, identical budget to cell C's already-run arms, unconditional on
+Phase D's own E1 budget freeze) on the EXISTING `coord_grid` `relay_routing`
+cell C config — byte-identical `env_kwargs` to cell C's `mlp`/`gnn_true`/
+`dcg_*` rows (reuses `phaseC_classical_sweep.CELLS["C"]` /
+`_env_kwargs` / `_run_one` verbatim), so the manifest is schema- and
+cell-label-compatible with `results/phaseC_classical/manifest_cellC_N6_ego_150000steps.csv`
+and can be spliced in directly via `--merge-into-cellc`.
+
+**Params (verified via `--params-only` immediately before this addendum):**
+`gnn_wrong` and `gnn_complete` are 23942 params each — identical to cell C's
+already-committed `gnn_true` (only `adjacency()` differs; same stabilised
+GCN config, `gnn_residual=True, gnn_layernorm=True, gnn_layers=2,
+gnn_hidden=64`).
+
+**What cell R can and cannot show.** It fills the *missing-arms*
+sub-limitation of cell C (cell C as run only had `mlp`/`gnn_true`/`dcg_*`,
+never a within-GNN structure control on the relay). It **cannot** un-null
+cell C's already-committed, fixed result (`gnn_true ≈ mlp` on
+`relay_routing`) — that data point is frozen and not re-run here; cell R only
+adds context around it.
+
+**Three frozen expectation patterns (verbatim, design section 11):**
+
+1. **Most likely:** all GNN arms (`gnn_wrong`, `gnn_complete`, alongside the
+   already-committed `gnn_true`) land at/below the ~61 `mlp` reference on
+   `relay_routing` → characterizes a **within-GNN null** (structure doesn't
+   matter among GNN arms because none of them route the 2-hop relay) →
+   delete the corresponding missing-arms limitation clause; headline
+   unchanged.
+2. **`gnn_true > wrong ≈ complete` but `gnn_true ≈ mlp`** → "topology-
+   sensitive but sub-baseline" — the GNN arms differentiate among
+   themselves but none clears the no-graph control; still no multi-hop
+   routing claim.
+3. **`gnn_true` suddenly clears `mlp`** → CONFLICTS with the already-
+   committed cell-C data (which fixed `gnn_true ≈ mlp` at 150k) → flag for
+   re-examination as a drift/reproducibility anomaly (e.g. environment or
+   dependency version drift since the original cell-C run), NOT treated as
+   an automatic win. Do not revise the cell-C headline on the strength of
+   cell R's `gnn_wrong`/`gnn_complete` data alone; re-run `gnn_true` under
+   matched conditions before any such revision.
+
+**Smoke gate for cell R.** Plumbing-only (design section 11 / sweep script
+docstring): 3 seeds, short budget, liveness = no crashes/NaNs, since cell R
+reuses the already-proven `relay_routing` env and training stack (cell C's
+own C-liveness gate, section 3.1 above, already established the harness
+trains this env). No new significance machinery at smoke.
+
+**Statistics.** Once appended to cell C's manifest via `--merge-into-cellc`,
+cell R's rows are covered by the SAME contrast family and test wiring
+already frozen for cell C (`scripts/phaseC_analysis.py`) — no new contrast
+family is defined here; `gnn_wrong`/`gnn_complete` simply become additional
+arms in cell C's existing `gnn_true`-vs-every-arm comparison.
