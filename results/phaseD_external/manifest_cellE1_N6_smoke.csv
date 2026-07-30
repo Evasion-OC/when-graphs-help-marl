@@ -1,0 +1,16 @@
+arm,algo,graph,cell,task,suite,k,n_agents,seed,run_dir,steps,n_episodes,final
+gnn_complete,gnn_qmix,complete,E1,mpe_reference_pairs,external_validity,3,6,0,results\phaseD_external\cellE1_N6_smoke\gnn_complete__cellE1_N6_smoke__seed0,3000,120,-135.2282568141853
+gnn_complete,gnn_qmix,complete,E1,mpe_reference_pairs,external_validity,3,6,1,results\phaseD_external\cellE1_N6_smoke\gnn_complete__cellE1_N6_smoke__seed1,3000,120,-121.12345057789429
+gnn_complete,gnn_qmix,complete,E1,mpe_reference_pairs,external_validity,3,6,2,results\phaseD_external\cellE1_N6_smoke\gnn_complete__cellE1_N6_smoke__seed2,3000,120,-134.30350386440486
+gnn_true,gnn_qmix,true,E1,mpe_reference_pairs,external_validity,3,6,0,results\phaseD_external\cellE1_N6_smoke\gnn_true__cellE1_N6_smoke__seed0,3000,120,-136.84683000758181
+gnn_true,gnn_qmix,true,E1,mpe_reference_pairs,external_validity,3,6,1,results\phaseD_external\cellE1_N6_smoke\gnn_true__cellE1_N6_smoke__seed1,3000,120,-110.14893491568665
+gnn_true,gnn_qmix,true,E1,mpe_reference_pairs,external_validity,3,6,2,results\phaseD_external\cellE1_N6_smoke\gnn_true__cellE1_N6_smoke__seed2,3000,120,-96.79258313219164
+gnn_wrong,gnn_qmix,wrong,E1,mpe_reference_pairs,external_validity,3,6,0,results\phaseD_external\cellE1_N6_smoke\gnn_wrong__cellE1_N6_smoke__seed0,3000,120,-123.09417069835492
+gnn_wrong,gnn_qmix,wrong,E1,mpe_reference_pairs,external_validity,3,6,1,results\phaseD_external\cellE1_N6_smoke\gnn_wrong__cellE1_N6_smoke__seed1,3000,120,-117.02146358319767
+gnn_wrong,gnn_qmix,wrong,E1,mpe_reference_pairs,external_validity,3,6,2,results\phaseD_external\cellE1_N6_smoke\gnn_wrong__cellE1_N6_smoke__seed2,3000,120,-149.45608705348857
+mlp,mlp_qmix,true,E1,mpe_reference_pairs,external_validity,3,6,0,results\phaseD_external\cellE1_N6_smoke\mlp__cellE1_N6_smoke__seed0,3000,120,-156.96027456620894
+mlp,mlp_qmix,true,E1,mpe_reference_pairs,external_validity,3,6,1,results\phaseD_external\cellE1_N6_smoke\mlp__cellE1_N6_smoke__seed1,3000,120,-124.06600333066956
+mlp,mlp_qmix,true,E1,mpe_reference_pairs,external_validity,3,6,2,results\phaseD_external\cellE1_N6_smoke\mlp__cellE1_N6_smoke__seed2,3000,120,-128.6305032967227
+oracle,mlp_qmix,true,E1,mpe_reference_pairs,external_validity,3,6,0,results\phaseD_external\cellE1_N6_smoke\oracle__cellE1_N6_smoke__seed0,3000,120,-109.25606269413375
+oracle,mlp_qmix,true,E1,mpe_reference_pairs,external_validity,3,6,1,results\phaseD_external\cellE1_N6_smoke\oracle__cellE1_N6_smoke__seed1,3000,120,-125.70200256912136
+oracle,mlp_qmix,true,E1,mpe_reference_pairs,external_validity,3,6,2,results\phaseD_external\cellE1_N6_smoke\oracle__cellE1_N6_smoke__seed2,3000,120,-99.46960790161116

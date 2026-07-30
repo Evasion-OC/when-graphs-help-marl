@@ -1,0 +1,16 @@
+arm,algo,graph,cell,task,suite,k,n_agents,seed,run_dir,steps,n_episodes,final
+gnn_complete,gnn_qmix,complete,E1,mpe_reference_pairs,external_validity,3,6,0,results\phaseD_external\cellE1_N6_30000steps\gnn_complete__cellE1_N6_30000steps__seed0,30000,1200,-62.42564303700413
+gnn_complete,gnn_qmix,complete,E1,mpe_reference_pairs,external_validity,3,6,1,results\phaseD_external\cellE1_N6_30000steps\gnn_complete__cellE1_N6_30000steps__seed1,30000,1200,-62.60148560224248
+gnn_complete,gnn_qmix,complete,E1,mpe_reference_pairs,external_validity,3,6,2,results\phaseD_external\cellE1_N6_30000steps\gnn_complete__cellE1_N6_30000steps__seed2,30000,1200,-62.44156715395414
+gnn_true,gnn_qmix,true,E1,mpe_reference_pairs,external_validity,3,6,0,results\phaseD_external\cellE1_N6_30000steps\gnn_true__cellE1_N6_30000steps__seed0,30000,1200,-64.21463535125788
+gnn_true,gnn_qmix,true,E1,mpe_reference_pairs,external_validity,3,6,1,results\phaseD_external\cellE1_N6_30000steps\gnn_true__cellE1_N6_30000steps__seed1,30000,1200,-65.29382934642103
+gnn_true,gnn_qmix,true,E1,mpe_reference_pairs,external_validity,3,6,2,results\phaseD_external\cellE1_N6_30000steps\gnn_true__cellE1_N6_30000steps__seed2,30000,1200,-61.50264442781363
+gnn_wrong,gnn_qmix,wrong,E1,mpe_reference_pairs,external_validity,3,6,0,results\phaseD_external\cellE1_N6_30000steps\gnn_wrong__cellE1_N6_30000steps__seed0,30000,1200,-65.2922324442782
+gnn_wrong,gnn_qmix,wrong,E1,mpe_reference_pairs,external_validity,3,6,1,results\phaseD_external\cellE1_N6_30000steps\gnn_wrong__cellE1_N6_30000steps__seed1,30000,1200,-64.18322488098607
+gnn_wrong,gnn_qmix,wrong,E1,mpe_reference_pairs,external_validity,3,6,2,results\phaseD_external\cellE1_N6_30000steps\gnn_wrong__cellE1_N6_30000steps__seed2,30000,1200,-64.96840152462458
+mlp,mlp_qmix,true,E1,mpe_reference_pairs,external_validity,3,6,0,results\phaseD_external\cellE1_N6_30000steps\mlp__cellE1_N6_30000steps__seed0,30000,1200,-58.41749014088097
+mlp,mlp_qmix,true,E1,mpe_reference_pairs,external_validity,3,6,1,results\phaseD_external\cellE1_N6_30000steps\mlp__cellE1_N6_30000steps__seed1,30000,1200,-57.84865317944712
+mlp,mlp_qmix,true,E1,mpe_reference_pairs,external_validity,3,6,2,results\phaseD_external\cellE1_N6_30000steps\mlp__cellE1_N6_30000steps__seed2,30000,1200,-58.52483347108403
+oracle,mlp_qmix,true,E1,mpe_reference_pairs,external_validity,3,6,0,results\phaseD_external\cellE1_N6_30000steps\oracle__cellE1_N6_30000steps__seed0,30000,1200,-57.97208790776885
+oracle,mlp_qmix,true,E1,mpe_reference_pairs,external_validity,3,6,1,results\phaseD_external\cellE1_N6_30000steps\oracle__cellE1_N6_30000steps__seed1,30000,1200,-58.2922532203274
+oracle,mlp_qmix,true,E1,mpe_reference_pairs,external_validity,3,6,2,results\phaseD_external\cellE1_N6_30000steps\oracle__cellE1_N6_30000steps__seed2,30000,1200,-57.52513391504254

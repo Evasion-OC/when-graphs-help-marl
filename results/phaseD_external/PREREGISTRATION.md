@@ -253,6 +253,134 @@ budget freeze), the three frozen expectation patterns, and the explicit
 statement that cell R cannot un-null cell C's already-committed
 `gnn_true ≈ mlp` result.
 
+## AMENDMENT (2026-07-31) — smoke results and gate verdict
+
+**Written and committed after the smoke, before any confirmatory launch —
+this amendment records the outcome and the resulting decision; it does NOT
+retroactively change sections 0–9 above.**
+
+### A.1 Reference points (committed, section 4.1's procedure)
+
+`results/phaseD_external/reference_points.csv`
+(`scripts/phaseD_reference_points.py`, 500 episodes × 12 seeds), E1 config
+(k=3, comm off, `graph="true"`, non-oracle obs):
+
+| policy | mean return | seed sd | n |
+|---|---:|---:|---:|
+| random | −84.81 | 0.673 | 12 |
+| do_nothing | −78.14 | 0.595 | 12 |
+
+Floor band (section 4.1): **[−84.81, −78.14]**.
+
+### A.2 Smoke 1 — 3,000 steps, 3 seeds (default smoke budget)
+
+All 5 E1 arms and cell R's 2 arms run (`--smoke --cell E1,R`). **Uninterpretable
+at this budget**: every E1 arm's per-episode return *degrades* monotonically
+over the run (e.g. `mlp` mean-by-decile: −87.7 → −89.4 → −90.4 → −149.2 →
+−157.0), consistent with `eps_anneal_steps = 0.8 × 3000 = 2400` collapsing
+exploration well before the Q-network has learned anything useful — a
+known QMIX failure mode at very short budgets, not evidence about any gate.
+Per section 4/design section 6, this licenses the one permitted extension.
+Cell R's smoke (3 seeds, 3000 steps) is plumbing-only and passed cleanly:
+`gnn_wrong` 31.25, `gnn_complete` 31.67 (sd ~1.5, n=3), no crashes/NaNs,
+values plausible next to the existing `relay_routing` random floor (33.37).
+
+### A.3 Smoke 2 — 30,000 steps, 3 seeds (the one permitted extension, used)
+
+`--cell E1 --steps 30000 --seeds 3`. Final-window means (n=3 each):
+
+| arm | mean | sd |
+|---|---:|---:|
+| `mlp` | −58.26 | 0.36 |
+| `oracle` | −57.93 | 0.39 |
+| `gnn_true` | −63.67 | 1.95 |
+| `gnn_wrong` | −64.81 | 0.57 |
+| `gnn_complete` | −62.49 | 0.10 |
+
+Per-episode deciles for `mlp`/`oracle`/`gnn_true` (seed 0) show all three
+curves **plateau by ~episode 480/1200 (40% through) and stay flat for the
+remaining 60%** — this is convergence, not an artifact of reading the
+window too early.
+
+**Gate 1 (privacy) — PASS, with the Trap-1 nuance applied.** `mlp`
+(−58.26) sits well above the floor band, which on its own would look like a
+leak. Resolved by the greedy-policy diagnostic below (A.4): `mlp` sits
+*below* the identity-blind `greedy_centroid` scripted ceiling (−53.74) and
+nowhere near the informed `greedy_target` ceiling (−31.64) — i.e. `mlp`'s
+improvement over the floor is exactly the benign structural exploitation
+Trap 1 anticipated (agents can see all 3 landmark *positions*, just not
+which one is the target, so a trained policy can beat pure noise without
+any privacy leak). `mlp` is in the correct "blind" performance band, not
+the "informed" one. **Privacy confirmed both by source (section 1a) and now
+empirically.**
+
+**Gate 2 (oracle-headroom) — FAIL at the extension cap.** `oracle`
+(−57.93) does **not** clearly beat `mlp` (−58.26); the two track each other
+within noise for 6 consecutive deciles. Per section 4/design section 6:
+this is the kill-switch. **No E1 confirmatory launch.**
+
+### A.4 Diagnostic — does headroom exist at all? (resolves which failure mode gate 2 is)
+
+A trained-oracle-≈-trained-mlp result is consistent with two different
+diagnoses that call for opposite responses (no env headroom → Branch 0,
+rescope the vehicle; headroom exists but training didn't reach it →
+calibration problem, not a null). Added at amendment time (not a training
+run, not a budget extension — a scripted, zero-learning reference in the
+same style as `phaseC_classical_reference_points.py`):
+`scripts/phaseD_greedy_reference.py`, `results/phaseD_external/greedy_reference.csv`
+(200 episodes × 12 seeds), same E1 config:
+
+| policy | mean return | seed sd | n |
+|---|---:|---:|---:|
+| `greedy_target` (hand-scripted, uses exactly the info `oracle` mode injects) | **−31.64** | 0.426 | 12 |
+| `greedy_centroid` (hand-scripted, identity-blind — landmark positions only, no target) | −53.74 | 0.561 | 12 |
+
+**Headroom clearly exists** (a ~22-point gap between a zero-learning
+informed script and a zero-learning blind script, dwarfing the noise in
+either). The trained `oracle` arm (−57.93) sits at the *blind* level, not
+partway toward the informed ceiling it was structurally handed. **Diagnosis:
+this is failure mode (b) — a training/calibration problem (30k steps is not
+enough for this harness's QMIX to learn to exploit a small privileged slice
+of a 24-dim continuous observation), not failure mode (a) — the vehicle is
+not intrinsically headroom-free.** This is consistent with, not contradicted
+by, the design's own Branch-0 language ("raise budget and re-smoke, or
+record the vehicle as intractable") — the evidence here supports "raise
+budget," not "intractable."
+
+### A.5 Verdict and decision
+
+**NO-GO for the E1 confirmatory launch under this pre-reg's frozen smoke
+protocol.** The oracle-headroom gate is a hard kill-switch (section 4) and
+the one permitted budget extension (3,000 → 30,000 steps) has already been
+used. Per the task's own instruction ("if a run reveals the regime is
+underpowered or unlearnable, say so and propose the budget/calibration
+change — do not silently extend budget"), going further (e.g. re-smoking at
+150k) requires new authorization, not a unilateral extension past the
+pre-registered cap. **The confirmatory budget is NOT frozen. No E1, E2, or
+E0 runs are launched under this pre-reg.**
+
+**Cell R is independently governed** (separate ADDENDUM to
+`results/phaseC_classical/PREREGISTRATION.md`, own frozen budget, own
+plumbing-only smoke gate already passed cleanly, not conditioned on E1's
+oracle-headroom finding). It is **held, not launched**, pending an explicit
+go-ahead from the authors, in line with the instruction to stop and report
+rather than launch when a kill-switch fires anywhere in the protocol.
+
+**Recommendation to authors (not acted on unilaterally):** the vehicle looks
+tractable in principle (proven headroom) but the harness's default
+hyperparameters (`lr=5e-4`, `buffer_capacity=50k`, `target_update=200`,
+`eps_anneal=0.8×steps`, reused verbatim from CoordGrid) may be miscalibrated
+for continuous MPE physics with a 21–24-dim observation and non-toroidal
+dynamics. Two independent next steps, not mutually exclusive: (1) a fresh,
+explicitly-authorized re-smoke at a materially larger budget (e.g. 150k,
+matching the house standard used elsewhere in this repo) to see whether
+`oracle` eventually separates given enough samples; (2) a short
+hyperparameter-only recalibration pass (learning rate / target-update
+interval / exploration schedule) on the `oracle` arm alone (never widen an
+advantage by tuning `mlp` down or `gnn_true` up — house rule) before
+re-spending a full smoke budget. Both are genuinely new decisions for the
+authors, not implied by the existing pre-registration.
+
 ## 9. Validity gates (summary, expanded in section 4)
 
 - Privacy confirmed by source inspection (section 1a) AND empirically (`mlp`

@@ -1,0 +1,7 @@
+arm,algo,env_graph,cell,task,suite,obs,n_agents,seed,run_dir,steps,n_episodes,final
+gnn_complete,gnn_qmix,complete,C,C,classical,ego,6,0,D:\Codes\Github\when-graphs-help-marl\results\phaseC_classical\cellR_N6_ego_smoke\gnn_complete__cellR_N6_ego_smoke__seed0,3000,120,33.208333333333336
+gnn_complete,gnn_qmix,complete,C,C,classical,ego,6,1,D:\Codes\Github\when-graphs-help-marl\results\phaseC_classical\cellR_N6_ego_smoke\gnn_complete__cellR_N6_ego_smoke__seed1,3000,120,30.791666666666668
+gnn_complete,gnn_qmix,complete,C,C,classical,ego,6,2,D:\Codes\Github\when-graphs-help-marl\results\phaseC_classical\cellR_N6_ego_smoke\gnn_complete__cellR_N6_ego_smoke__seed2,3000,120,31.0
+gnn_wrong,gnn_qmix,relay_wrong,C,C,classical,ego,6,0,D:\Codes\Github\when-graphs-help-marl\results\phaseC_classical\cellR_N6_ego_smoke\gnn_wrong__cellR_N6_ego_smoke__seed0,3000,120,33.020833333333336
+gnn_wrong,gnn_qmix,relay_wrong,C,C,classical,ego,6,1,D:\Codes\Github\when-graphs-help-marl\results\phaseC_classical\cellR_N6_ego_smoke\gnn_wrong__cellR_N6_ego_smoke__seed1,3000,120,31.166666666666668
+gnn_wrong,gnn_qmix,relay_wrong,C,C,classical,ego,6,2,D:\Codes\Github\when-graphs-help-marl\results\phaseC_classical\cellR_N6_ego_smoke\gnn_wrong__cellR_N6_ego_smoke__seed2,3000,120,29.5625
