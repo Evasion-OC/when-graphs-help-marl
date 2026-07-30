@@ -564,3 +564,18 @@ gate outcome, unchanged from the base pre-reg.
   `results/phaseD_external/reference_points.csv` before any gate is read.
 - `tests/test_mpe_reference_pairs.py` (adjacency/obs_dim/privacy-slice
   tests) green — confirmed at pre-reg time, full suite 180+ tests.
+
+## AMENDMENT 1 — GATE VERDICT (2026-07-31, applied before confirmatory launch)
+
+150k re-smoke (manifest_cellE1_N6_resmoke150k.csv): oracle mean -40.92
+(seeds -43.85/-38.65/-40.27) vs mlp -66.39 (seeds -64.98/-71.46/-62.72) —
+clear separation, no seed overlap. GATE: PASS. Confirmatory budget FROZEN
+at 150k; E1 (60 runs) + E0 launch now per the base pre-registration.
+oracle_pos (diagnostic only): -30.12, at the scripted position ceiling.
+CALIBRATION NOTE recorded, not a gate: gnn_true diverged in the re-smoke
+(-122.74 mean, below the -84.81 random floor, seed spread -85.8..-148.3).
+A read-only implementation diagnostic runs in parallel with confirmatory;
+per the standing validity rule (cf. phaseC_classical rule 4), a confirmed
+implementation defect voids affected arms (discard, do not interpret);
+absent a defect, the confirmatory result stands and is interpreted under
+the frozen branches whatever it shows.
