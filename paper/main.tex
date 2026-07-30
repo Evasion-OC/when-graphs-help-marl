@@ -2,8 +2,8 @@
 % When Does Graph Structure Help in Multi-Agent Reinforcement Learning?
 % A controlled empirical study.
 %
-% Target venue: Transactions on Machine Learning Research (TMLR).
-% Uses the official TMLR style (tmlr.sty). All figures are vector PDF.
+% Target venue: JAAMAS (Springer). Currently still in TMLR layout (tmlr.sty)
+% pending the Springer sn-jnl port. All figures are vector PDF.
 % =========================================================================
 % Official TMLR style. Default = anonymized submission build.
 %   - For a non-anonymous preprint:   \usepackage[preprint]{tmlr}
@@ -277,18 +277,20 @@
 
 % =========================================================================
 \begin{abstract}
-Graph neural networks are widely used to add coordination structure to
-cooperative multi-agent reinforcement learning (MARL), but gains are
-rarely separated from the capacity they add. We contribute a
-controlled-attribution method that does. On \coordgrid, a cooperative gridworld
+For a coordination graph in cooperative multi-agent reinforcement learning
+(MARL), the design question is where to route communication, not whether to add
+it: the topology must match the task's information
+dependencies---the right edges, not more edges. We establish this with a
+controlled-attribution method. On \coordgrid, a
+cooperative gridworld
 whose coordination graph is itself the experimental variable, we fix the
 encoder, mixer, optimiser, and parameter count and add two
 isolators: a byte-identical no-graph control (structure vs.\ capacity) and a
-density-matched \emph{wrong}-graph control (the right edges vs.\ merely more
-edges). This reconciles a tension: graph-MARL methods such as
-\algoname{DGN} and \algoname{G2ANet} report gains in partially observable
+density-matched \emph{wrong}-graph control (right edges vs.\ more). This
+reconciles a tension: graph-MARL methods (\algoname{DGN}, \algoname{G2ANet})
+report gains in partially observable
 settings, rarely against capacity-matched controls; the
-discriminator between those positives and full-information negatives is the
+discriminator from full-information negatives is the
 task's \emph{information structure}, not the algorithm. When an agent must act
 on private information held by one specific, unobserved partner, a graph whose
 edges match the task's coordination structure decisively outperforms
@@ -296,21 +298,21 @@ edges match the task's coordination structure decisively outperforms
 select it---the wrong graph, and the no-graph control, at matched parameters and
 observations (Cohen's $d \approx 5$, complete seed-level separation over 12
 seeds, Holm-corrected). Learned attention recovers the signal only on the right
-graph, even given $5\times$ the training budget, where the gap
-widens ($d{\approx}5\!\to\!12$) rather than closes. The advantage holds across
-team sizes and observability, and replicates out of harness in a non-spatial
-referential game (matched graph ${\approx}96\%$ of maximum, rivals far below).
-When coordination is instead incidental or convention-reducible, the same
+graph, not by learned targeting over all-to-all: even at $5\times$ the budget
+that gap widens ($d{\approx}5\!\to\!12$) rather than closing, so matched
+structure is far more sample-efficient. The advantage
+holds across
+team sizes and observability, and replicates in a non-spatial
+referential game (matched graph ${\approx}96\%$ of maximum). When coordination
+is instead incidental or convention-reducible, the same
 architecture confers \emph{no benefit} over the parameter-matched baseline;
 the commonly used \emph{unstabilised} operator is actively harmful
 (a penalty that persists with training, grows with team size, and recurs on
 MPE \texttt{simple\_spread} and, directionally, Level-Based Foraging)---but
-stabilisation removes this optimisation pathology, recovering the graph to
-parity. The rule: route along task-relevant edges, not all-to-all---and only
+stabilisation removes this optimisation pathology, recovering parity. The rule applies only
 when the coordination topology is known or reliably estimable. These are
-controlled, constructed tasks; replication on standard benchmarks with private
-per-agent goals is future work. Code, configurations, and data accompany the
-submission.
+constructed tasks; replication on standard benchmarks with private
+per-agent goals is future work. Code and data accompany the submission.
 \end{abstract}
 
 % =========================================================================
@@ -335,10 +337,15 @@ generalise better and converge faster. Yet the conditions under which this
 holds are under-tested. Three specific gaps motivate the present study:
 
 \begin{enumerate}[leftmargin=*,itemsep=0pt,topsep=2pt]
-  \item \textbf{Graph regime is rarely varied.} Most empirical comparisons
-        fix one environment with one (often implicit) coordination graph,
-        leaving open whether observed gains transfer to other graphs:
-        sparse vs.\ dense, structured vs.\ random.
+  \item \textbf{The designer's question is unanswered: when to wire an
+        interaction graph, and what the wrong wiring costs.} A practitioner
+        deciding whether to add a coordination graph---and which edges to
+        wire---has little controlled guidance. Most empirical comparisons
+        fix one environment with one (often implicit) coordination graph and
+        vary neither the regime (sparse vs.\ dense, structured vs.\ random) nor
+        the \emph{correctness} of the wiring, so the cost of pointing the graph
+        at the wrong neighbours---the mis-specification a designer actually
+        risks---is never measured.
   \item \textbf{Capacity is rarely controlled.} Adding a GNN adds
         parameters and depth as well as relational structure. Without a
         controlled comparison it is unclear whether the win comes from the
@@ -375,8 +382,9 @@ the algorithm.
 answer it by locating \emph{both} endpoints of a boundary under one
 controlled harness (Figure~\ref{fig:teaser}). At one endpoint---tasks that
 are full-information or
-\emph{convention-reducible}, by which we mean solvable by a fixed shared
-convention the agents can adopt without exchanging private state (e.g.\
+\emph{convention-reducible}---solvable by a fixed shared
+convention the agents can adopt without exchanging private state, in the
+offline social-laws sense of \citet{shoham_1995_sociallaws} (e.g.\
 \coordgrid's edge-reward task, where meeting at a pre-agreed rendezvous
 solves coordination with no communication at all)---a graph-conditioned
 mixer confers no benefit over a parameter-matched no-graph control (and, in
@@ -529,12 +537,39 @@ greedy policy $\pi_i(o_i) = \arg\max_{a_i} \Qi(o_i, a_i)$ recovers the
 joint greedy action when $f_{\text{mix}}$ satisfies the Individual-Global-Max
 (IGM) condition \citep{son_2019_qtran}.
 
-\paragraph{Coordination graph.} We define a coordination graph
-$\Gtask = (\Nset, \Egraph)$ over the agents. \coordgrid\ (Section
-\ref{sec:env}) ties the per-step reward to $\Egraph$ directly: only
-\emph{edges} contribute reward, so the coordination structure is not a
-heuristic about the environment but a literal description of it.
-\gnnqmix\ takes $\Gtask$ as side information; \iql/\vdn/\qmix\ do not.
+\paragraph{Coordination graph.} We use a coordination graph
+$\Gtask = (\Nset, \Egraph)$ over the agents. The formalism was developed in
+the Guestrin--Koller--Parr factored-MDP line
+\citep{guestrin_2001_factoredmdp,guestrin_2002_coordrl,guestrin_2003_factoredmdp_jair},
+where an additively factored value function induces a graph over agents (edge
+$A_i\!\to\!A_j$ iff $A_i$'s action influences $A_j$'s local payoff term;
+\citealp{guestrin_2002_contextspecific}) and joint actions are computed by
+variable elimination over that graph; \citet{kok_2004_sparseq} and
+\citet{kok_2006_payoffprop} developed the reinforcement-learning treatment,
+representing the joint $Q$ over graph edges and selecting joint actions by
+max-plus payoff propagation. The idea descends from the constraint graph of
+distributed constraint optimization \citep{modi_2005_adopt,fioretto_2018_dcopsurvey}
+and is the decision-theoretic sparse-coupling model of
+\citet{melo_2011_decsimdp}. \coordgrid\ (Section~\ref{sec:env}) ties the
+per-step reward to $\Egraph$ directly: only \emph{edges} contribute reward---a
+pairwise-factored payoff in the Guestrin\,/\,Kok--Vlassis sense---so the
+coordination structure is not a heuristic about the environment but a literal
+description of it. \gnnqmix\ takes $\Gtask$ as side information;
+\iql/\vdn/\qmix\ do not.
+
+\paragraph{Two uses of ``coordination graph.''} The term names two distinct
+objects, and we are explicit about which we study. \textbf{(a)} The
+\emph{classical} coordination graph is a factored-payoff structure over which a
+\emph{joint} action is computed exactly by variable elimination or max-plus
+payoff propagation \citep{guestrin_2003_factoredmdp_jair,kok_2006_payoffprop};
+\algoname{DCG} \citep{boehmer_2020_dcg} inherits this reading in a deep setting.
+\textbf{(b)} We supply the \emph{same edge set} as a message-passing substrate
+for a GNN inside an otherwise-unchanged monotonic mixer with per-agent
+$\arg\max$ execution---no variable elimination, no joint-action inference over
+the graph. All claims in this paper concern object~(b): whether handing a fixed
+edge set to a learned deep aggregator helps. Classical coordination-graph
+solvers (max-plus / variable elimination over a known factored payoff) are a
+distinct object our experiments do not test.
 
 % =========================================================================
 \section{Related Work}
@@ -595,10 +630,17 @@ graph, \algoname{DICG} \citep{li_2021_dicg}, which infers a dynamic
 coordination graph for a GNN, and the context-aware sparse coordination graphs
 of \algoname{CASEC} \citep{wang_2022_casec} and \algoname{Non-Linear
 Coordination Graphs} \citep{kang_2022_nonlinearcg}. Of these, \algoname{CASEC}
-is the closest qualitative precedent for our headline: it argues and shows that
-\emph{sparse} coordination graphs outperform dense/static ones. We credit that
-``sparse beats complete'' is already established; our delta is the controlled
-\emph{attribution}. CASEC (and the learned-graph line generally) \emph{learns}
+is the closest \emph{deep} qualitative precedent for our headline: it argues and
+shows that \emph{sparse} coordination graphs outperform dense/static ones. But
+``sparse beats dense'' is much older: \citet{kok_2004_sparseq} established it for
+tabular payoff propagation---representing the joint $Q$ only over graph
+edges---with known factored payoffs, and \citet{melo_2009_sparseinteractions}
+showed agents can \emph{learn} where the sparse interactions are without a
+pre-given model. We credit that ``sparse beats complete'' is thus
+long-established; our delta is the controlled \emph{attribution} of that effect
+inside a deep function approximator under partial observability and private
+state, at byte-matched capacity and with a wrong-graph control---none of which
+the tabular precedents run. CASEC (and the learned-graph line generally) \emph{learns}
 the sparse topology and measures task return, so its gain entangles sparsity,
 learned selection, and capacity. We instead \emph{fix} the topology and contrast
 a task-matched graph against a \emph{density-matched wrong} graph and all-to-all
@@ -630,10 +672,16 @@ against a wrong-graph control. Closest in spirit,
 abstraction helps cooperative agents and find it improves sample efficiency on
 spatially structured tasks; they use a learned relational critic and measure
 return, however, and run neither a density-matched wrong-graph nor a
-parameter-matched no-graph control. To our knowledge, no published work---through
-2026---isolates the contribution of graph \emph{structure} as we do: fixing the
-topology and contrasting a task-matched graph against a density-matched wrong
-graph and all-to-all at byte-identical parameters and observations. That is the
+parameter-matched no-graph control. Our positioning relative to this lineage is
+therefore specific rather than a claim of first-ever: \citet{kok_2004_sparseq}
+and \citet{kok_2006_payoffprop} established that sparse task structure beats
+dense for tabular payoff propagation with \emph{known} payoffs; our contribution
+is the byte-matched-capacity isolation of that structure effect inside a deep
+function approximator under partial observability and private state, together
+with the density-matched wrong-graph control that separates \emph{which} edges
+carry the effect from sparsity, from learned graph selection, and from the act
+of having a graph at all. That specific combination of controls is, to our
+knowledge, what the graph-MARL literature through 2026 leaves open, and is the
 gap this study fills.
 
 \paragraph{Communication under partial observability.} A parallel line of
@@ -754,7 +802,10 @@ $t$ is
   r_t \;=\; \sum_{(i,j) \in \Egraph} \mathbf{1}\bigl[p_i^{(t)} = p_j^{(t)}\bigr],
 \]
 where $p_i^{(t)}$ is agent $i$'s grid position at $t$. Reward is therefore
-the count of \emph{graph edges} whose endpoints are co-located. Agents not
+the count of \emph{graph edges} whose endpoints are co-located---a
+pairwise-factored payoff over $\Gtask$ in the Guestrin\,/\,Kok--Vlassis sense
+\citep{guestrin_2002_coordrl,kok_2004_sparseq}, decomposing exactly into
+per-edge terms. Agents not
 linked by an edge have no reason to coordinate spatially: the graph is
 literally the coordination structure. Each agent observes its own
 normalised position, the relative displacement to each of its graph
@@ -804,6 +855,20 @@ clipping at 10.
         the only difference between the two is whether information
         crosses the coordination graph.
 \end{itemize}
+
+\paragraph{Execution cost: decentralised-with-local-communication.}
+One asymmetry the return comparison does not price is worth stating up front.
+The no-graph arms (\iql/\vdn/\qmix/\mlpqmix) execute with \emph{zero} runtime
+communication: each agent acts from its own observation. \gnnqmix\ (and the
+attention variants) instead run an $L$-layer message pass over $\Gtask$ at
+\emph{every} timestep, so each agent must exchange embeddings with its $L$-hop
+neighbours to compute its own $\Qi$. ``Decentralised execution'' for the graph
+arms therefore means decentralised-\emph{with}-local-communication, and the
+graph arm pays an $L$-hop per-step bandwidth cost the MLP control does not. At
+the negative endpoint this only strengthens the conclusion---the graph arm buys
+no return while incurring a communication cost the no-graph arm avoids---so we
+do not attempt to charge for it in the metrics; we flag it because the
+``decentralised execution'' label is not equivalent across arms.
 
 \paragraph{Why this matters: isolating graph from capacity.} The mixer,
 optimiser, exploration schedule and per-agent encoder \emph{stem} are
@@ -1290,7 +1355,10 @@ $p_{\text{Holm}}$ across the two sweeps (both correct per family).
 \subsection{A task where structure is load-bearing by construction}
 \label{sec:pairrouting}
 
-\pairrouting\ is \coordgrid\ with a single change to the reward: every agent
+\pairrouting\ abstracts a recurring multi-agent-systems pattern---distributed
+task allocation / routing under partial observability with private goals, where
+each agent's target is known only to a specific counterpart. Concretely it is
+\coordgrid\ with a single change to the reward: every agent
 privately observes \emph{its own} goal and is rewarded (dense toroidal
 proximity) for reaching its \emph{partner's} goal, where a fixed perfect
 matching defines partners. Partners must therefore exchange goals across
@@ -1666,7 +1734,12 @@ not a lack of budget. The learning curves make this direct
 stay within a few points of the floor while every true-graph arm climbs steeply, so
 ``attention over all-to-all merely needs more training'' is refuted by
 measurement, not deferred. We bound the claim to the budgets we tested (30k and
-150k) rather than asserting impossibility in principle. The result stands: an
+150k) rather than asserting impossibility in principle. Stated as a
+sample-efficiency comparison---the register these results support---a fixed
+task-matched structure is dramatically more sample-efficient than learning to
+target over all-to-all: at \emph{both} tested budgets the matched graph wins,
+and the gap \emph{widens} rather than closes ($d{\approx}5$ at 30k to
+$d{\approx}12$ at 150k). The result stands: an
 expressive, well-trained attention
 aggregator does \emph{not} recover the routing advantage from the wrong
 structure within the same budget that suffices given the right graph---so
@@ -1716,8 +1789,10 @@ over all-to-all. (An earlier 3-seed run of this cell was underpowered; the
 
 Everything above is \coordgrid, a navigation task; the effect could be a
 gridworld artefact. To rule that out we replicate the structure test in a
-\emph{completely different} environment---\tokenmatch, a referential matching
-game with \emph{no grid, no movement, no navigation}: each agent privately
+\emph{completely different} environment---\tokenmatch, a referential
+coordination / signalling game (the abstraction of agents that must communicate
+private symbols to act jointly) with \emph{no grid, no movement, no
+navigation}: each agent privately
 holds a token and must \emph{output its partner's token}, which can reach it
 only over the graph. The structure-isolating arms carry over unchanged (only
 \texttt{env.adjacency()} differs): \gtrue\ (the matching), \gwrong\ (a wrong
@@ -1859,7 +1934,10 @@ evaluation-rigour concerns of
 \emph{task-relevant} edges rather than all-to-all, only when agents must act
 on information held by specific others they cannot observe. The controls make
 the rule sharp, and we state it in the form the data support rather than as an
-absolute: with a fixed-budget learned aggregator, all-to-all recovers
+absolute: a fixed task-matched structure is dramatically more sample-efficient
+than learning to target over all-to-all (at both the 30k and 150k budgets the
+matched graph wins and the gap widens, $d{\approx}5\!\to\!12$). Within budget,
+all-to-all recovers
 \emph{at most partial} routing and never approaches the task-matched graph
 (${\approx}7\%$ of the gap on \pairrouting---about one point above the
 no-communication floor, a statistically detectable sliver of routing,
@@ -1985,17 +2063,23 @@ We list explicit limitations rather than burying them.
         parity) but do not sweep the full stabilisation/normalisation design
         space, and learned message passing (\algoname{GIN}) and edge-feature
         GNNs remain open.
-  \item \textbf{Positive endpoint is still a synthetic-task result.} The
-        positive boundary (Section~\ref{sec:results:structure}) is a
-        constructed-task existence/boundary result. It now replicates out of
-        harness in a structurally unrelated, non-spatial environment
-        (\tokenmatch, Section~\ref{sec:structure:tokenmatch}), so it is not a
-        \coordgrid\ artefact; but both \tokenmatch\ and \pairrouting\ are
-        purpose-built cooperative tasks with a private-partner-routing
-        structure. Replication on a standard third-party benchmark (an MPE/LBF
-        variant with private per-agent goals) remains future work, and we do
-        not generalise beyond ``task-structured routing under partial
-        information.''
+  \item \textbf{Positive endpoint is a boundary result on constructed
+        archetypes.} The positive boundary
+        (Section~\ref{sec:results:structure}) is an existence/boundary result on
+        two deliberately constructed tasks, each an abstraction of a canonical
+        multi-agent-systems problem: \pairrouting\ of distributed task
+        allocation / routing under partial observability with private goals, and
+        \tokenmatch\ of referential coordination / signalling. Using
+        purpose-built tasks is the design that isolates structure from capacity,
+        convention, and observability; the effect is not confined to one
+        environment, replicating across the structurally unrelated, non-spatial
+        \tokenmatch\ (Section~\ref{sec:structure:tokenmatch}), so it is not a
+        \coordgrid\ artefact. Both tasks nonetheless share a
+        private-partner-routing structure by construction; extending the
+        measurement to a standard third-party benchmark instantiating these
+        archetypes (an MPE/LBF variant with private per-agent goals) is the
+        natural next step, and we do not generalise beyond ``task-structured
+        routing under partial information.''
   \item \textbf{Mis-specification is sampled only at the endpoints.} We contrast
         an exactly-correct graph against a fully-wrong matching and all-to-all,
         but not the intermediate case a practitioner faces---a graph with a
@@ -2064,10 +2148,12 @@ attenuation), and replicates out of harness in a
 non-spatial token-matching game (\tokenmatch), so it is not a gridworld
 artefact. The practical rule that unifies the two: route along task-relevant
 edges, not all-to-all, only when agents must act on information held by
-specific others they cannot observe. The positive endpoint remains a
-synthetic-task result---replication on a standard third-party benchmark with
-private per-agent goals is the natural next step. We release the harness and
-the \mlpqmix\ control to make such measurements cheaper.
+specific others they cannot observe. The positive endpoint is a boundary
+result on constructed archetypes of distributed routing and referential
+signalling; extending it to a standard third-party benchmark that instantiates
+those archetypes (with private per-agent goals) is the natural next step. We
+release the harness and the \mlpqmix\ control to make such measurements
+cheaper.
 
 \section*{Broader Impact Statement}
 
@@ -2259,8 +2345,10 @@ Section~\ref{sec:results:mpe}. Figure~\ref{fig:mpe} is the MPE analogue of
 the \coordgrid\ capacity-control figure (Figure~\ref{fig:phase8}): at
 $N{=}3$ the three algorithms are indistinguishable, while at $N{=}6$
 \mlpqmix\ pulls above \qmix\ (capacity helps) and \gnnqmix\ drops below
-both (the graph penalty). The coordination graph is the $k{=}2$
-nearest-neighbour graph over agent positions, recomputed each episode and
+both (the graph penalty). The interaction graph here is a $k{=}2$
+proximity (nearest-neighbour) graph over agent positions---an
+\emph{estimated} interaction graph, not a task-defined coordination graph in
+the sense of Section~\ref{sec:env}---recomputed each episode and
 held fixed within it (Section~\ref{sec:results:mpe}); the trainer reads it
 once per episode exactly as for \coordgrid.
 
