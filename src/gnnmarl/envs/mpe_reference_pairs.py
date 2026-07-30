@@ -78,6 +78,7 @@ _NATIVE_N_ACTIONS = _MOVE_DIM * _SAY_DIM  # 50
 _FIXED_SAY = 0  # constant say symbol when comm is off
 
 _VALID_GRAPHS = ("true", "wrong", "complete")
+_VALID_ORACLE_MODES = ("color", "position")
 
 
 class MPEReferencePairs(MultiAgentEnv):
@@ -107,13 +108,37 @@ class MPEReferencePairs(MultiAgentEnv):
         observation vector; with comm disabled the observation is byte-
         identical across ``graph`` values).
     oracle
-        If ``True``, concatenate the partner's ``goal_id`` block (i.e. this
-        agent's *own* target, which the partner holds — see module
-        docstring) directly into each agent's observation, short-circuiting
-        the need to route it over any graph. This is a descriptive headroom
-        ceiling, not a controlled arm: ``obs_dim`` is ``24`` instead of
-        ``21`` in this mode (that is expected and documented — see design
-        doc section 3, "param-match its nets accordingly").
+        If ``True``, concatenate this agent's own target directly into its
+        observation, short-circuiting the need to route it over any graph.
+        This is a descriptive headroom ceiling, not a controlled arm:
+        ``obs_dim`` grows relative to ``21`` in this mode (by 3 for
+        ``oracle_mode="color"``, by 2 for ``oracle_mode="position"`` — see
+        ``oracle_mode`` below; expected and documented, see design doc
+        section 3, "param-match its nets accordingly").
+    oracle_mode
+        Only meaningful when ``oracle=True``. One of:
+
+        * ``"color"`` (default) — inject the partner's ``goal_id`` block
+          (i.e. this agent's own target's *color*, which the partner holds
+          — see module docstring). ``obs_dim`` is ``24``. This is the arm
+          used throughout the confirmatory pre-registration
+          (``results/phaseD_external/PREREGISTRATION.md``); the network
+          must learn the env's static color->landmark-index->position
+          lookup to exploit it.
+        * ``"position"`` — inject the same own-target landmark's *relative
+          position* instead of its color (``obs_dim`` is ``23``), read
+          directly from the underlying ``mpe2`` world state
+          (``partner.goal_b.state.p_pos - self.state.p_pos``, matching
+          ``scripts/phaseD_greedy_reference.py``'s ``greedy_target``
+          policy's own target computation). This removes the color->slot
+          indirection entirely: the network is handed exactly where to
+          steer, only "steering" remains to be learned. Authorized as a
+          **diagnostic-only** arm
+          (``results/phaseD_external/PREREGISTRATION.md`` AMENDMENT 1) to
+          disambiguate a budget/training shortfall from an ungrounded
+          color->index mapping if the color-mode oracle gate fails; it is
+          never part of the confirmatory contrast family or the oracle
+          gate itself.
     comm_on
         If ``True``, leave the native ``say`` channel and the full
         ``Discrete(50)`` action space intact (``n_actions=50``) and do NOT
@@ -137,6 +162,7 @@ class MPEReferencePairs(MultiAgentEnv):
         *,
         graph: str = "true",
         oracle: bool = False,
+        oracle_mode: str = "color",
         comm_on: bool = False,
         max_cycles: int = 25,
         local_ratio: float = 0.5,
@@ -152,6 +178,8 @@ class MPEReferencePairs(MultiAgentEnv):
                 f"disjoint from the true pairing does not exist at k={k} (N=2, "
                 "true and complete coincide -- see design doc section 2a)"
             )
+        if oracle_mode not in _VALID_ORACLE_MODES:
+            raise ValueError(f"oracle_mode must be one of {_VALID_ORACLE_MODES}, got {oracle_mode!r}")
 
         try:
             # simple_reference moved out of pettingzoo into the standalone
@@ -170,12 +198,16 @@ class MPEReferencePairs(MultiAgentEnv):
         self.k = int(k)
         self.graph = graph
         self.oracle = bool(oracle)
+        self.oracle_mode = oracle_mode
         self.comm_on = bool(comm_on)
         self.max_cycles = int(max_cycles)
         self.local_ratio = float(local_ratio)
 
         self.n_agents = 2 * self.k
-        self.obs_dim = _SUBENV_OBS_DIM + (3 if self.oracle else 0)
+        _oracle_extra_dim = 0
+        if self.oracle:
+            _oracle_extra_dim = 3 if self.oracle_mode == "color" else 2
+        self.obs_dim = _SUBENV_OBS_DIM + _oracle_extra_dim
         self.state_dim = self.obs_dim * self.n_agents
         self.n_actions = _NATIVE_N_ACTIONS if self.comm_on else _MOVE_DIM
 
@@ -331,13 +363,35 @@ class MPEReferencePairs(MultiAgentEnv):
         if not self.oracle:
             return obs
 
-        # Oracle: concatenate the partner's goal_color block -- which is
-        # this agent's OWN target, held only by the partner (see module
-        # docstring) -- so the routing problem is solved for free.
         out = np.zeros((n, self.obs_dim), dtype=np.float32)
         out[:, :_SUBENV_OBS_DIM] = obs
-        for kk in range(self.k):
-            g0, g1 = 2 * kk, 2 * kk + 1
-            out[g0, _SUBENV_OBS_DIM:] = raw[g1, _GOAL_SLICE]
-            out[g1, _SUBENV_OBS_DIM:] = raw[g0, _GOAL_SLICE]
+
+        if self.oracle_mode == "color":
+            # Oracle (color): concatenate the partner's goal_color block --
+            # which is this agent's OWN target, held only by the partner
+            # (see module docstring) -- so the routing problem is solved for
+            # free, modulo the network still having to learn the env's
+            # static color->landmark-index->position lookup.
+            for kk in range(self.k):
+                g0, g1 = 2 * kk, 2 * kk + 1
+                out[g0, _SUBENV_OBS_DIM:] = raw[g1, _GOAL_SLICE]
+                out[g1, _SUBENV_OBS_DIM:] = raw[g0, _GOAL_SLICE]
+        else:  # "position" -- diagnostic-only, PREREGISTRATION.md AMENDMENT 1.
+            # Same own-target landmark as "color" mode, but its RELATIVE
+            # POSITION read directly from the mpe2 world state, bypassing
+            # the color->index indirection entirely (matches
+            # scripts/phaseD_greedy_reference.py's greedy_target own-target
+            # computation: partner.goal_b.state.p_pos - self.state.p_pos).
+            for kk in range(self.k):
+                world = self._envs[kk].unwrapped.world
+                a0, a1 = world.agents[0], world.agents[1]
+                g0, g1 = 2 * kk, 2 * kk + 1
+                out[g0, _SUBENV_OBS_DIM:] = (
+                    np.asarray(a1.goal_b.state.p_pos, dtype=np.float32)
+                    - np.asarray(a0.state.p_pos, dtype=np.float32)
+                )
+                out[g1, _SUBENV_OBS_DIM:] = (
+                    np.asarray(a0.goal_b.state.p_pos, dtype=np.float32)
+                    - np.asarray(a1.state.p_pos, dtype=np.float32)
+                )
         return out

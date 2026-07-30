@@ -173,6 +173,66 @@ def test_oracle_mode_exposes_partner_goal_and_widens_obs() -> None:
     env.close()
 
 
+def test_oracle_position_mode_injects_relative_position_not_color() -> None:
+    """AMENDMENT 1 (results/phaseD_external/PREREGISTRATION.md): diagnostic-
+    only oracle_mode="position" injects the same own-target landmark as
+    oracle_mode="color", but its RELATIVE POSITION (read from the mpe2 world
+    state) rather than its color -- obs_dim shrinks to 23 (2 floats) instead
+    of 24 (3 floats), and the injected values must match
+    partner.goal_b.state.p_pos - self.state.p_pos exactly (the same
+    computation scripts/phaseD_greedy_reference.py's greedy_target policy
+    uses for its own-target displacement)."""
+    env = MPEReferencePairs(k=3, graph="true", oracle=True, oracle_mode="position", seed=0)
+    assert env.obs_dim == 23
+    out = env.reset(seed=0)
+    assert out.obs.shape == (6, 23)
+
+    for kk in range(env.k):
+        world = env._envs[kk].unwrapped.world
+        a0, a1 = world.agents[0], world.agents[1]
+        g0, g1 = 2 * kk, 2 * kk + 1
+
+        expected_g0 = np.asarray(a1.goal_b.state.p_pos) - np.asarray(a0.state.p_pos)
+        expected_g1 = np.asarray(a0.goal_b.state.p_pos) - np.asarray(a1.state.p_pos)
+        assert np.allclose(out.obs[g0, 21:23], expected_g0, atol=1e-5)
+        assert np.allclose(out.obs[g1, 21:23], expected_g1, atol=1e-5)
+
+        # Sanity: this must NOT equal the color-mode injection (different
+        # quantity, different units) -- guards against a copy-paste bug that
+        # silently reused the color slice.
+        own_target_color_g0 = a1.goal_b.color
+        assert not np.allclose(out.obs[g0, 21:23], own_target_color_g0[:2], atol=1e-3)
+
+    # Position mode must still respect the comm-disable contract.
+    assert np.all(out.obs[:, 11:21] == 0.0)
+
+    step_out = env.step(np.zeros(6, dtype=np.int64))
+    assert step_out.obs.shape == (6, 23)
+    assert np.all(np.isfinite(step_out.obs))
+    env.close()
+
+
+def test_oracle_mode_default_is_color_and_unchanged() -> None:
+    """Default oracle_mode="color" must reproduce the pre-existing
+    obs_dim=24 behavior byte-for-byte -- no change to the already-authorized
+    confirmatory `oracle` arm."""
+    env_default = MPEReferencePairs(k=3, graph="true", oracle=True, seed=0)
+    env_explicit = MPEReferencePairs(
+        k=3, graph="true", oracle=True, oracle_mode="color", seed=0
+    )
+    assert env_default.obs_dim == env_explicit.obs_dim == 24
+    out_default = env_default.reset(seed=0)
+    out_explicit = env_explicit.reset(seed=0)
+    assert np.array_equal(out_default.obs, out_explicit.obs)
+    env_default.close()
+    env_explicit.close()
+
+
+def test_invalid_oracle_mode_raises() -> None:
+    with pytest.raises(ValueError, match="oracle_mode must be one of"):
+        MPEReferencePairs(k=3, graph="true", oracle=True, oracle_mode="nonsense", seed=0)
+
+
 def test_oracle_mode_comm_still_zeroed_by_default() -> None:
     env = MPEReferencePairs(k=3, graph="true", oracle=True, seed=0)
     out = env.reset(seed=0)
