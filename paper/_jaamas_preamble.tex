@@ -1,0 +1,185 @@
+% =========================================================================
+% JAAMAS (Springer sn-jnl) front-matter / preamble template.
+%
+% This file is NOT compiled standalone. paper/_assemble_jaamas.py splices
+% four blocks of text lifted verbatim from paper/main.tex into the four
+% placeholder markers below (each marker appears exactly once in this
+% file -- do not repeat a marker token elsewhere, incl. in comments, or
+% the splice will insert content in the wrong place):
+%   1. the notation/result-macro placeholder -- every \newcommand line
+%      from main.tex's preamble (so new result macros defined there by
+%      future sweeps propagate automatically on the next re-run);
+%   2. the abstract-text placeholder -- main.tex's
+%      \begin{abstract}...\end{abstract} body (unedited, verbatim);
+%   3. the body placeholder -- main.tex's Introduction..Broader Impact
+%      Statement content (unedited, verbatim);
+%   4. the appendices placeholder -- main.tex's \appendix..\end{document}
+%      content (unedited, verbatim, wrapped in the appendices environment).
+%
+% Everything else in this file (class, packages, author/affiliation block,
+% keywords, Declarations text) is Springer/JAAMAS-specific scaffolding
+% hand-written for this port. It contains no scientific content.
+% =========================================================================
+
+% --- Document class ---------------------------------------------------
+% sn-basic = Basic Springer Nature Reference Style (author-year citations,
+% sn-basic.bst), the pairing JAAMAS (a Springer, non-Nature-Portfolio
+% journal) expects; confirmed against the template user manual sec. 7.9/8.3.
+% The class internally issues \bibliographystyle{sn-basic} and loads
+% natbib[authoryear] for this option -- do not load natbib or set a
+% bibliographystyle ourselves.
+\documentclass[sn-basic,pdflatex]{sn-jnl}
+
+% --- Packages -----------------------------------------------------------
+% sn-jnl.cls itself \RequirePackage's only: fontenc[T1], geometry (fixed
+% Springer page geometry -- do not reload/override), hyperref, hypcap,
+% breakurl, wrapfig; and (inside the sn-basic option branch) natbib in
+% author-year mode plus \bibliographystyle{sn-basic}. Re-loading any of
+% those five/six risks an option clash ("already defined").
+%
+% Confirmed EMPIRICALLY (not just from the manual's prose, which is
+% ambiguous about who loads what): graphicx, multirow, amsmath, amssymb,
+% amsfonts, amsthm, xcolor, textcomp, manyfoot, booktabs, algorithm,
+% algorithmicx, algpseudocode, the appendix package, and
+% enumitem/subcaption/microtype are NOT auto-loaded by the class -- they
+% are listed in the manual only as "packages the class depends on" and
+% must be \usepackage'd by the document, exactly as the class's own
+% sn-article.tex sample does. Omitting amsmath in particular breaks the
+% class's own \begin{document} hook (it calls \allowdisplaybreaks), so
+% this list is load-bearing, not decorative.
+%
+% mathrsfs and listings are in the class's dependency table too, but
+% main.tex uses neither \mathscr{} nor lstlisting -- loading mathrsfs
+% anyway produced spurious "Font shape U/rsfs/m/n ... not available" font
+% warnings at the reduced table sizes below with zero benefit, so both are
+% dropped (load what main.tex uses, not the sample's maximal set).
+\usepackage{graphicx}
+\usepackage{multirow}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{amsthm}
+\usepackage[title]{appendix}
+\usepackage{xcolor}
+\usepackage{textcomp}
+\usepackage{manyfoot}
+\usepackage{booktabs}
+\usepackage{algorithm}
+\usepackage{algorithmicx}
+\usepackage{algpseudocode}
+% What main.tex additionally needs, beyond the class's own dependency set:
+\usepackage{enumitem}   % \begin{enumerate}[leftmargin=*,...] / description[style=nextline]
+                         % used throughout Sections 1, Hypotheses, etc.
+% caption (pulled in by subcaption) does not recognise sn-jnl and warns
+% "Unknown document class, standard defaults will be used" at load time.
+% Tried compatibility=false to keep caption from patching \@makecaption at
+% all: that instead raises a hard "Package caption Error: Can be used only
+% in preamble" the first time \begin{subfigure} executes in the body (a
+% known interaction of that option with lazy first-use subfloat setup).
+% So: plain load, and the harmless-in-practice fallback the warning
+% announces (verified visually against the class's own caption style --
+% see build report) is accepted rather than fought further.
+\usepackage{subcaption}
+\usepackage[protrusion=true,expansion=false]{microtype}  % same settings main.tex used under TMLR
+% bookmark: hyperref's own PDF-outline builder warns "Difference (N)
+% between bookmark levels is greater than one" whenever an unnumbered
+% \section*{} (Broader Impact Statement, Declarations) is followed by a
+% numbered \section (an \appendix one) more than one level apart in the
+% outline tree it infers. The bookmark package rebuilds outlines from
+% \label-level structure instead of guessing from heading numbers, which
+% resolves the level jump without renumbering or renaming any section.
+\usepackage{bookmark}
+% \emergencystretch (standard, non-\sloppy last-resort stretch budget for
+% otherwise-unbreakable lines) and a slightly relaxed \tolerance: sn-jnl's
+% single-column text (31pc =~ 372pt) is narrower than TMLR's (6.5in =
+% 468pt), which pushes a handful of lines with long macro-heavy technical
+% terms (\textsc{} algorithm names, citation author/venue strings the
+% sn-basic bibliography style renders) into moderate-badness underfull
+% territory. This does not touch text content or line-breaking decisions
+% for lines that already break well; it only gives TeX a bit more room on
+% the few that would otherwise break badly.
+\tolerance=9999
+\emergencystretch=3em
+% sn-jnl.cls globally \gdef's \orcidlogo (via \includegraphics{Orcidlogo.eps},
+% an asset the template package does not ship) purely so its own \orcid{URL}
+% macro has something to call. The orcidlink package (self-contained, no
+% external image) also names its internal macro \orcidlogo, so loading it
+% after the class errors with "Command \orcidlogo already defined." Clear
+% the class's definition first so orcidlink's \newcommand succeeds; we then
+% use orcidlink's public \orcidlink{ID} macro, not the class's \orcid{URL}.
+\let\orcidlogo\relax
+\usepackage{orcidlink}   % \orcidlink{...} -- vector ORCID icon, no external
+                         % image file needed (sn-jnl's own \orcid{} macro
+                         % requires a missing Orcidlogo.eps asset; avoided).
+
+% \Description{...} is an acmart-specific figure-accessibility alt-text
+% macro used by the shared results/phase2.tex and results/phase4.tex
+% \input files. It carries no visible content under sn-jnl either, so we
+% no-op it exactly as main.tex does under tmlr.sty.
+\providecommand{\Description}[1]{}
+
+% --- Notation / result macros, lifted verbatim from main.tex -----------
+% (every \newcommand line in main.tex's preamble; \def lines --
+% \month/\year/\openreview, TMLR camera-ready metadata -- are dropped as
+% unused outside the TMLR accepted-mode title block.)
+__NOTATION_MACROS__
+
+\raggedbottom
+
+\begin{document}
+
+% =========================================================================
+% Front matter (title / authors / affiliations / abstract / keywords).
+% De-anonymized per JAAMAS single-blind policy.
+% =========================================================================
+
+\title[When Does Graph Structure Help in MARL?]{When Does Graph Structure Help in Multi-Agent Reinforcement Learning? A Controlled Boundary}
+
+\author*[1]{\fnm{Ali} \sur{Jabbary}\orcidlink{0000-0003-0573-6909}}\email{st\_a.jabbary@urmia.ac.ir}
+
+\author[2]{\fnm{Kasra} \sur{Ghanavati}}\email{kg1111r@gre.ac.uk}
+
+\affil*[1]{\orgdiv{Department of Mechanical Engineering}, \orgname{Urmia University}, \orgaddress{\city{Urmia}, \country{Iran}}}
+
+\affil[2]{\orgname{University of Greenwich}, \orgaddress{\city{London}, \country{United Kingdom}}}
+
+\abstract{__ABSTRACT_TEXT__}
+
+% Six keywords (JAAMAS wants 4-6). sn-jnl's \keywords macro prints its
+% argument verbatim after "Keywords:" with no special handling of \and
+% (that command is only meaningful inside \author's multi-author list
+% machinery); comma-separated, matching the class's own sample usage,
+% renders correctly.
+\keywords{multi-agent reinforcement learning, coordination graphs, graph neural networks, value factorization, communication topology, empirical methodology}
+
+\maketitle
+
+__BODY__
+
+\backmatter
+
+% =========================================================================
+% Statements and Declarations (sn-jnl \backmatter convention: after the
+% main text / Broader Impact Statement, before the bibliography and
+% appendices -- matches the ordering in the class's own sn-article.tex
+% sample).
+% =========================================================================
+\section*{Declarations}
+
+\begin{itemize}
+\item \textbf{Funding.} The authors received no financial support for the research, authorship, or publication of this article.
+\item \textbf{Competing interests.} The authors have no competing interests to declare that are relevant to the content of this article.
+\item \textbf{Ethics approval and consent to participate.} Not applicable.
+\item \textbf{Consent for publication.} Not applicable.
+\item \textbf{Data availability.} All code, configurations, per-run manifests, and analysis scripts are available at \url{https://github.com/Evasion-OC/when-graphs-help-marl}.
+\item \textbf{Materials availability.} Not applicable.
+\item \textbf{Code availability.} All code is available at \url{https://github.com/Evasion-OC/when-graphs-help-marl}.
+\item \textbf{Use of AI tools.} Large language model tools (Claude, Anthropic) were used extensively under author direction for code implementation, statistical analysis pipelines, and manuscript drafting; all experimental designs, decision rules, and final claims were reviewed and approved by the authors, who take full responsibility for the content.
+\item \textbf{Author contributions.} Jabbary: conceptualization, methodology, software, investigation, formal analysis, writing---original draft, writing---review and editing, supervision. Ghanavati: validation, writing---review and editing.
+\end{itemize}
+
+\bibliography{references}
+
+\begin{appendices}
+__APPENDICES__
+\end{appendices}
+
+\end{document}
