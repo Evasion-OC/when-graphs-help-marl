@@ -1,0 +1,13 @@
+arm,algo,env_graph,cell,task,suite,obs,n_agents,seed,run_dir,steps,n_episodes,final
+dcg_canonical_true,dcg,matching,B,B,classical,ego,6,0,results\phaseC_classical\cellB_N6_ego_smoke\dcg_canonical_true__cellB_N6_ego_smoke__seed0,3000,120,49.395833333333336
+dcg_canonical_true,dcg,matching,B,B,classical,ego,6,1,results\phaseC_classical\cellB_N6_ego_smoke\dcg_canonical_true__cellB_N6_ego_smoke__seed1,3000,120,51.104166666666664
+dcg_canonical_true,dcg,matching,B,B,classical,ego,6,2,results\phaseC_classical\cellB_N6_ego_smoke\dcg_canonical_true__cellB_N6_ego_smoke__seed2,3000,120,48.9375
+dcg_jointobs_complete,dcg,complete,B,B,classical,ego,6,0,results\phaseC_classical\cellB_N6_ego_smoke\dcg_jointobs_complete__cellB_N6_ego_smoke__seed0,3000,120,50.8125
+dcg_jointobs_complete,dcg,complete,B,B,classical,ego,6,1,results\phaseC_classical\cellB_N6_ego_smoke\dcg_jointobs_complete__cellB_N6_ego_smoke__seed1,3000,120,50.8125
+dcg_jointobs_complete,dcg,complete,B,B,classical,ego,6,2,results\phaseC_classical\cellB_N6_ego_smoke\dcg_jointobs_complete__cellB_N6_ego_smoke__seed2,3000,120,50.791666666666664
+dcg_jointobs_true,dcg,matching,B,B,classical,ego,6,0,results\phaseC_classical\cellB_N6_ego_smoke\dcg_jointobs_true__cellB_N6_ego_smoke__seed0,3000,120,49.166666666666664
+dcg_jointobs_true,dcg,matching,B,B,classical,ego,6,1,results\phaseC_classical\cellB_N6_ego_smoke\dcg_jointobs_true__cellB_N6_ego_smoke__seed1,3000,120,51.229166666666664
+dcg_jointobs_true,dcg,matching,B,B,classical,ego,6,2,results\phaseC_classical\cellB_N6_ego_smoke\dcg_jointobs_true__cellB_N6_ego_smoke__seed2,3000,120,47.791666666666664
+dcg_jointobs_wrong,dcg,matching_wrong,B,B,classical,ego,6,0,results\phaseC_classical\cellB_N6_ego_smoke\dcg_jointobs_wrong__cellB_N6_ego_smoke__seed0,3000,120,50.9375
+dcg_jointobs_wrong,dcg,matching_wrong,B,B,classical,ego,6,1,results\phaseC_classical\cellB_N6_ego_smoke\dcg_jointobs_wrong__cellB_N6_ego_smoke__seed1,3000,120,48.041666666666664
+dcg_jointobs_wrong,dcg,matching_wrong,B,B,classical,ego,6,2,results\phaseC_classical\cellB_N6_ego_smoke\dcg_jointobs_wrong__cellB_N6_ego_smoke__seed2,3000,120,49.729166666666664

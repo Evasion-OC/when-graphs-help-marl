@@ -1,0 +1,13 @@
+arm,algo,env_graph,cell,task,suite,obs,n_agents,seed,run_dir,steps,n_episodes,final
+dcg_canonical,dcg,ring,A,A,classical,full,4,0,results\phaseC_classical\cellA_N4_full_smoke\dcg_canonical__cellA_N4_full_smoke__seed0,3000,120,9.0
+dcg_canonical,dcg,ring,A,A,classical,full,4,1,results\phaseC_classical\cellA_N4_full_smoke\dcg_canonical__cellA_N4_full_smoke__seed1,3000,120,8.791666666666666
+dcg_canonical,dcg,ring,A,A,classical,full,4,2,results\phaseC_classical\cellA_N4_full_smoke\dcg_canonical__cellA_N4_full_smoke__seed2,3000,120,14.333333333333334
+dcg_jointobs,dcg,ring,A,A,classical,full,4,0,results\phaseC_classical\cellA_N4_full_smoke\dcg_jointobs__cellA_N4_full_smoke__seed0,3000,120,10.666666666666666
+dcg_jointobs,dcg,ring,A,A,classical,full,4,1,results\phaseC_classical\cellA_N4_full_smoke\dcg_jointobs__cellA_N4_full_smoke__seed1,3000,120,9.625
+dcg_jointobs,dcg,ring,A,A,classical,full,4,2,results\phaseC_classical\cellA_N4_full_smoke\dcg_jointobs__cellA_N4_full_smoke__seed2,3000,120,11.083333333333334
+gnn_true,gnn_qmix,ring,A,A,classical,full,4,0,results\phaseC_classical\cellA_N4_full_smoke\gnn_true__cellA_N4_full_smoke__seed0,3000,120,4.291666666666667
+gnn_true,gnn_qmix,ring,A,A,classical,full,4,1,results\phaseC_classical\cellA_N4_full_smoke\gnn_true__cellA_N4_full_smoke__seed1,3000,120,2.5833333333333335
+gnn_true,gnn_qmix,ring,A,A,classical,full,4,2,results\phaseC_classical\cellA_N4_full_smoke\gnn_true__cellA_N4_full_smoke__seed2,3000,120,5.666666666666667
+mlp,mlp_qmix,ring,A,A,classical,full,4,0,results\phaseC_classical\cellA_N4_full_smoke\mlp__cellA_N4_full_smoke__seed0,3000,120,22.208333333333332
+mlp,mlp_qmix,ring,A,A,classical,full,4,1,results\phaseC_classical\cellA_N4_full_smoke\mlp__cellA_N4_full_smoke__seed1,3000,120,14.083333333333334
+mlp,mlp_qmix,ring,A,A,classical,full,4,2,results\phaseC_classical\cellA_N4_full_smoke\mlp__cellA_N4_full_smoke__seed2,3000,120,22.583333333333332
