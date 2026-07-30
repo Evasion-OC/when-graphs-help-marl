@@ -381,6 +381,54 @@ advantage by tuning `mlp` down or `gnn_true` up — house rule) before
 re-spending a full smoke budget. Both are genuinely new decisions for the
 authors, not implied by the existing pre-registration.
 
+### A.6 Correction to A.4 (caught in post-hoc review, before any further action)
+
+**`greedy_target` is NOT "exactly the info `oracle` mode injects" as A.4
+claimed — it is strictly stronger.** Verified directly:
+`_GOAL_SLICE = slice(8, 11)` in `mpe_reference_pairs.py` is the target
+landmark's **color** (a fixed 3-vector — `mpe2`'s `reset_world` hardcodes
+`landmarks[0].color=[.75,.25,.25]` (red), `[1]=[.25,.75,.25]` (green),
+`[2]=[.25,.25,.75]` (blue), **identically on every episode/seed**, only
+`state.p_pos` — the landmark *positions* the agent separately observes via
+`entity_pos` — is re-randomized per episode). `scripts/phaseD_greedy_reference.py`'s
+`greedy_target` policy instead reads `goal_b.state.p_pos` directly from the
+`mpe2` world object — the landmark's actual position, bypassing the
+color→landmark-index→position lookup the `oracle` arm's network would
+actually have to perform (map the injected 3-dim color to one of the three
+fixed-order `entity_pos` slots, then steer to that slot's position). So
+**−31.64 is a position-omniscient ceiling, not the `oracle` arm's true
+achievable ceiling** — A.4 established *information sufficiency* (color
+does determine the target unambiguously, under an always-fixed
+color↔landmark-index mapping) but did **not** establish *learnability* of
+that indirection within 30k steps. The oracle arm plateauing exactly at the
+blind `greedy_centroid` level is therefore consistent with EITHER (i) a
+budget shortfall (A.5's original reading) OR (ii) the network never having
+grounded the static color→slot mapping at all — the diagnostic in A.4
+cannot distinguish these, because it skips the indirection entirely.
+
+One fact favours (i) being worth testing rather than dismissed: the
+color→landmark-index mapping is **static across every episode** (not
+re-randomized), so it is a fixed function learnable in principle by a
+shallow net without any per-episode relational binding — a plausibly easy
+target for more gradient steps, not a fundamentally hard credit-assignment
+problem. But this is a plausibility argument, not evidence; a genuine
+learnability test (not attempted here) would need either substantially more
+training or a probe specifically isolating the color→slot mapping.
+
+**This does not change the verdict in A.5** — NO-GO stands, nothing is
+launched, cell R/E0 remain held. It changes the recommendation's framing:
+a re-smoke at a larger budget should be described to authors as **testing
+whether the color→landmark-index indirection is learnable**, not as
+"confirming known headroom the oracle should reach" (authors must not read
+−31.64 as the oracle arm's expected ceiling with more steps). A cleaner
+alternative operationalization, worth considering instead of/alongside a
+budget increase: redefine `oracle` to inject the target landmark's
+*relative position* directly (rather than its color) — that is the more
+honest "routing done for free" ceiling A.4 intended, and removes the
+indirection-learnability confound entirely. This is a design change, not
+implied by the current pre-registration, and would need its own
+authorization before implementation.
+
 ## 9. Validity gates (summary, expanded in section 4)
 
 - Privacy confirmed by source inspection (section 1a) AND empirically (`mlp`
