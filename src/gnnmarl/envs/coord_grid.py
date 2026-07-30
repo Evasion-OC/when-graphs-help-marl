@@ -42,6 +42,8 @@ _VALID_GRAPHS = (
     "matching",
     "matching_wrong",
     "skip_ring",
+    "relay",
+    "relay_wrong",
 )
 _VALID_OBS_MODES = ("full", "ego", "radius")
 
@@ -73,6 +75,16 @@ class CoordGrid:
         algorithm receives the same input shape.
     obs_radius
         Required when ``obs_mode="radius"``; the visibility radius in cells.
+    relay_routing
+        Two-hop relay task (Stage C, ``docs/CLASSICAL_CG_BASELINE_DESIGN.md``
+        cell C). ``n_agents`` must be a multiple of 3 and >= 6: agent
+        ``3k`` is the source, ``3k+1`` the relay, ``3k+2`` the sink of chain
+        ``k``. The source privately observes a goal ``g_s`` that only the
+        sink's reward depends on (``prox(pos_t, g_s)``); the relay is
+        rewarded for its own, independent private goal ``g_r`` (so it has no
+        task incentive to condition its action on ``g_s``). Use ``graph``
+        ``"relay"`` (true chain edges), ``"relay_wrong"`` (degree-matched
+        mis-wiring, see :meth:`_build_adjacency`) or ``"complete"``.
     """
 
     n_actions: int = 5
@@ -92,6 +104,7 @@ class CoordGrid:
         goal_dense: bool = False,
         pair_routing: bool = False,
         nbr_routing: bool = False,
+        relay_routing: bool = False,
     ) -> None:
         if n_agents < 1:
             raise ValueError(f"n_agents must be >= 1, got {n_agents}")
@@ -130,6 +143,12 @@ class CoordGrid:
             raise ValueError(
                 "graph='skip_ring' (the +-2 ring) needs n_agents >= 5 so it is "
                 f"2-regular and edge-disjoint from the +-1 ring; got {n_agents}"
+            )
+
+        if graph in ("relay", "relay_wrong") and (n_agents % 3 != 0 or n_agents < 6):
+            raise ValueError(
+                f"graph={graph!r} requires n_agents to be a multiple of 3 and >= 6 "
+                f"(two or more disjoint source-relay-sink chains); got n_agents={n_agents}"
             )
 
         if graph == "erdos_renyi" and not (0.0 <= er_prob <= 1.0):
@@ -207,6 +226,26 @@ class CoordGrid:
                 f"got n_agents={n_agents}"
             )
 
+        # Relay-routing task (Stage C cell C, docs/CLASSICAL_CG_BASELINE_DESIGN.md
+        # section 2): two-or-more disjoint source-relay-sink chains. The source's
+        # private goal is only ever consumed by the SINK's reward, two hops away;
+        # the relay is rewarded for its own, unrelated private goal, so it has no
+        # task incentive to let its action carry the source's goal onward. This
+        # is the mechanism that a 1-hop pairwise payoff factor structurally
+        # cannot propagate, unlike a >=2-layer GNN which composes features across
+        # both hops regardless of the relay's action.
+        self.relay_routing = bool(relay_routing)
+        if self.relay_routing and (self.goal_routing or self.pair_routing or self.nbr_routing):
+            raise ValueError(
+                "relay_routing is mutually exclusive with goal_routing / "
+                "pair_routing / nbr_routing"
+            )
+        if self.relay_routing and (n_agents % 3 != 0 or n_agents < 6):
+            raise ValueError(
+                "relay_routing requires n_agents to be a multiple of 3 and >= 6 "
+                f"(two or more disjoint source-relay-sink chains); got n_agents={n_agents}"
+            )
+
         self.n_agents = int(n_agents)
         self.grid_size = int(grid_size)
         self.episode_steps = int(episode_steps)
@@ -240,9 +279,11 @@ class CoordGrid:
 
         # Goal block (3 slots: has-goal flag + normalized goal x/y) is appended in
         # goal-routing mode (filled only for the source agent) and in pair/nbr
-        # routing (filled for *every* agent with its own private goal).
+        # routing (filled for *every* agent with its own private goal). Relay
+        # routing also needs 3 slots, but only source/relay agents get theirs
+        # filled (see ``_compute_obs``) -- the sink's own goal is unused.
         self._private_goals = self.pair_routing or self.nbr_routing
-        self._goal_slots = 3 if (self.goal_routing or self._private_goals) else 0
+        self._goal_slots = 3 if (self.goal_routing or self._private_goals or self.relay_routing) else 0
         self.obs_dim = 2 + 2 * self.max_neighbors + self.n_agents + self._goal_slots
         self.state_dim = 2 * self.n_agents
 
@@ -266,6 +307,13 @@ class CoordGrid:
             self._ring_nbrs = np.array(
                 [[(i - 1) % n, (i + 1) % n] for i in range(n)], dtype=np.int64
             )
+
+        # Fixed source/relay/sink roles used by relay-routing: agent i's role is
+        # i % 3 (0=source, 1=relay, 2=sink) and its chain is i // 3. This is
+        # *task* structure, fixed regardless of the communication ``graph``
+        # (``relay`` => comm==task; ``relay_wrong`` / ``complete`` mismatch it).
+        if self.relay_routing:
+            self._role = np.arange(self.n_agents, dtype=np.int64) % 3
 
         # Per-episode state.
         self._positions: np.ndarray = np.zeros((self.n_agents, 2), dtype=np.int64)
@@ -291,7 +339,7 @@ class CoordGrid:
             self._goal = self._rng.integers(
                 low=0, high=self.grid_size, size=2, dtype=np.int64
             )
-        if self._private_goals:
+        if self._private_goals or self.relay_routing:
             self._goals = self._rng.integers(
                 low=0, high=self.grid_size, size=(self.n_agents, 2), dtype=np.int64
             )
@@ -405,6 +453,36 @@ class CoordGrid:
                 j = (i + 2) % n
                 a[i, j] = 1.0
                 a[j, i] = 1.0
+        elif self.graph_kind == "relay":
+            # True task graph: disjoint 3-chains source(3k)-relay(3k+1)-sink(3k+2).
+            # The source and sink of a chain are exactly 2 hops apart via the
+            # relay; no other path connects them.
+            for k in range(n // 3):
+                s, r, t = 3 * k, 3 * k + 1, 3 * k + 2
+                a[s, r] = 1.0
+                a[r, s] = 1.0
+                a[r, t] = 1.0
+                a[t, r] = 1.0
+        elif self.graph_kind == "relay_wrong":
+            # Degree-matched mis-wiring: each relay keeps its own chain's
+            # source-relay edge but is rewired to the NEXT chain's sink instead
+            # of its own. Per-role degrees still match `relay` exactly (source 1,
+            # relay 2, sink 1) so this is not merely "a graph of the right
+            # density" -- but no relay now holds a matched (source_k, sink_k)
+            # pair, so no source is <=2 hops from its own chain's sink (the
+            # property the task needs). Note this deliberately does NOT keep the
+            # source-relay edges edge-disjoint from `relay` (only the
+            # relay-sink side is shifted) -- at N=6 (2 chains) shifting BOTH
+            # sides while staying degree-matched and route-broken is impossible
+            # (the only alternative permutation recreates a matched pair).
+            n_chains = n // 3
+            for k in range(n_chains):
+                s, r = 3 * k, 3 * k + 1
+                t_wrong = 3 * ((k + 1) % n_chains) + 2
+                a[s, r] = 1.0
+                a[r, s] = 1.0
+                a[r, t_wrong] = 1.0
+                a[t_wrong, r] = 1.0
         else:  # pragma: no cover — guarded in __init__.
             raise ValueError(self.graph_kind)
 
@@ -468,6 +546,20 @@ class CoordGrid:
                 obs[i, base + 1] = self._goals[i, 0] / gs
                 obs[i, base + 2] = self._goals[i, 1] / gs
 
+        # Relay-routing: only source and relay agents see their own private
+        # goal directly -- the sink sees nothing of its own (its goal block
+        # stays zero-filled) and must get the source's goal, if at all, via
+        # the graph. This is the mechanism under test: the relay has its OWN
+        # goal to show here, not the source's, so nothing forces it to route
+        # the source's goal onward.
+        if self.relay_routing:
+            base = 2 + 2 * self.max_neighbors + n
+            for i in range(n):
+                if self._role[i] != 2:  # source or relay
+                    obs[i, base] = 1.0
+                    obs[i, base + 1] = self._goals[i, 0] / gs
+                    obs[i, base + 2] = self._goals[i, 1] / gs
+
         return obs
 
     def _toroidal_delta(self, d: int) -> int:
@@ -505,6 +597,27 @@ class CoordGrid:
             tor = np.minimum(raw, self.grid_size - raw)          # [N, 2, 2]
             prox = 1.0 - tor.sum(axis=-1) / max_dist             # [N, 2]
             return float(np.sum(prox.mean(axis=-1)))
+        if self.relay_routing:
+            # Dense: the relay scores by toroidal proximity to its OWN private
+            # goal (this occupies its action -- it has no task-driven reason to
+            # condition on the source's goal instead); the sink scores by
+            # proximity to its chain's SOURCE's private goal, two hops away over
+            # the relay. The source itself is not rewarded (its only role is to
+            # hold the goal the sink must reach).
+            max_dist = max(1, 2 * (self.grid_size // 2))
+            relay_idx = np.where(self._role == 1)[0]
+            sink_idx = np.where(self._role == 2)[0]
+            source_idx_for_sink = sink_idx - 2  # chain k: source=3k, sink=3k+2
+
+            raw_r = np.abs(self._positions[relay_idx] - self._goals[relay_idx])
+            tor_r = np.minimum(raw_r, self.grid_size - raw_r)
+            relay_prox = np.sum(1.0 - tor_r.sum(axis=-1) / max_dist)
+
+            raw_t = np.abs(self._positions[sink_idx] - self._goals[source_idx_for_sink])
+            tor_t = np.minimum(raw_t, self.grid_size - raw_t)
+            sink_prox = np.sum(1.0 - tor_t.sum(axis=-1) / max_dist)
+
+            return float(relay_prox + sink_prox)
         if self.goal_routing:
             if self.goal_dense:
                 # Shaped: each agent scores 1 - (toroidal Manhattan distance to

@@ -14,6 +14,7 @@ from .dgn_qmix import DGNQMIX
 from .gat_qmix import GATQMIX
 from .gnn_qmix import GNNQMIX
 from .iql import IQL
+from .maxplus import DCG
 from .mlp_qmix import MLPQMIX
 from .qmix import QMIX
 from .vdn import VDN
@@ -28,6 +29,7 @@ __all__ = [
     "MLPQMIX",
     "GATQMIX",
     "DGNQMIX",
+    "DCG",
     "make_algo",
 ]
 
@@ -40,6 +42,7 @@ _REGISTRY: dict[str, type[BaseAlgo]] = {
     "mlp_qmix": MLPQMIX,
     "gat_qmix": GATQMIX,
     "dgn_qmix": DGNQMIX,
+    "dcg": DCG,
 }
 
 

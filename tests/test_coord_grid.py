@@ -381,3 +381,139 @@ def test_nbr_routing_reward_max_when_goals_coincide() -> None:
 def test_nbr_routing_validation(kwargs: dict, match: str) -> None:
     with pytest.raises(ValueError, match=match):
         CoordGrid(grid_size=3, seed=0, **kwargs)
+
+
+# --------------------------------------------------------------- relay_routing
+# Stage C cell C (docs/CLASSICAL_CG_BASELINE_DESIGN.md sections 1-2): two-hop
+# relay task. True graph = disjoint source-relay-sink chains; wrong graph is a
+# degree-matched mis-wiring under which no source is <=2 hops from its own
+# chain's sink (the property that makes the relay a genuine multi-hop test).
+
+
+def _reachable_within_2_hops(adj: np.ndarray, i: int, j: int) -> bool:
+    reach2 = (adj @ adj) + adj
+    return bool(reach2[i, j] > 0)
+
+
+def test_relay_routing_obs_dim_constant_across_comm_graphs() -> None:
+    dims = {
+        g: CoordGrid(n_agents=6, grid_size=3, graph=g, relay_routing=True,
+                     obs_mode="ego", max_neighbors_override=5, seed=0).obs_dim
+        for g in ("relay", "relay_wrong", "complete")
+    }
+    assert len(set(dims.values())) == 1, dims
+
+
+def test_relay_graph_is_two_disjoint_chains() -> None:
+    env = CoordGrid(n_agents=6, grid_size=3, graph="relay", relay_routing=True, seed=0)
+    adj = env.adjacency()
+    # Degree sequence: source 1, relay 2, sink 1, repeated per chain.
+    np.testing.assert_array_equal(adj.sum(axis=1), [1.0, 2.0, 1.0, 1.0, 2.0, 1.0])
+    for k in range(2):
+        s, r, t = 3 * k, 3 * k + 1, 3 * k + 2
+        assert adj[s, r] == 1.0 and adj[r, t] == 1.0
+        assert adj[s, t] == 0.0  # not directly connected -- exactly 2 hops via r
+
+
+def test_relay_true_graph_source_is_two_hop_reachable_from_sink() -> None:
+    env = CoordGrid(n_agents=6, grid_size=3, graph="relay", relay_routing=True, seed=0)
+    adj = env.adjacency()
+    for k in range(2):
+        s, t = 3 * k, 3 * k + 2
+        assert _reachable_within_2_hops(adj, s, t), f"chain {k}: s{s} should reach t{t} in <=2 hops"
+
+
+def test_relay_wrong_graph_breaks_source_to_sink_reachability() -> None:
+    # The discriminating property (not merely "a graph of the right density"):
+    # under relay_wrong, NO chain's source is within 2 hops of its OWN sink.
+    env = CoordGrid(n_agents=6, grid_size=3, graph="relay_wrong", relay_routing=True, seed=0)
+    adj = env.adjacency()
+    for k in range(2):
+        s, t = 3 * k, 3 * k + 2
+        assert not _reachable_within_2_hops(adj, s, t), (
+            f"chain {k}: relay_wrong must NOT let s{s} reach its own sink t{t} in <=2 hops"
+        )
+
+
+def test_relay_wrong_is_degree_matched_to_relay() -> None:
+    a_true = CoordGrid(n_agents=6, grid_size=3, graph="relay", seed=0).adjacency()
+    a_wrong = CoordGrid(n_agents=6, grid_size=3, graph="relay_wrong", seed=0).adjacency()
+    # Per-role degree sequence matches exactly (source 1, relay 2, sink 1 --
+    # for EVERY agent index, not just in aggregate).
+    np.testing.assert_array_equal(a_true.sum(axis=1), a_wrong.sum(axis=1))
+
+
+def test_relay_graphs_require_multiple_of_three_and_at_least_six() -> None:
+    with pytest.raises(ValueError, match="multiple of 3"):
+        CoordGrid(n_agents=5, grid_size=3, graph="relay", seed=0)
+    with pytest.raises(ValueError, match="multiple of 3"):
+        CoordGrid(n_agents=3, grid_size=3, graph="relay_wrong", seed=0)
+
+
+def test_relay_routing_source_and_relay_see_own_goal_sink_sees_nothing() -> None:
+    env = CoordGrid(n_agents=6, grid_size=3, graph="relay", relay_routing=True,
+                     obs_mode="ego", max_neighbors_override=5, seed=0)
+    env.reset(seed=1)
+    obs = env._compute_obs()
+    goal_block = obs[:, -3:]  # [has_goal, gx, gy]
+    for i in range(6):
+        role = i % 3
+        if role == 2:  # sink
+            np.testing.assert_array_equal(goal_block[i], np.zeros(3, dtype=np.float32))
+        else:  # source or relay: sees its own private goal
+            assert goal_block[i, 0] == 1.0
+            np.testing.assert_allclose(goal_block[i, 1:], env._goals[i] / env.grid_size)
+    # Neighbour block withheld under ego.
+    nbr = obs[:, 2:2 + 2 * env.max_neighbors]
+    np.testing.assert_array_equal(nbr, np.zeros_like(nbr))
+
+
+def test_relay_routing_reward_wiring() -> None:
+    env = CoordGrid(n_agents=6, grid_size=3, graph="relay", relay_routing=True, seed=0)
+    env.reset(seed=2)
+    # Put every relay exactly on its own goal, every sink exactly on its
+    # chain's SOURCE's goal, and sources anywhere (unrewarded). Only relays
+    # (2) and sinks (2) score, each maxed at 1.0 -> reward = 4.0 (NOT N=6 --
+    # the source itself never contributes).
+    positions = np.zeros((6, 2), dtype=np.int64)
+    for k in range(2):
+        s, r, t = 3 * k, 3 * k + 1, 3 * k + 2
+        positions[r] = env._goals[r]
+        positions[t] = env._goals[s]
+    env._place_agents(positions)
+    assert env._compute_reward() == pytest.approx(4.0)
+    # Sitting away from those targets is below max.
+    env._place_agents(np.zeros((6, 2), dtype=np.int64))
+    assert env._compute_reward() < 4.0
+
+
+def test_relay_routing_sink_reward_depends_on_source_goal_not_own() -> None:
+    # If a sink sits on ITS OWN chain's relay's goal instead of the source's
+    # goal, it should NOT generally score the max (unless goals coincide by
+    # chance -- use goals forced apart to rule that out).
+    env = CoordGrid(n_agents=6, grid_size=5, graph="relay", relay_routing=True, seed=0)
+    env.reset(seed=5)
+    env._goals[0] = np.array([0, 0])  # source0's goal
+    env._goals[1] = np.array([4, 4])  # relay0's goal (far away, toroidal-max)
+    env._goals[2] = np.array([1, 1])  # sink0's own (unused) goal
+    positions = np.zeros((6, 2), dtype=np.int64)
+    positions[2] = env._goals[1]  # sink sits on the RELAY's goal, not the source's
+    env._place_agents(positions)
+    r_wrong_target = env._compute_reward()
+    positions[2] = env._goals[0]  # now sit on the SOURCE's goal (the correct target)
+    env._place_agents(positions)
+    r_right_target = env._compute_reward()
+    assert r_right_target > r_wrong_target
+
+
+def test_relay_routing_validation() -> None:
+    with pytest.raises(ValueError, match="multiple of 3"):
+        CoordGrid(n_agents=5, grid_size=3, relay_routing=True, seed=0)
+    with pytest.raises(ValueError, match="multiple of 3"):
+        CoordGrid(n_agents=3, grid_size=3, relay_routing=True, seed=0)
+    with pytest.raises(ValueError, match="mutually exclusive"):
+        CoordGrid(n_agents=6, grid_size=3, relay_routing=True, pair_routing=True, seed=0)
+    with pytest.raises(ValueError, match="mutually exclusive"):
+        CoordGrid(n_agents=6, grid_size=3, relay_routing=True, goal_routing=True, seed=0)
+    with pytest.raises(ValueError, match="mutually exclusive"):
+        CoordGrid(n_agents=6, grid_size=3, relay_routing=True, nbr_routing=True, seed=0)
