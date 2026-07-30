@@ -1,7 +1,7 @@
 # JAAMAS Information Sheet (regular paper)
 
 *To accompany the submission of* **When Does Graph Structure Help in Multi-Agent
-Reinforcement Learning? A Controlled Empirical Study** *(Jabbary & Ghanavati).*
+Reinforcement Learning? A Controlled Boundary** *(Jabbary & Ghanavati).*
 *Draft — paste into the submission form / upload as PDF after author review.*
 
 ## 1. What is the main claim of the paper? Why is this an important contribution to the autonomous agents and multi-agent systems literature?

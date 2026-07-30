@@ -297,7 +297,7 @@
 \newcommand{\CBAgnn}{83.93}            % gnn_true (stabilised GCN; NOT Phase-8 72.8)
 \newcommand{\CBAgnnCI}{[83.70, 84.16]}
 \newcommand{\CBAgnnSD}{0.36}
-\newcommand{\CBAmlp}{83.66}            % mlp-QMIX
+\newcommand{\CBAmlp}{83.65}            % mlp-QMIX
 \newcommand{\CBAmlpCI}{[83.06, 84.25]}
 \newcommand{\CBAmlpSD}{0.93}
 \newcommand{\CBAdcg}{83.57}            % dcg_jointobs (steelman)
@@ -328,14 +328,14 @@
 \newcommand{\CBCgatSD}{0.84}
 \newcommand{\CBCmlp}{61.11}            % mlp (no-comms reference)
 \newcommand{\CBCmlpMed}{63.33}
-\newcommand{\CBCmlpCI}{[58.70, 63.53]}
+\newcommand{\CBCmlpCI}{[58.69, 63.53]}
 \newcommand{\CBCmlpSD}{3.81}
 \newcommand{\CBCdcgtrue}{56.51}        % dcg_jointobs_true
 \newcommand{\CBCdcgtrueMed}{56.41}
 \newcommand{\CBCdcgtrueSD}{5.08}
-\newcommand{\CBCwrong}{56.45}          % dcg_jointobs_wrong
+\newcommand{\CBCwrong}{56.44}          % dcg_jointobs_wrong
 \newcommand{\CBCwrongMed}{58.32}
-\newcommand{\CBCcomplete}{57.10}       % dcg_jointobs_complete (no shortcut collapse)
+\newcommand{\CBCcomplete}{57.09}       % dcg_jointobs_complete (no shortcut collapse)
 \newcommand{\CBCcompleteMed}{58.68}
 \newcommand{\CBCcanon}{51.17}          % dcg_canonical_true
 \newcommand{\CBCcanonMed}{49.65}
@@ -570,7 +570,12 @@ into a single ``when does it help'' statement rather than overturning it.
         \emph{given} the right graph), and the effect is significant at
         every $N{=}4$--$10$ (non-monotone), robust to observability,
         survives attenuated at degree-2, and replicates out of harness in a
-        non-spatial token-matching game.
+        non-spatial token-matching game. A pre-registered classical baseline
+        extends the claim across mechanism families: a deep coordination
+        graph \citep{boehmer_2020_dcg} matches this result on the true graph
+        and collapses on wrong or dense graphs
+        (\S\ref{sec:structure:classical}), so the active ingredient is the
+        task-matched \emph{topology}, not the message-passing mechanism.
   \item The depth--diameter alignment heuristic (H3) is falsified in favour
         of a sharper practitioner rule (\S\ref{sec:results:ablation}): a
         hard over-depth cliff means GCN depth should not exceed two in
@@ -1999,7 +2004,7 @@ to within-GNN structure (Section~\ref{sec:limitations}).
     \texttt{dcg\_jointobs\_wrong}   & \CBBwrong    & 49.83 & 0.44 & [49.61, 50.17] \\
     \texttt{dcg\_jointobs\_complete}& \CBBcomplete & 50.24 & 0.30 & [50.11, 50.49] \\
     \texttt{dcg\_jointobs\_true}    & \CBBdcgtrue  & 95.42 & \CBBdcgtrueSD & \CBBdcgtrueCI \\
-    \textbf{\texttt{gnn\_true}}     & \SCkTrue     & 96.28 & 5.06 & [91.75, 98.18] \\
+    \textbf{\texttt{gnn\_true}}     & \SCkTrue     & 96.28 & 5.05 & [91.75, 98.18] \\
     \midrule
     \multicolumn{5}{l}{\emph{Cell C --- 2-hop relay} ($N{=}6$, ego; floor \CBCfloor, no-comms \mlpqmix\ ref \CBCmlp, oracle \CBCoracle).} \\
     \texttt{dcg\_canonical\_true}   & \CBCcanon    & \CBCcanonMed    & 7.46 & [46.44, 55.91] \\
