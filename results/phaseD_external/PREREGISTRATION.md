@@ -429,6 +429,24 @@ indirection-learnability confound entirely. This is a design change, not
 implied by the current pre-registration, and would need its own
 authorization before implementation.
 
+### A.7 Runtime plumbing check (rules out a third failure mode)
+
+Before treating (i)/(ii) as the exhaustive failure-mode space, verified a
+third candidate directly: that `oracle=True`'s injected slot `obs[:, 21:24]`
+is dead/zero/wrong at runtime (a `_compose_obs` bug), which would produce
+the *identical* observed signature (`oracle ≈ mlp`, since `oracle` would
+just be `mlp` plus three inert dims) for a reason unrelated to learnability
+or budget. Checked directly by instantiating
+`MPEReferencePairs(k=3, graph="true", comm_on=False, oracle=True, seed=0)`
+and inspecting the composed observation, both at `reset()` and after one
+`step()`: `obs[0, 21:24]` equals `obs[1, 8:11]` (agent 1's own goal_color)
+and vice versa, both non-zero and distinct — the injected slot correctly
+carries the partner's target color, symmetric across both agents, and
+persists correctly across a step. **Plumbing confirmed correct; failure
+mode (iii) ruled out.** The (i) budget-shortfall / (ii)
+indirection-not-grounded framing in A.6 is the live, exhaustive-as-checked
+diagnosis space.
+
 ## 9. Validity gates (summary, expanded in section 4)
 
 - Privacy confirmed by source inspection (section 1a) AND empirically (`mlp`
