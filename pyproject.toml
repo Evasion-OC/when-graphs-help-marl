@@ -27,8 +27,16 @@ dependencies = [
 
 [project.optional-dependencies]
 mpe = [
-    "pettingzoo[mpe]>=1.24",
-    "supersuit>=3.9",
+    # The MPE benchmarks (simple_spread, simple_tag, simple_reference, ...)
+    # moved out of pettingzoo into the standalone `mpe2` package; it pulls in
+    # a compatible pettingzoo>=1.24.3 transitively. `pettingzoo[mpe]` is kept
+    # as a fallback import path in mpe_adapter.py for older installs, but is
+    # NOT pinned here: its `[mpe]` extra pulls in `supersuit`, whose
+    # `tinyscaler` dependency has no Windows/py3.13 wheel and requires MSVC
+    # build tools to compile from source. supersuit is unused anywhere in
+    # this codebase (frame-stacking / vectorization helpers we don't call),
+    # so it is dropped rather than pinned.
+    "mpe2>=1.1.0",
 ]
 dev = [
     "pytest>=7.4",
