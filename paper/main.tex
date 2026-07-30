@@ -263,6 +263,69 @@
 \newcommand{\TMtcGap}{+33.1}          % gnn_true - gnn_complete
 \newcommand{\TMtmGap}{+45.7}          % gnn_true - mlp
 
+% --- Classical coordination-graph (deep CG / DCG) baseline. ----------------
+% Pre-registered (results/phaseC_classical/PREREGISTRATION.md, commit d7b8dd3;
+% ANALYSIS.md sec.5 statements [A],[B],[C]). Steelman DCG = deep sparse
+% cooperative Q-learning with max-plus action selection (Boehmer et al. 2020,
+% the neural descendant of Kok-Vlassis) factored over env.adjacency(). All
+% three cells: 12 seeds, 150k env steps. Numbers transcribed from ANALYSIS.md
+% (2 d.p., matching statements [A]-[C]); no recomputation.
+%   Cell A -- full-info co-location ring (N=4, full obs). Floor 4.02.
+\newcommand{\CBAfloor}{4.02}
+\newcommand{\CBAgnn}{83.93}            % gnn_true (stabilised GCN; NOT Phase-8 72.8)
+\newcommand{\CBAgnnCI}{[83.70, 84.16]}
+\newcommand{\CBAgnnSD}{0.36}
+\newcommand{\CBAmlp}{83.66}            % mlp-QMIX
+\newcommand{\CBAmlpCI}{[83.06, 84.25]}
+\newcommand{\CBAmlpSD}{0.93}
+\newcommand{\CBAdcg}{83.57}            % dcg_jointobs (steelman)
+\newcommand{\CBAdcgCI}{[82.98, 84.16]}
+\newcommand{\CBAdcgSD}{0.93}
+\newcommand{\CBAcanon}{74.87}          % dcg_canonical (action-coupling only)
+\newcommand{\CBAcanonCI}{[70.76, 78.99]}
+\newcommand{\CBAcanonSD}{6.48}
+\newcommand{\CBAgnnMlpGap}{+0.27}      % gnn - mlp (Welch p_holm 0.47, MWU 0.84)
+\newcommand{\CBAgnnDcgGap}{+0.36}      % gnn - dcg_jointobs (p_holm 0.471, MWU 0.507)
+\newcommand{\CBAdcgMlpGap}{-0.08}      % dcg_jointobs - mlp (Welch 0.83, MWU 0.44, d -0.09)
+\newcommand{\CBAcanonGnnGap}{-9.06}    % dcg_canonical - gnn (d 1.97, p_holm 1.5e-3)
+%   Cell B -- 1-hop PairRouting-ego (N=6). Floor ~50, oracle ~149.
+%   gnn_true row = frozen 150k anchor = \SCkTrue (94.96); do NOT re-mint.
+\newcommand{\CBBdcgtrue}{90.50}        % dcg_jointobs_true (steelman on true graph)
+\newcommand{\CBBdcgtrueCI}{[80.02, 100.97]}
+\newcommand{\CBBdcgtrueSD}{16.49}
+\newcommand{\CBBcanon}{50.09}          % dcg_canonical_true (floor)
+\newcommand{\CBBwrong}{49.89}          % dcg_jointobs_wrong (floor)
+\newcommand{\CBBcomplete}{50.30}       % dcg_jointobs_complete (floor)
+\newcommand{\CBBgnnDcgGap}{+4.47}      % gnn_true - dcg_jointobs_true (d 0.37, p_holm 0.386, MWU 0.707)
+%   Cell C -- 2-hop relay (N=6, ego). Floor 33.37, no-comms MLP ref 61.11,
+%   privileged oracle 99.11. ALWAYS pair mean with median here.
+\newcommand{\CBCfloor}{33.37}
+\newcommand{\CBCoracle}{99.11}
+\newcommand{\CBCgnn}{64.00}            % gnn_true
+\newcommand{\CBCgnnMed}{63.84}
+\newcommand{\CBCgnnCI}{[63.26, 64.75]}
+\newcommand{\CBCgnnSD}{1.17}
+\newcommand{\CBCgat}{63.16}            % gat_true
+\newcommand{\CBCgatMed}{63.42}
+\newcommand{\CBCgatSD}{0.84}
+\newcommand{\CBCmlp}{61.11}            % mlp (no-comms reference)
+\newcommand{\CBCmlpMed}{63.33}
+\newcommand{\CBCmlpCI}{[58.70, 63.53]}
+\newcommand{\CBCmlpSD}{3.81}
+\newcommand{\CBCdcgtrue}{56.51}        % dcg_jointobs_true
+\newcommand{\CBCdcgtrueMed}{56.41}
+\newcommand{\CBCdcgtrueSD}{5.08}
+\newcommand{\CBCwrong}{56.45}          % dcg_jointobs_wrong
+\newcommand{\CBCwrongMed}{58.32}
+\newcommand{\CBCcomplete}{57.10}       % dcg_jointobs_complete (no shortcut collapse)
+\newcommand{\CBCcompleteMed}{58.68}
+\newcommand{\CBCcanon}{51.17}          % dcg_canonical_true
+\newcommand{\CBCcanonMed}{49.65}
+\newcommand{\CBCgnnMlpGap}{+2.89}      % gnn_true - mlp: d 1.03, Welch p_holm 0.052, MWU 0.078 (FAILS both)
+\newcommand{\CBCgatMlpGap}{+2.04}      % gat_true - mlp (MWU 0.51)
+\newcommand{\CBCgnnDcgGap}{+7.50}      % gnn_true - dcg_jointobs_true: d 2.03, p_holm 1.5e-3, MWU 3.7e-5
+\newcommand{\CBCmedGap}{0.51}          % gnn_true median - mlp median
+
 % --- Title block. ---------------------------------------------------------
 \title{When Does Graph Structure Help in Multi-Agent\\
        Reinforcement Learning? A Controlled Boundary}
@@ -277,42 +340,31 @@
 
 % =========================================================================
 \begin{abstract}
-For a coordination graph in cooperative multi-agent reinforcement learning
-(MARL), the design question is where to route communication, not whether to add
-it: the topology must match the task's information
-dependencies---the right edges, not more edges. We establish this with a
-controlled-attribution method. On \coordgrid, a
-cooperative gridworld
-whose coordination graph is itself the experimental variable, we fix the
-encoder, mixer, optimiser, and parameter count and add two
-isolators: a byte-identical no-graph control (structure vs.\ capacity) and a
-density-matched \emph{wrong}-graph control (right edges vs.\ more). This
-reconciles a tension: graph-MARL methods (\algoname{DGN}, \algoname{G2ANet})
-report gains in partially observable
-settings, rarely against capacity-matched controls; the
-discriminator from full-information negatives is the
-task's \emph{information structure}, not the algorithm. When an agent must act
-on private information held by one specific, unobserved partner, a graph whose
-edges match the task's coordination structure decisively outperforms
-\emph{all-to-all} communication---which carries the partner's signal but must
-select it---the wrong graph, and the no-graph control, at matched parameters and
-observations (Cohen's $d \approx 5$, complete seed-level separation over 12
+In cooperative multi-agent reinforcement learning (MARL), the
+coordination-graph design question is where to route communication, not whether
+to add it---the right edges, not more edges. We establish this by controlled
+attribution: on
+\coordgrid, a gridworld whose graph is the experimental variable, we fix the
+encoder, mixer, optimiser, and parameter count and add two isolators---a
+no-graph control (structure vs.\ capacity) and a density-matched
+\emph{wrong}-graph control (right edges vs.\ more). When an agent must act on
+private information held by a specific unobserved partner, the task-matched
+graph beats \emph{all-to-all} communication---which carries the partner's signal
+but must select it---the wrong graph, and the no-graph control, at matched
+parameters and observations (Cohen's $d\approx5$, complete separation over 12
 seeds, Holm-corrected). Learned attention recovers the signal only on the right
-graph, not by learned targeting over all-to-all: even at $5\times$ the budget
-that gap widens ($d{\approx}5\!\to\!12$) rather than closing, so matched
-structure is far more sample-efficient. The advantage
-holds across
-team sizes and observability, and replicates in a non-spatial
-referential game (matched graph ${\approx}96\%$ of maximum). When coordination
-is instead incidental or convention-reducible, the same
-architecture confers \emph{no benefit} over the parameter-matched baseline;
-the commonly used \emph{unstabilised} operator is actively harmful
-(a penalty that persists with training, grows with team size, and recurs on
-MPE \texttt{simple\_spread} and, directionally, Level-Based Foraging)---but
-stabilisation removes this optimisation pathology, recovering parity. The rule applies only
-when the coordination topology is known or reliably estimable. These are
-constructed tasks; replication on standard benchmarks with private
-per-agent goals is future work. Code and data accompany the submission.
+graph: even at $5\times$ the budget the gap widens ($d{\approx}5\!\to\!12$). A
+pre-registered classical baseline sharpens the claim: a deep coordination graph
+(max-plus payoff propagation) reproduces the 1-hop result and shares its
+structure-dependence, so the active ingredient is task-matched topology, not the
+message-passing mechanism; on a constructed 2-hop relay neither mechanism routes
+above a no-communication baseline, leaving multi-hop routing open. When
+coordination is instead full-information or convention-reducible, the same
+architecture confers \emph{no benefit} over the parameter-matched baseline; its
+common \emph{unstabilised} form is actively harmful, but stabilisation removes
+this pathology, recovering parity. The rule applies only when the coordination
+topology is known or reliably estimable. These are constructed tasks;
+replication on standard benchmarks with private per-agent goals is future work.
 \end{abstract}
 
 % =========================================================================
@@ -566,10 +618,14 @@ payoff propagation \citep{guestrin_2003_factoredmdp_jair,kok_2006_payoffprop};
 \textbf{(b)} We supply the \emph{same edge set} as a message-passing substrate
 for a GNN inside an otherwise-unchanged monotonic mixer with per-agent
 $\arg\max$ execution---no variable elimination, no joint-action inference over
-the graph. All claims in this paper concern object~(b): whether handing a fixed
-edge set to a learned deep aggregator helps. Classical coordination-graph
-solvers (max-plus / variable elimination over a known factored payoff) are a
-distinct object our experiments do not test.
+the graph. Our \emph{primary} claims concern object~(b): whether handing a fixed
+edge set to a learned deep aggregator helps. We do, however, also test object~(a)
+directly---as a pre-registered baseline (\S\ref{sec:structure:classical}), we run
+\algoname{DCG} \citep{boehmer_2020_dcg}, the neural max-plus descendant of the
+classical solver, over the same factored payoff, to ask whether payoff
+propagation reproduces object~(b)'s routing result. It does at 1-hop and shares
+its structure-dependence, which is why we frame our positive finding as a
+property of the task's topology rather than of any one mechanism.
 
 % =========================================================================
 \section{Related Work}
@@ -649,7 +705,12 @@ is what isolates the effect to \emph{which} edges rather than to sparsity or to
 the act of learning a graph. Even \algoname{DCG}, the closest fixed-graph
 relative, defines payoffs over \emph{given} hyperedges but never runs a
 wrong-graph control, so it cannot separate topology-correctness from the mere
-presence of a graph. More generally these methods combine three design choices
+presence of a graph. We engage this lineage directly rather than only by
+contrast: we run \algoname{DCG} \citep{boehmer_2020_dcg}---the neural max-plus
+descendant of \citet{kok_2006_payoffprop}---as a pre-registered baseline under
+our own true/wrong/complete isolators (\S\ref{sec:structure:classical}), and
+find its 1-hop behaviour shares the same structure-dependence as the GNN's.
+More generally these methods combine three design choices
 (a graph, a message-passing mechanism, and a value mixer) in ways that make it
 difficult to attribute observed gains to any single component; our study
 isolates the GNN encoder by inserting it into an otherwise-identical \qmix\
@@ -1333,11 +1394,15 @@ attention-over-complete test were fixed before those runs
 \tokenmatch\ replication (\S\ref{sec:structure:tokenmatch}) are post-hoc
 robustness/replication cells run under the same protocol and thresholds but
 not themselves pre-registered. We flag one limit on how independently this
-ordering can be checked: only the F1 attention robustness check
-(\texttt{results/phaseC\_150k/PREREGISTRATION.md}) was committed to version
-control before any 150k-step result existed, so it alone is timestamp-verifiable
-as pre-committed; the earlier pre-registrations rest on the documented protocol
-rather than on commit-order evidence. All confirmatory cells use $\ge 12$ seeds and
+ordering can be checked: two of the pre-registrations are timestamp-verifiable
+because they were committed to version control before their results existed---the
+F1 attention robustness check
+(\texttt{results/phaseC\_150k/PREREGISTRATION.md}, committed before any 150k-step
+result) and the classical-baseline pre-registration of
+\S\ref{sec:structure:classical}
+(\texttt{results/phaseC\_classical/PREREGISTRATION.md}, commit \texttt{d7b8dd3},
+before any DCG run)---whereas the earlier structure-sweep pre-registrations rest
+on the documented protocol rather than on commit-order evidence. All confirmatory cells use $\ge 12$ seeds and
 the same Welch\,/\,Holm and Mann--Whitney tests of
 Section~\ref{sec:protocol}. One protocol difference is disclosed rather than
 hidden: the cells of this section use the final window pre-registered for
@@ -1784,6 +1849,139 @@ over all-to-all. (An earlier 3-seed run of this cell was underpowered; the
   \end{tabular}
 \end{table}
 
+\subsection{A classical coordination-graph baseline: is the routing effect unique to message passing?}
+\label{sec:structure:classical}
+
+The controls so far vary the graph handed to \emph{one} mechanism (a GNN). The
+classical coordination-graph lineage (\S\ref{sec:related}) poses a sharper
+question: does the 1-hop benefit require message passing at all, or would
+payoff propagation over the \emph{same} factored payoff reproduce it? We answer
+with a pre-registered baseline whose design, arms, and four decision rules were
+frozen and git-committed (commit \texttt{d7b8dd3}) before any result was
+observed (\texttt{results/phaseC\_classical/}). The steelman is a \emph{deep}
+coordination graph---\algoname{DCG} \citep{boehmer_2020_dcg}, the neural,
+function-approximated descendant of Kok--Vlassis max-plus---whose pairwise
+factor $Q_{ij}(o_i,o_j,a_i,a_j)$ conditions on the joint edge observation and
+whose greedy joint action is computed by max-plus over
+\texttt{env.adjacency()}. It is granted $\ge$ \gnnqmix\ parameters, 12 seeds,
+150k steps, and generosity (max-plus iterations, payoff-net width, learning
+rate) tuned only in its own favour; a \texttt{dcg\_canonical} control drops
+cross-agent observation from the pairwise factor to isolate action-coupling
+from observation-routing. Three pre-registered cells follow
+(Table~\ref{tab:classical}); we transcribe the frozen analysis.
+
+\paragraph{Cell A (full information): validity, and no GNN advantage.} On the
+full-information co-location ring ($N{=}4$), the steelman DCG is fully
+competent: \CBAdcg\ \CBAdcgCI, tying the no-graph \mlpqmix\ (\CBAmlp; advantage
+\CBAdcgMlpGap, Welch $p{=}0.83$, MWU $p{=}0.44$, $d{=}{-}0.09$) and the
+stabilised \gnnqmix\ (\CBAgnn; advantage \CBAgnnDcgGap, Welch
+$p_{\text{Holm}}{=}0.47$, MWU $p{=}0.51$), all far above the random floor of
+\CBAfloor\ ($p{=}4{\times}10^{-23}$). Crucially the stabilised \gnnqmix\ shows
+\emph{no} advantage over \mlpqmix\ here (\CBAgnnMlpGap, Welch
+$p_{\text{Holm}}{=}0.47$, MWU $p{=}0.84$): the same no-full-information-benefit
+endpoint the rest of the paper reports (Appendix~\ref{app:repaired}), now
+reproduced against a competent classical baseline rather than only against the
+no-graph control. Dropping cross-agent observation from the pairwise factor
+(\texttt{dcg\_canonical}, \CBAcanon) costs ${\sim}9$ points ($\CBAcanonGnnGap$
+vs.\ the GNN, $d{=}1.97$, $p_{\text{Holm}}{=}1.5{\times}10^{-3}$) even on DCG's
+home turf, though it stays far above floor.
+
+\paragraph{Cell B (1-hop routing): the benefit is observation-routing,
+reproducible by a deep CG.} On \pairrouting-ego ($N{=}6$, the 1-hop task of
+\S\ref{sec:structure:headline}), the steelman DCG on the \emph{true} graph
+\emph{matches} \gtrue: \CBBdcgtrue\ \CBBdcgtrueCI\ vs.\ \SCkTrue\ (advantage
+\CBBgnnDcgGap, $d{=}0.37$, Welch $p_{\text{Holm}}{=}0.386$, MWU
+$p{=}0.707$---not significant). Every DCG variant lacking correct
+observation-routing collapses to the ${\approx}\SCfloor$ no-routing floor
+(\texttt{dcg\_canonical\_true} \CBBcanon, \texttt{dcg\_jointobs\_wrong}
+\CBBwrong, \texttt{dcg\_jointobs\_complete} \CBBcomplete; each ${\sim}45$ points
+below \gtrue, $d{>}12$, $p_{\text{Holm}}{<}10^{-10}$). The 1-hop benefit is
+therefore an \emph{observation-routing} effect, reproducible by a deep
+coordination graph, not action-coordination; as pre-registered, we concede that
+message passing is not the \emph{unique} mechanism for it. What \emph{does}
+replicate across both mechanism families is the structure-dependence: the right
+edges route, and wrong, action-only, or all-to-all edges floor. The upgraded
+reading of the 1-hop positive is thus ``the right edges, not more edges'' as a
+property of the \emph{task}, holding for message passing and payoff propagation
+alike---mechanism choice is secondary in this regime.
+
+\paragraph{Cell C (2-hop relay): an honest pre-registered negative for both
+mechanisms.} Cell C is a constructed 2-hop relay---a source's private goal must
+reach a sink two hops away, with the relay agent occupied by its own goal so it
+cannot double as a signalling channel (random floor \CBCfloor, no-comms
+\mlpqmix\ reference \CBCmlp, privileged oracle \CBCoracle). It was built to
+probe multi-hop routing, the one regime where a 2-layer GNN might separate from
+a pairwise-factored DCG. \emph{Neither method demonstrates it.} \gtrue\ does
+\emph{not} significantly exceed the honest no-comms \mlpqmix\ baseline: \CBCgnn\
+\CBCgnnCI\ vs.\ \CBCmlp\ \CBCmlpCI, advantage \CBCgnnMlpGap\ but $d{=}1.03$,
+Welch $p_{\text{Holm}}{=}0.052$, MWU $p{=}0.078$---failing both pre-registered
+tests. The mean advantage is a tail artifact of four unstable \mlpqmix\ seeds;
+the \emph{medians} nearly coincide (\gtrue\ \CBCgnnMed\ vs.\ \mlpqmix\
+\CBCmlpMed, gap \CBCmedGap), and \gatqmix\ likewise fails to beat \mlpqmix\
+(\CBCgatMlpGap, MWU $p{=}0.51$). By the frozen success criterion, no method
+routes here. \gtrue\ \emph{does} significantly beat every DCG arm (vs.\
+\texttt{dcg\_jointobs\_true} \CBCgnnDcgGap, $d{=}2.03$,
+$p_{\text{Holm}}{=}1.5{\times}10^{-3}$, MWU $p{=}3.7{\times}10^{-5}$), but only
+because the DCG arms fall \emph{below} the no-comms \mlpqmix\ baseline
+(\texttt{dcg\_jointobs\_true} \CBCdcgtrue, ${-}12\%$ of the routing headroom
+relative to \mlpqmix)---not because the GNN routes \emph{above} it. That
+ordering is informative for GNN-vs-DCG, not evidence of routing. We report cell
+C as a pre-registered negative: at 150k steps, neither message passing nor
+payoff propagation demonstrates multi-hop information routing above the
+no-routing baseline. (A 30k, 3-seed smoke had suggested a GNN lead that the
+12-seed, 150k confirmatory run did not confirm---smoke-to-confirmatory optimism
+we flag rather than bury.) This cell carries no \texttt{gnn\_wrong}/%
+\texttt{gnn\_complete} arms, so it speaks only to GNN-vs-DCG and GNN-vs-MLP, not
+to within-GNN structure (Section~\ref{sec:limitations}).
+
+\begin{table}[t]
+  \centering
+  \footnotesize
+  \caption{\textbf{Classical (deep) coordination-graph baseline}, three
+  pre-registered cells (commit \texttt{d7b8dd3}; \texttt{results/phaseC\_classical/}),
+  each $n{=}12$ seeds, 150k steps. Steelman \texttt{dcg\_jointobs}$_\bullet$ is a
+  deep max-plus CG on the joint edge observation; \texttt{dcg\_canonical} drops
+  cross-agent observation; \gtrue's cell-B row is the frozen 150k anchor
+  (\S\ref{sec:structure:attention}). \emph{A:} the classical steelman ties both
+  \mlpqmix\ and the stabilised \gnnqmix\ on full-information home turf, and the
+  GNN has no full-information advantage. \emph{B:} on 1-hop routing the deep CG
+  on the \emph{true} graph matches \gtrue\ (n.s.), while every mis-routed DCG
+  arm floors---the structure-dependence replicates across mechanism families.
+  \emph{C:} on the 2-hop relay neither the GNN nor any DCG arm significantly
+  exceeds the no-comms \mlpqmix\ reference (\CBCmlp); the GNN beats the DCG arms
+  only because those fall \emph{below} that reference. Cell C: report medians
+  (mean gap is a 4-seed \mlpqmix\ tail artifact).}
+  \label{tab:classical}
+  \setlength{\tabcolsep}{4pt}%
+  \begin{tabular}{lrrrl}
+    \toprule
+    Arm & mean & median & sd & 95\% CI \\
+    \midrule
+    \multicolumn{5}{l}{\emph{Cell A --- full-info co-location ring} ($N{=}4$, full obs; random floor \CBAfloor).} \\
+    \texttt{dcg\_canonical}     & \CBAcanon & 75.97 & \CBAcanonSD & \CBAcanonCI \\
+    \texttt{dcg\_jointobs}      & \CBAdcg   & 83.85 & \CBAdcgSD    & \CBAdcgCI \\
+    \texttt{mlp}                & \CBAmlp   & 84.08 & \CBAmlpSD    & \CBAmlpCI \\
+    \textbf{\texttt{gnn\_true}} & \CBAgnn   & 83.89 & \CBAgnnSD    & \CBAgnnCI \\
+    \midrule
+    \multicolumn{5}{l}{\emph{Cell B --- 1-hop routing} (\pairrouting-ego, $N{=}6$; floor ${\approx}\SCfloor$, oracle ${\approx}\SCoracle$).} \\
+    \texttt{dcg\_canonical\_true}   & \CBBcanon    & 50.12 & 0.44 & [49.81, 50.37] \\
+    \texttt{dcg\_jointobs\_wrong}   & \CBBwrong    & 49.83 & 0.44 & [49.61, 50.17] \\
+    \texttt{dcg\_jointobs\_complete}& \CBBcomplete & 50.24 & 0.30 & [50.11, 50.49] \\
+    \texttt{dcg\_jointobs\_true}    & \CBBdcgtrue  & 95.42 & \CBBdcgtrueSD & \CBBdcgtrueCI \\
+    \textbf{\texttt{gnn\_true}}     & \SCkTrue     & 96.28 & 5.06 & [91.75, 98.18] \\
+    \midrule
+    \multicolumn{5}{l}{\emph{Cell C --- 2-hop relay} ($N{=}6$, ego; floor \CBCfloor, no-comms \mlpqmix\ ref \CBCmlp, oracle \CBCoracle).} \\
+    \texttt{dcg\_canonical\_true}   & \CBCcanon    & \CBCcanonMed    & 7.46 & [46.44, 55.91] \\
+    \texttt{dcg\_jointobs\_wrong}   & \CBCwrong    & \CBCwrongMed    & 6.17 & [52.52, 60.37] \\
+    \texttt{dcg\_jointobs\_complete}& \CBCcomplete & \CBCcompleteMed & 6.06 & [53.25, 60.94] \\
+    \texttt{dcg\_jointobs\_true}    & \CBCdcgtrue  & \CBCdcgtrueMed  & \CBCdcgtrueSD & [53.28, 59.74] \\
+    \texttt{mlp} (no comm.)         & \CBCmlp      & \CBCmlpMed      & \CBCmlpSD & \CBCmlpCI \\
+    \texttt{gat\_true}              & \CBCgat      & \CBCgatMed      & \CBCgatSD & [62.62, 63.69] \\
+    \textbf{\texttt{gnn\_true}}     & \CBCgnn      & \CBCgnnMed      & \CBCgnnSD & \CBCgnnCI \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
 \subsection{Out-of-harness replication: not a gridworld artefact}
 \label{sec:structure:tokenmatch}
 
@@ -1913,6 +2111,29 @@ architecture. The two readings coexist: a graph earns its keep
 exactly when it is the only path for task-structured information \emph{and}
 points at the right neighbours, and is neutral (or, unstabilised, harmful)
 otherwise.
+
+\paragraph{The active ingredient is topology, not the mechanism.} A
+pre-registered classical baseline (\S\ref{sec:structure:classical}) sharpens
+what ``structure'' means. On the 1-hop routing task, a deep coordination graph
+(\algoname{DCG}, max-plus payoff propagation over the same factored payoff)
+\emph{matches} the GNN on the true graph (\CBBdcgtrue\ vs.\ \SCkTrue, n.s.) and
+\emph{floors} on every mis-routed variant, exactly as the GNN does---so the
+1-hop benefit is not unique to message passing but is a property of the task's
+topology, reproduced across two mechanism families. The upgraded rule is
+therefore ``the right edges, not more edges'' as a statement about the task:
+both message passing and payoff propagation succeed given the correct edges and
+collapse given wrong or action-only ones (the GNN's positive claims at matched
+parameters, \S\ref{sec:structure:headline}, are unchanged; what changes is that
+mechanism choice is secondary to topology in the tested regime). This
+completes---rather than dilutes---the paper's thesis: it moves the burden from
+``which architecture'' to ``which edges,'' where the controls place it.
+Honesty about the boundary of this rule: on a constructed 2-hop \emph{relay},
+\emph{neither} mechanism demonstrated routing above a no-comms \mlpqmix\
+baseline at the budgets tested (\gtrue\ vs.\ \mlpqmix: Welch
+$p_{\text{Holm}}{=}0.052$, MWU $p{=}0.078$; medians coincident; every DCG arm
+below \mlpqmix)---multi-hop information routing remains open for both, and the
+GNN's advantage over DCG there reflects DCG falling below the baseline, not the
+GNN routing above it.
 \emph{This is a claim about a mechanism, not a verdict on any system}: we
 test the relational operators these methods rely on (a fixed GCN and learned
 graph attention) inside one controlled QMIX-style harness on
@@ -2089,6 +2310,18 @@ We list explicit limitations rather than burying them.
         $\{0,0.25,0.5,0.75,1\}$) would turn the binary right-vs-wrong contrast
         into a graded mis-specification-cost curve and is the cheapest
         decision-relevant extension.
+  \item \textbf{Multi-hop routing is unresolved, and the relay cell is
+        narrow.} The 2-hop relay (cell C of \S\ref{sec:structure:classical})
+        returned a pre-registered \emph{negative}: neither the GNN nor the deep
+        coordination graph exceeded the no-comms \mlpqmix\ reference at 150k
+        steps, so we make no multi-hop routing claim. That cell is limited in
+        three ways: it carries no \texttt{gnn\_wrong}/\texttt{gnn\_complete}
+        arms, so it speaks only to GNN-vs-DCG and GNN-vs-MLP and cannot test
+        within-GNN structure-dependence on the relay; it was run at a single
+        (150k) budget, so we cannot rule out that either mechanism routes with
+        more training; and it is one constructed relay task. Whether message
+        passing separates from payoff propagation on genuine multi-hop routing,
+        and at what budget, remains open.
   \item \textbf{Single-CPU training.} We did not retune learning-rate /
         batch-size choices for GPU throughput.
   \item \textbf{Seed count.} The main CoordGrid and MPE sweep runs at
