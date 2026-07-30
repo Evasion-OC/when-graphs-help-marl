@@ -447,6 +447,110 @@ mode (iii) ruled out.** The (i) budget-shortfall / (ii)
 indirection-not-grounded framing in A.6 is the live, exhaustive-as-checked
 diagnosis space.
 
+## AMENDMENT 1 (2026-07-31) — authorized 150k re-smoke + position-oracle diagnostic
+
+**Written and git-committed BEFORE the re-smoke or the position-oracle diagnostic
+was run.** Does not reopen or revise the `## AMENDMENT (2026-07-31)` section
+above (the 30k-cap NO-GO verdict stands as the record of that smoke); this is
+a new authorization layered on top of it, granted explicitly by the authors
+per that amendment's own "Recommendation to authors" (A.5) and its A.6
+follow-up, in response to the report that (i) headroom clearly exists
+(`greedy_target` vs `greedy_centroid`, A.4) and (ii) the trained `oracle` arm
+plateauing at the blind level is ambiguous between a budget shortfall and an
+ungrounded color→landmark-index indirection (A.6).
+
+### A1.1 What is authorized
+
+1. **One 150k-class re-smoke (3 seeds)** of `{oracle, mlp, gnn_true}` — the
+   same three arms whose curves the original smoke gate reads. Framing is
+   frozen as: **this tests whether the color→landmark-index indirection
+   becomes learnable at the 150k-class budget used elsewhere in this paper**
+   (matching the house standard e.g. `results/phaseC_150k/`,
+   `results/phaseC_classical/`'s 150k cells) — it is explicitly **NOT** framed
+   as "confirming a known-reachable ceiling." A.6 already established that
+   `greedy_target`'s −31.64 is a position-omniscient ceiling strictly above
+   what a network doing the color→slot lookup could achieve even with
+   unlimited budget; no number from A.4/A.6 is treated as `oracle`'s expected
+   value here.
+2. **One diagnostic arm, `oracle_pos`** (position injection instead of color
+   injection), run alongside the three above at the same 3 seeds / 150k
+   budget. **Labeled DIAGNOSTIC ONLY.** Its outcome cannot gate or enter any
+   confirmatory family (the frozen three-contrast family in section 2 is
+   unchanged: `gnn_true−gnn_wrong`, `gnn_true−gnn_complete`, `gnn_true−mlp`;
+   `oracle_pos` is not in it and never will be — it is not even a candidate
+   arm for E1's confirmatory grid, which keeps `oracle` at
+   `oracle_mode="color"` exactly as designed). It exists solely to
+   disambiguate, in the Branch-0 write-up **if the gate fails again**,
+   "the indirection is unlearnable" (color-`oracle` fails, `oracle_pos`
+   clearly separates — the position-injected ceiling is reachable, so the
+   specific blocker is the color→slot lookup, not the harness/budget more
+   generally) from "other harness failure" (neither `oracle` nor `oracle_pos`
+   separates from `mlp` — points at a harness/hyperparameter problem
+   orthogonal to the indirection).
+
+### A1.2 Gate rule for the re-smoke (frozen now, applied when it lands)
+
+**Unchanged from the original gate 2** (section 4, item 2 / design section 6):
+curve-based, not a statistical test. **PASS iff `oracle` clearly separates
+above `mlp`** — a visible gap between the two curves with no overlap in their
+final (last-20%) windows across the 3 seeds, read the same way the original
+30k smoke was read (A.3's decile tables). The confirmatory both-tests
+criterion (Welch + MWU, Holm-corrected, on the three-contrast family) is
+**deferred to the confirmatory run itself**, exactly as originally frozen —
+this re-smoke is still a smoke, not a substitute for the confirmatory grid.
+`gnn_true` liveness is read the same way as before: calibration information
+(should visibly begin separating from `mlp`), not an independent auto-kill.
+`oracle_pos` does not participate in the PASS/FAIL decision at all (A1.1.2).
+
+### A1.3 Frozen consequence if the gate FAILS
+
+**Branch 0, final.** The vehicle is intractable in this harness at the
+budgets tested (30k and 150k). **No further budget extensions** — this
+authorization exhausts the re-smoke option; a hypothetical 300k+ re-smoke
+would require fresh authorization this document does not grant and the
+project's compute budget does not obviously support. **No confirmatory run.**
+The result does **not** enter the manuscript as evidence for or against
+external validity on this vehicle. The limitation (an untested MPE variant)
+remains open, with the following honest one-sentence disclosure option
+available for the limitations section, to be used verbatim or adapted at
+write-up time, **only if this branch is reached**:
+
+> "We attempted an external-validity check on a composed third-party MPE
+> environment (`simple_reference` pairs, comm disabled) but found the
+> harness's QMIX-style training could not learn to exploit even a
+> directly-injected oracle signal within a 150k-step budget matching the
+> rest of the paper, despite confirming (via a hand-scripted reference
+> policy) that the environment itself has substantial headroom; we report
+> this as an inconclusive attempt rather than a null result, since a null
+> result requires the baseline to actually solve the task it is being
+> compared against."
+
+### A1.4 Implementation change authorized
+
+`oracle_mode="color"|"position"` kwarg on `MPEReferencePairs`
+(`src/gnnmarl/envs/mpe_reference_pairs.py`), default `"color"` (preserves
+the existing `oracle` arm's behavior and `obs_dim=24` byte-for-byte — no
+change to any already-run or already-authorized confirmatory config).
+`oracle_mode="position"` injects the partner-held own-target landmark's
+**relative position** (`obs_dim=23`, 2 floats) in place of its color
+(`obs_dim=24`, 3 floats) — the same landmark the color mode already injects
+(`agent_p`'s own target is `partner.goal_b`; see module docstring), just
+its position instead of its color, so the network is hardwired to the target
+without needing to learn the fixed color→landmark-index→position lookup at
+all. This is a genuinely new diagnostic env config, authorized here, not
+implied by the original pre-registration or design doc. Implemented behind
+a unit test (`tests/test_mpe_reference_pairs.py`); full suite re-verified
+green before any run under this amendment; commit precedes the runs.
+
+### A1.5 What remains untouched
+
+Cell R's own governance (section 8 above / the ADDENDUM to
+`results/phaseC_classical/PREREGISTRATION.md`) is unconditional on this
+amendment and on E1's oracle-headroom finding — its launch is authorized
+separately (that ADDENDUM's own frozen budget) and proceeds regardless of
+which way this re-smoke lands. E0/E2 remain un-launched pending E1's own
+gate outcome, unchanged from the base pre-reg.
+
 ## 9. Validity gates (summary, expanded in section 4)
 
 - Privacy confirmed by source inspection (section 1a) AND empirically (`mlp`
