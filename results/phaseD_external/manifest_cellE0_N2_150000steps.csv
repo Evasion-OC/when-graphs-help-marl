@@ -1,0 +1,13 @@
+arm,algo,graph,cell,task,suite,k,n_agents,seed,run_dir,steps,n_episodes,final
+gnn,gnn_qmix,true,E0,mpe_reference_pairs,external_validity,1,2,0,D:\Codes\Github\when-graphs-help-marl\results\phaseD_external\cellE0_N2_150000steps\gnn__cellE0_N2_150000steps__seed0,150000,6000,-52.35901724985667
+gnn,gnn_qmix,true,E0,mpe_reference_pairs,external_validity,1,2,1,D:\Codes\Github\when-graphs-help-marl\results\phaseD_external\cellE0_N2_150000steps\gnn__cellE0_N2_150000steps__seed1,150000,6000,-48.18567635102281
+gnn,gnn_qmix,true,E0,mpe_reference_pairs,external_validity,1,2,2,D:\Codes\Github\when-graphs-help-marl\results\phaseD_external\cellE0_N2_150000steps\gnn__cellE0_N2_150000steps__seed2,150000,6000,-53.05473000680424
+gnn,gnn_qmix,true,E0,mpe_reference_pairs,external_validity,1,2,3,D:\Codes\Github\when-graphs-help-marl\results\phaseD_external\cellE0_N2_150000steps\gnn__cellE0_N2_150000steps__seed3,150000,6000,-48.48344654683001
+gnn,gnn_qmix,true,E0,mpe_reference_pairs,external_validity,1,2,4,D:\Codes\Github\when-graphs-help-marl\results\phaseD_external\cellE0_N2_150000steps\gnn__cellE0_N2_150000steps__seed4,150000,6000,-36.100995923387444
+gnn,gnn_qmix,true,E0,mpe_reference_pairs,external_validity,1,2,5,D:\Codes\Github\when-graphs-help-marl\results\phaseD_external\cellE0_N2_150000steps\gnn__cellE0_N2_150000steps__seed5,150000,6000,-36.98883711719267
+mlp,mlp_qmix,true,E0,mpe_reference_pairs,external_validity,1,2,0,D:\Codes\Github\when-graphs-help-marl\results\phaseD_external\cellE0_N2_150000steps\mlp__cellE0_N2_150000steps__seed0,150000,6000,-20.14553989476332
+mlp,mlp_qmix,true,E0,mpe_reference_pairs,external_validity,1,2,1,D:\Codes\Github\when-graphs-help-marl\results\phaseD_external\cellE0_N2_150000steps\mlp__cellE0_N2_150000steps__seed1,150000,6000,-23.30217657805555
+mlp,mlp_qmix,true,E0,mpe_reference_pairs,external_validity,1,2,2,D:\Codes\Github\when-graphs-help-marl\results\phaseD_external\cellE0_N2_150000steps\mlp__cellE0_N2_150000steps__seed2,150000,6000,-20.580973743015246
+mlp,mlp_qmix,true,E0,mpe_reference_pairs,external_validity,1,2,3,D:\Codes\Github\when-graphs-help-marl\results\phaseD_external\cellE0_N2_150000steps\mlp__cellE0_N2_150000steps__seed3,150000,6000,-53.13028236978426
+mlp,mlp_qmix,true,E0,mpe_reference_pairs,external_validity,1,2,4,D:\Codes\Github\when-graphs-help-marl\results\phaseD_external\cellE0_N2_150000steps\mlp__cellE0_N2_150000steps__seed4,150000,6000,-51.74936570467245
+mlp,mlp_qmix,true,E0,mpe_reference_pairs,external_validity,1,2,5,D:\Codes\Github\when-graphs-help-marl\results\phaseD_external\cellE0_N2_150000steps\mlp__cellE0_N2_150000steps__seed5,150000,6000,-30.56751044330125

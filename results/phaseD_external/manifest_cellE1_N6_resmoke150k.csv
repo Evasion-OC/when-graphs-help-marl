@@ -1,0 +1,13 @@
+arm,algo,graph,cell,task,suite,k,n_agents,seed,run_dir,steps,n_episodes,final
+gnn_true,gnn_qmix,true,E1,mpe_reference_pairs,external_validity,3,6,0,D:\Codes\Github\when-graphs-help-marl\results\phaseD_external\cellE1_N6_resmoke150k\gnn_true__cellE1_N6_resmoke150k__seed0,150000,6000,-134.14536707578867
+gnn_true,gnn_qmix,true,E1,mpe_reference_pairs,external_validity,3,6,1,D:\Codes\Github\when-graphs-help-marl\results\phaseD_external\cellE1_N6_resmoke150k\gnn_true__cellE1_N6_resmoke150k__seed1,150000,6000,-85.78118423675888
+gnn_true,gnn_qmix,true,E1,mpe_reference_pairs,external_validity,3,6,2,D:\Codes\Github\when-graphs-help-marl\results\phaseD_external\cellE1_N6_resmoke150k\gnn_true__cellE1_N6_resmoke150k__seed2,150000,6000,-148.30247241902538
+mlp,mlp_qmix,true,E1,mpe_reference_pairs,external_validity,3,6,0,D:\Codes\Github\when-graphs-help-marl\results\phaseD_external\cellE1_N6_resmoke150k\mlp__cellE1_N6_resmoke150k__seed0,150000,6000,-64.97650915244107
+mlp,mlp_qmix,true,E1,mpe_reference_pairs,external_validity,3,6,1,D:\Codes\Github\when-graphs-help-marl\results\phaseD_external\cellE1_N6_resmoke150k\mlp__cellE1_N6_resmoke150k__seed1,150000,6000,-71.46120415271058
+mlp,mlp_qmix,true,E1,mpe_reference_pairs,external_validity,3,6,2,D:\Codes\Github\when-graphs-help-marl\results\phaseD_external\cellE1_N6_resmoke150k\mlp__cellE1_N6_resmoke150k__seed2,150000,6000,-62.723624679199325
+oracle,mlp_qmix,true,E1,mpe_reference_pairs,external_validity,3,6,0,D:\Codes\Github\when-graphs-help-marl\results\phaseD_external\cellE1_N6_resmoke150k\oracle__cellE1_N6_resmoke150k__seed0,150000,6000,-43.85263407237324
+oracle,mlp_qmix,true,E1,mpe_reference_pairs,external_validity,3,6,1,D:\Codes\Github\when-graphs-help-marl\results\phaseD_external\cellE1_N6_resmoke150k\oracle__cellE1_N6_resmoke150k__seed1,150000,6000,-38.64569997540202
+oracle,mlp_qmix,true,E1,mpe_reference_pairs,external_validity,3,6,2,D:\Codes\Github\when-graphs-help-marl\results\phaseD_external\cellE1_N6_resmoke150k\oracle__cellE1_N6_resmoke150k__seed2,150000,6000,-40.27339638435969
+oracle_pos,mlp_qmix,true,E1,mpe_reference_pairs,external_validity,3,6,0,D:\Codes\Github\when-graphs-help-marl\results\phaseD_external\cellE1_N6_resmoke150k\oracle_pos__cellE1_N6_resmoke150k__seed0,150000,6000,-30.017092726681526
+oracle_pos,mlp_qmix,true,E1,mpe_reference_pairs,external_validity,3,6,1,D:\Codes\Github\when-graphs-help-marl\results\phaseD_external\cellE1_N6_resmoke150k\oracle_pos__cellE1_N6_resmoke150k__seed1,150000,6000,-29.898085359268414
+oracle_pos,mlp_qmix,true,E1,mpe_reference_pairs,external_validity,3,6,2,D:\Codes\Github\when-graphs-help-marl\results\phaseD_external\cellE1_N6_resmoke150k\oracle_pos__cellE1_N6_resmoke150k__seed2,150000,6000,-30.456555518688244
