@@ -69,3 +69,9 @@ results/phaseC/*
 !results/phaseC/*.csv
 # Stage D (token-match) raw runs; its curated CSVs are written under results/phaseC/
 results/phaseD/
+
+# Local tooling / third-party template / raw sweep outputs
+.codex/
+paper/springer_template/
+results/phaseC_classical/cell*/
+scratchpad/
