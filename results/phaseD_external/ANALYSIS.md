@@ -111,13 +111,17 @@ Floor band (pre-reg §4.1): **[−84.81, −78.14]**. All three GNN arms finish
 **Headroom fraction** `(arm − mlp)/(oracle − mlp)`, denominator +30.06 (pre-reg §0
 mandates reporting this):
 
-| arm | headroom fraction |
-|---|---:|
-| `gnn_true` | **−1.196** |
-| `gnn_wrong` | **−1.289** |
-| `gnn_complete` | **−1.683** |
+| arm | headroom fraction (mean-based) | headroom fraction (median-based) |
+|---|---:|---:|
+| `gnn_true` | **−1.196** | **−2.17** |
+| `gnn_wrong` | **−1.289** | **−2.62** |
+| `gnn_complete` | **−1.683** | **−3.13** |
 
-All negative — the GNN arms do not capture headroom, they consume it.
+Median-based denominator = +20.77 (−42.81 − (−63.58)). Both are reported because
+the rest of this document pairs every E1 mean with a median; the **mean-based
+figures are the conservative ones**, for the same reason as §1.2 (`mlp`'s mean is
+depressed by its own contaminated seeds). All six are negative — the GNN arms do
+not capture headroom, they consume it.
 
 ### 1.2 The frozen confirmatory family (exactly three contrasts, `gnn_true`-centred)
 
@@ -255,7 +259,10 @@ privileged oracle 99.11.
 | `dcg_canonical_true` | 12 | 51.17 | 49.65 | 7.46 | [46.44, 55.91] | [38.44, 62.30] |
 
 **The mean-vs-median tension, stated explicitly.** `mlp`'s mean 61.11 is depressed
-by three low seeds (53.63, 55.80, 57.04); its **median is 63.33**, sitting squarely
+by **four** unstable seeds (53.63, 55.80, 57.04, 58.17 — the next value is 63.10, a
+4.93-point gap; the other eight seeds average 63.59). This matches the committed
+manuscript, which already describes the cell-C mean advantage as "a tail artifact
+of four unstable \mlpqmix\ seeds" (`paper/main.tex` L1922). Its **median is 63.33**, sitting squarely
 inside the GNN cluster (63.28–64.00). The three GNN arms cluster within **0.72
 points of each other** with very small dispersion (sd 0.45–1.17).
 
@@ -283,6 +290,14 @@ Because the **uncorrected MWU already fails** (0.0783 > 0.05), the "`gnn_true` �
 `mlp`" conclusion is **invariant to family size** under the both-tests house rule.
 All four DCG contrasts remain significant in both families (m=6 p_Holm 5.2e-4 to
 6.8e-3). **Cell C's committed headline is untouched by cell R.**
+
+**Toolchain-validity check (free, and worth stating).** The m=6 recomputation
+returns `gnn_true`−`mlp` d = **1.03**, Welch p_Holm = **0.0517**, MWU p = **0.0783**.
+The committed manuscript publishes exactly these three values —
+"$d{=}1.03$, Welch $p_{	ext{Holm}}{=}0.052$, MWU $p{=}0.078$"
+(`paper/main.tex` L1921–1923). **This analysis pipeline independently reproduces
+the already-published cell-C statistics to the printed precision**, which
+substantiates the rest of the numbers in this report.
 
 ### 3.3 Which frozen expectation pattern obtains
 
@@ -400,6 +415,14 @@ trainer signature and byte-identical GNN `algo_kwargs` differing only in `graph`
 oracle observation plumbing verified at runtime in pre-reg A.7; gate 1 re-verified
 at 150k (§0.4); loss/grad-norm drift is large but finite with no numerical failure.
 
+**Provenance, stated precisely.** The no-implementation-defect verdict is taken
+**as reported** by the read-only diagnostic (relayed via the task brief and the
+gate-verdict amendment); no diagnostic artifact was located in the repository and
+this analysis does **not** re-derive that verdict from source. What is
+independently verified here is the list above: absence of numerical failure,
+absence of parameter mismatch, absence of metric error, and gate-1/gate-2
+re-verification at the confirmatory budget.
+
 **The §4.2 contradictions concern the diagnostic's *descriptive characterisation*,
 not its defect verdict.** The pre-reg's void rule (gate-verdict note, cf.
 `phaseC_classical` rule 4) is triggered only by a **confirmed implementation
@@ -465,7 +488,7 @@ data. Numbers are exact.
 > exploration annealing completes (median onset 42--65\% of the budget), and 10--11
 > of 12 seeds in each graph arm finish **below the random-policy floor**
 > ($-84.81$). The no-graph control is affected more mildly and later (2/12 seeds,
-> onset $\geq$ 94\% of budget), and the oracle arm not at all (0/12). We report the
+> onset $\geq$ 92\% of budget), and the oracle arm not at all (0/12). We report the
 > failure to exceed the no-graph control as the pre-registered outcome and the
 > divergence as a characterised but **unexplained** training instability of this
 > stack on this environment family.
