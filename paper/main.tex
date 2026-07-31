@@ -325,6 +325,98 @@
 \newcommand{\CBCgatMlpGap}{+2.04}      % gat_true - mlp (MWU 0.51)
 \newcommand{\CBCgnnDcgGap}{+7.50}      % gnn_true - dcg_jointobs_true: d 2.03, p_holm 1.5e-3, MWU 3.7e-5
 \newcommand{\CBCmedGap}{0.51}          % gnn_true median - mlp median
+%   Cell R -- the two within-GNN controls added to cell C under the ADDENDUM to
+%   results/phaseC_classical/PREREGISTRATION.md (commit 568e759; 12 seeds, 150k,
+%   byte-identical params to cell C's gnn_true). Numbers transcribed from
+%   results/phaseD_external/ANALYSIS.md sec.3; no recomputation.
+\newcommand{\CRcomplete}{63.98}        % gnn_complete on relay_routing
+\newcommand{\CRcompleteMed}{63.94}
+\newcommand{\CRcompleteSD}{0.45}
+\newcommand{\CRcompleteCI}{[63.70, 64.27]}
+\newcommand{\CRwrong}{63.28}           % gnn_wrong on relay_routing
+\newcommand{\CRwrongMed}{63.15}
+\newcommand{\CRwrongSD}{0.55}
+\newcommand{\CRwrongCI}{[62.93, 63.63]}
+\newcommand{\CRtwGap}{+0.73}           % gnn_true - gnn_wrong (p_holm 0.16, MWU 0.069)
+\newcommand{\CRtcGap}{+0.02}           % gnn_true - gnn_complete (p_holm 0.95, MWU 0.62)
+\newcommand{\CRtmHolm}{0.10}           % gnn_true - mlp, Holm over the grown m=8 family
+\newcommand{\CRtmHolmSix}{0.052}       % same contrast, cell C's original m=6 family
+
+% --- Phase D: pre-registered transfer attempt onto a composed MPE vehicle. --
+% Composed mpe2 simple_reference pairs (K=3, N=6, native comm disabled), 12
+% seeds, 150k env steps. Pre-registration + cell-R addendum commit 568e759;
+% budget freeze + gate verdict b00e26b; all data b5d76f9. Numbers transcribed
+% from results/phaseD_external/ANALYSIS.md (statements C1-C6); no recomputation.
+\newcommand{\PDseeds}{12}
+\newcommand{\PDsteps}{150{,}000}
+\newcommand{\PDparams}{38{,}534}       % identical across gnn_true/wrong/complete
+\newcommand{\PDfloor}{-84.81}          % uniform-random reference policy
+\newcommand{\PDnoop}{-78.14}           % do-nothing reference policy
+\newcommand{\PDblind}{-53.74}          % greedy_centroid: identity-blind scripted ceiling
+\newcommand{\PDinformed}{-31.64}       % greedy_target: position-omniscient scripted ceiling
+\newcommand{\PDoracle}{-43.36}         % oracle (routed information injected)
+\newcommand{\PDoracleMed}{-42.81}
+\newcommand{\PDoracleSD}{4.00}
+\newcommand{\PDoracleCI}{[-45.90, -40.82]}
+\newcommand{\PDmlp}{-73.42}            % mlp: no-graph control
+\newcommand{\PDmlpMed}{-63.58}
+\newcommand{\PDmlpSD}{19.28}
+\newcommand{\PDmlpCI}{[-85.67, -61.16]}
+\newcommand{\PDtrue}{-109.38}          % gnn_true: the native pair edges
+\newcommand{\PDtrueMed}{-108.73}
+\newcommand{\PDtrueSD}{22.08}
+\newcommand{\PDtrueCI}{[-123.41, -95.35]}
+\newcommand{\PDwrong}{-112.16}         % gnn_wrong: density-matched wrong matching
+\newcommand{\PDwrongMed}{-117.94}
+\newcommand{\PDwrongSD}{18.10}
+\newcommand{\PDwrongCI}{[-123.66, -100.67]}
+\newcommand{\PDcomplete}{-123.99}      % gnn_complete: all-to-all
+\newcommand{\PDcompleteMed}{-128.68}
+\newcommand{\PDcompleteSD}{26.55}
+\newcommand{\PDcompleteCI}{[-140.86, -107.13]}
+\newcommand{\PDoracleGap}{+30.06}      % oracle - mlp (gate; d 2.16, Welch 1.9e-4, MWU 3.7e-5)
+\newcommand{\PDoracleGapCI}{[+17.67, +42.45]}
+\newcommand{\PDoracleD}{2.16}
+\newcommand{\PDtmGap}{-35.96}          % gnn_true - mlp (d -1.73, p_holm 1.0e-3, MWU 7.3e-4)
+\newcommand{\PDtmGapCI}{[-53.53, -18.40]}
+\newcommand{\PDtmD}{{-}1.73}
+\newcommand{\PDtmMedGap}{-45.15}       % same contrast on medians (worse than the mean gap)
+\newcommand{\PDtwGap}{+2.78}           % gnn_true - gnn_wrong (p_holm 0.74, MWU 0.62)
+\newcommand{\PDtwD}{0.14}
+\newcommand{\PDtcGap}{+14.61}          % gnn_true - gnn_complete (p_holm 0.31, MWU 0.13)
+\newcommand{\PDtcD}{0.60}
+\newcommand{\PDpeakGap}{-8.39}         % EXPLORATORY peak-window gnn_true - mlp
+\newcommand{\PDpeakD}{{-}3.29}
+\newcommand{\PDhrTrue}{-1.20}          % headroom fraction (arm - mlp)/(oracle - mlp), mean-based
+\newcommand{\PDhrWrong}{-1.29}
+\newcommand{\PDhrComplete}{-1.68}
+\newcommand{\PDhrTrueMed}{-2.17}       % same fractions on the median-based denominator
+\newcommand{\PDhrWrongMed}{-2.62}
+\newcommand{\PDhrCompleteMed}{-3.13}
+\newcommand{\PDblowTrue}{8}            % seeds (of 12) with a sustained grad-norm blow-up
+\newcommand{\PDblowWrong}{9}
+\newcommand{\PDblowComplete}{10}
+\newcommand{\PDblowMlp}{2}
+\newcommand{\PDblowEarly}{24}          % of \PDblowTotal graph-arm blow-ups, before anneal end
+\newcommand{\PDblowTotal}{27}
+\newcommand{\PDonsetLo}{42}            % median onset, % of budget (gnn_complete)
+\newcommand{\PDonsetHi}{65}            % median onset, % of budget (gnn_true)
+\newcommand{\PDdropTrue}{36.5}         % median peak-to-final drop, gnn_true
+\newcommand{\PDdropWrong}{45.9}
+\newcommand{\PDdropComplete}{59.5}
+\newcommand{\PDdropMlp}{4.7}
+% Cell E0 -- unmodified N=2 simple_reference, native comm ON, 6 seeds,
+% NON-CONFIRMATORY (its own validity gate failed; see appendix).
+\newcommand{\PDzeroSeeds}{6}
+\newcommand{\PDzeroMlp}{-33.25}
+\newcommand{\PDzeroMlpMed}{-26.93}
+\newcommand{\PDzeroGnn}{-45.86}
+\newcommand{\PDzeroGnnMed}{-48.33}
+\newcommand{\PDzeroGap}{-12.62}
+\newcommand{\PDzeroGapCI}{[-28.97, +3.74]}
+\newcommand{\PDzeroD}{{-}1.05}
+\newcommand{\PDzeroFloor}{-28.25}
+\newcommand{\PDzeroNoop}{-26.00}
 
 % --- Title block. ---------------------------------------------------------
 \title{When Does Graph Structure Help in Multi-Agent\\
@@ -344,27 +436,28 @@ In cooperative multi-agent reinforcement learning (MARL), the
 coordination-graph design question is where to route communication, not whether
 to add it---the right edges, not more edges. We establish this by controlled
 attribution: on
-\coordgrid, a gridworld whose graph is the experimental variable, we fix the
+\coordgrid, whose graph is the experimental variable, we fix the
 encoder, mixer, optimiser, and parameter count and add two isolators---a
 no-graph control (structure vs.\ capacity) and a density-matched
 \emph{wrong}-graph control (right edges vs.\ more). When an agent must act on
 private information held by a specific unobserved partner, the task-matched
 graph beats \emph{all-to-all} communication---which carries the partner's signal
 but must select it---the wrong graph, and the no-graph control, at matched
-parameters and observations (Cohen's $d\approx5$, complete separation over 12
-seeds, Holm-corrected). Learned attention recovers the signal only on the right
-graph: even at $5\times$ the budget the gap widens ($d{\approx}5\!\to\!12$). A
-pre-registered classical baseline sharpens the claim: a deep coordination graph
-(max-plus payoff propagation) reproduces the 1-hop result and shares its
+parameters and observations (Cohen's $d\approx5$, complete separation at
+$n{=}12$, Holm-corrected). Learned attention recovers the signal only on the
+right graph: at $5\times$ the budget the gap widens ($d{\approx}5\!\to\!12$). A
+pre-registered classical baseline sharpens this: a deep coordination graph
+(max-plus) reproduces the 1-hop result and shares its
 structure-dependence, so the active ingredient is task-matched topology, not the
 message-passing mechanism; on a constructed 2-hop relay neither mechanism routes
 above a no-communication baseline, leaving multi-hop routing open. When
 coordination is instead full-information or convention-reducible, the same
 architecture confers \emph{no benefit} over the parameter-matched baseline; its
-common \emph{unstabilised} form is actively harmful, but stabilisation removes
-this pathology, recovering parity. The rule applies only when the coordination
-topology is known or reliably estimable. These are constructed tasks;
-replication on standard benchmarks with private per-agent goals is future work.
+common \emph{unstabilised} form is actively harmful, but stabilisation recovers
+parity. The rule applies only when the coordination
+topology is known or estimable. These are constructed tasks; a pre-registered
+transfer onto a composed MPE vehicle found all graph arms diverging below the
+no-graph control, scoping the positive endpoint to the archetypes tested.
 \end{abstract}
 
 % =========================================================================
@@ -1399,14 +1492,18 @@ attention-over-complete test were fixed before those runs
 \tokenmatch\ replication (\S\ref{sec:structure:tokenmatch}) are post-hoc
 robustness/replication cells run under the same protocol and thresholds but
 not themselves pre-registered. We flag one limit on how independently this
-ordering can be checked: two of the pre-registrations are timestamp-verifiable
+ordering can be checked: three of the pre-registrations are timestamp-verifiable
 because they were committed to version control before their results existed---the
 F1 attention robustness check
 (\texttt{results/phaseC\_150k/PREREGISTRATION.md}, committed before any 150k-step
-result) and the classical-baseline pre-registration of
+result), the classical-baseline pre-registration of
 \S\ref{sec:structure:classical}
 (\texttt{results/phaseC\_classical/PREREGISTRATION.md}, commit \texttt{d7b8dd3},
-before any DCG run)---whereas the earlier structure-sweep pre-registrations rest
+before any DCG run), and the transfer-attempt pre-registration of
+\S\ref{sec:structure:transfer}
+(\texttt{results/phaseD\_external/PREREGISTRATION.md}, commit \texttt{568e759},
+which also carries the relay addendum, before either
+run)---whereas the earlier structure-sweep pre-registrations rest
 on the documented protocol rather than on commit-order evidence. All confirmatory cells use $\ge 12$ seeds and
 the same Welch\,/\,Holm and Mann--Whitney tests of
 Section~\ref{sec:protocol}. One protocol difference is disclosed rather than
@@ -1873,7 +1970,9 @@ whose greedy joint action is computed by max-plus over
 rate) tuned only in its own favour; a \texttt{dcg\_canonical} control drops
 cross-agent observation from the pairwise factor to isolate action-coupling
 from observation-routing. Three pre-registered cells follow
-(Table~\ref{tab:classical}); we transcribe the frozen analysis.
+(Table~\ref{tab:classical}), together with the two within-GNN control arms
+added to the third of them later under a separate pre-registered addendum; we
+transcribe the frozen analysis throughout.
 
 \paragraph{Cell A (full information): validity, and no GNN advantage.} On the
 full-information co-location ring ($N{=}4$), the steelman DCG is fully
@@ -1935,9 +2034,27 @@ C as a pre-registered negative: at 150k steps, neither message passing nor
 payoff propagation demonstrates multi-hop information routing above the
 no-routing baseline. (A 30k, 3-seed smoke had suggested a GNN lead that the
 12-seed, 150k confirmatory run did not confirm---smoke-to-confirmatory optimism
-we flag rather than bury.) This cell carries no \texttt{gnn\_wrong}/%
-\texttt{gnn\_complete} arms, so it speaks only to GNN-vs-DCG and GNN-vs-MLP, not
-to within-GNN structure (Section~\ref{sec:limitations}).
+we flag rather than bury.)
+
+\paragraph{Cell C completed: a within-GNN null on the relay.} As run, cell C
+carried no \gwrong/\gcomplete\ arms, so it spoke only to GNN-vs-DCG and
+GNN-vs-MLP. A pre-registered addendum (committed at \texttt{568e759} before
+either arm was run) adds both at byte-identical parameters, 12 seeds, 150k
+steps. The three graph arms are statistically indistinguishable from one
+another---\gtrue\ \CBCgnn\ \CBCgnnCI\ (median \CBCgnnMed), \gcomplete\
+\CRcomplete\ \CRcompleteCI\ (median \CRcompleteMed), \gwrong\ \CRwrong\
+\CRwrongCI\ (median \CRwrongMed); \gtrue$-$\gwrong\ \CRtwGap\
+($p_{\text{Holm}}{=}0.16$, MWU $p{=}0.069$), \gtrue$-$\gcomplete\ \CRtcGap\
+($p_{\text{Holm}}{=}0.95$, MWU $p{=}0.62$)---and none clears the no-comms
+\mlpqmix\ control under both pre-registered tests (against \mlpqmix's median
+\CBCmlpMed\ the graph arms are level). On the relay, graph structure does not
+matter \emph{among} the graph arms, because none of them routes: a within-GNN
+null. Adding the arms grows cell C's Holm family from six contrasts to eight,
+which moves \gtrue$-$\mlpqmix\ from $p_{\text{Holm}}{=}\CRtmHolmSix$ to
+$\CRtmHolm$; since the uncorrected Mann--Whitney test ($p{=}0.078$) already
+fails, the ``\gtrue\ $\approx$ \mlpqmix'' conclusion is invariant to the family
+size, and all four DCG contrasts remain significant in both families. Cell C's
+committed result is unchanged.
 
 \begin{table}[t]
   \centering
@@ -1955,7 +2072,11 @@ to within-GNN structure (Section~\ref{sec:limitations}).
   \emph{C:} on the 2-hop relay neither the GNN nor any DCG arm significantly
   exceeds the no-comms \mlpqmix\ reference (\CBCmlp); the GNN beats the DCG arms
   only because those fall \emph{below} that reference. Cell C: report medians
-  (mean gap is a 4-seed \mlpqmix\ tail artifact).}
+  (mean gap is a 4-seed \mlpqmix\ tail artifact). $^{\dagger}$Added later under
+  a separate pre-registered addendum (commit \texttt{568e759};
+  \texttt{results/phaseD\_external/}), same budget and byte-identical
+  parameters, to supply the within-GNN controls cell C originally lacked; the
+  three graph arms are mutually indistinguishable.}
   \label{tab:classical}
   \setlength{\tabcolsep}{4pt}%
   \begin{tabular}{lrrrl}
@@ -1982,6 +2103,8 @@ to within-GNN structure (Section~\ref{sec:limitations}).
     \texttt{dcg\_jointobs\_true}    & \CBCdcgtrue  & \CBCdcgtrueMed  & \CBCdcgtrueSD & [53.28, 59.74] \\
     \texttt{mlp} (no comm.)         & \CBCmlp      & \CBCmlpMed      & \CBCmlpSD & \CBCmlpCI \\
     \texttt{gat\_true}              & \CBCgat      & \CBCgatMed      & \CBCgatSD & [62.62, 63.69] \\
+    \texttt{gnn\_wrong}$^{\dagger}$    & \CRwrong    & \CRwrongMed    & \CRwrongSD    & \CRwrongCI \\
+    \texttt{gnn\_complete}$^{\dagger}$ & \CRcomplete & \CRcompleteMed & \CRcompleteSD & \CRcompleteCI \\
     \textbf{\texttt{gnn\_true}}     & \CBCgnn      & \CBCgnnMed      & \CBCgnnSD & \CBCgnnCI \\
     \bottomrule
   \end{tabular}
@@ -2010,7 +2133,10 @@ $\TMtwGap$, all-to-all by $\TMtcGap$, and no communication by $\TMtmGap$
 ${\approx}\TMfloor$ floor)---the partner's token is one of the inputs the mean
 aggregator averages---but it remains $\TMtcGap$ below the task-matched graph.
 The structure effect therefore reproduces, more cleanly, in a structurally
-unrelated task: it is \textbf{not} a \coordgrid\ artefact.
+unrelated task: it is \textbf{not} a \coordgrid\ artefact. For reproducibility,
+the \pairrouting\ $N{=}6$ headline is \emph{bit-identical} across two
+independent runs spanning a script refactor---genuine seed determinism, not
+relabelled copies.
 
 \begin{figure}[t]
   \centering
@@ -2055,20 +2181,183 @@ unrelated task: it is \textbf{not} a \coordgrid\ artefact.
   \end{tabular}
 \end{table}
 
+\subsection{A pre-registered transfer attempt onto a third-party vehicle}
+\label{sec:structure:transfer}
+
+Both positive-endpoint tasks are ours. The obvious next question---does the
+structure effect survive physics and a reward we did not write?---we attempted
+rather than deferred, and we report the outcome as it landed.
+
+\paragraph{The vehicle, and what stays author-imposed.} We compose $K{=}3$
+independent pairs of \texttt{mpe2}'s \texttt{simple\_reference} into a single
+$N{=}6$ task with continuous physics and the environment's own reward. The
+private-partner-goal structure is \emph{native} rather than injected: in
+\texttt{simple\_reference} an agent's own target never appears in its own
+observation---only its partner holds it---so with the environment's
+communication slot zeroed, the coordination graph is the only path by which an
+acting agent can receive it. (The centralised mixer's state input does carry
+every pair's goal block, but identically for all four confirmatory arms, so it
+cannot separate them; only the decentralised actors differ.) The
+structure-isolating arms carry over unchanged: \gtrue\ (the $K$ native pair
+edges), \gwrong\ (a disjoint matching of identical $1$-regular density),
+\gcomplete\ (all-to-all), \mlpc\ (no graph), and an \texttt{oracle} arm that
+receives the routed payload---the partner-held identity of its own
+target---directly in its observation, as a headroom anchor pre-registered
+outside the contrast family rather than a rival. The three graph arms are byte-identical at
+\PDparams\ parameters and differ only in \texttt{adjacency()}. Three things are
+ours by construction and remain so whatever the result: the composition into
+pairs, the pairing graph, and disabling the native channel. We therefore never
+describe this cell as a replication on an unmodified benchmark, or on
+coordination structure we did not design---a guardrail frozen in the
+pre-registration before the runs and binding regardless of outcome.
+
+\paragraph{Provenance, including the detour.} The arms, metric, the
+three-contrast Holm family (\gtrue\ vs.\ \gwrong/\gcomplete/\mlpc), the oracle
+gate and five decision branches were git-committed at \texttt{568e759} before
+any run. What follows is a disclosed detour rather than a straight line. At a
+30k budget the oracle-headroom gate \emph{failed}---the arm handed the routed
+information did not separate from the no-graph control---and the
+pre-registration's own kill-switch stopped the confirmatory launch. A dated
+amendment (\texttt{b00e26b}) then authorised one 150k re-smoke, which passed
+the gate, and froze the confirmatory budget at 150k. The same amendment
+recorded in writing, before the confirmatory grid ran, that \gtrue\ had
+diverged below the random-policy floor in that re-smoke: the outcome below was
+anticipated and disclosed in advance, not discovered afterwards. Both commits
+precede every datum reported here in wall-clock time and in git ancestry (all
+runs land at \texttt{b5d76f9}).
+
+\paragraph{The gate: the task is solvable when routed.} At \PDsteps\ steps and
+\PDseeds\ seeds the \texttt{oracle} arm reaches $\PDoracle$ $\PDoracleCI$
+against the no-graph control's $\PDmlp$ $\PDmlpCI$ (advantage $\PDoracleGap$
+$\PDoracleGapCI$, $d{=}\PDoracleD$, Welch $p{=}1.9{\times}10^{-4}$, MWU
+$p{=}3.7{\times}10^{-5}$), so the task is learnable when the information is
+routed and the metric has headroom. Privacy holds at the same budget: \mlpc's
+median ($\PDmlpMed$) sits below a hand-scripted \emph{identity-blind} ceiling
+($\PDblind$) and nowhere near a position-omniscient one ($\PDinformed$)---the
+blind band, which is where an agent that cannot observe its own target belongs.
+
+\paragraph{The result: no graph arm exceeds the no-graph control.} Each falls
+below it. \gtrue\ finishes at $\PDtrue$ $\PDtrueCI$ (median $\PDtrueMed$),
+$\PDtmGap$ $\PDtmGapCI$ against \mlpc\ ($d{=}\PDtmD$, Welch
+$p_{\text{Holm}}{=}1.0{\times}10^{-3}$, MWU $p{=}7.3{\times}10^{-4}$---%
+significant on both pre-registered tests, in the negative direction), and
+separates from neither the density-matched wrong graph ($\PDtwGap$,
+$d{=}\PDtwD$, $p_{\text{Holm}}{=}0.74$, MWU $p{=}0.62$) nor all-to-all
+($\PDtcGap$, $d{=}\PDtcD$, $p_{\text{Holm}}{=}0.31$, MWU $p{=}0.13$; at
+$d{=}\PDtcD$ and $n{=}\PDseeds$ this contrast is underpowered rather than a
+confident tie, and we read no direction into it). The pre-registered mean-based
+statistic is the conservative one here: \mlpc's mean is itself depressed by
+three unstable seeds, so on medians the deficit is \emph{larger}
+($\PDtmMedGap$). The mandated headroom fractions
+$(\text{arm}-\mlpc)/(\texttt{oracle}-\mlpc)$ are $\PDhrTrue$, $\PDhrWrong$ and
+$\PDhrComplete$ (mean-based; median-based values are more negative still,
+Appendix~\ref{app:transfer})---the graph arms consume the routing headroom
+rather than capture it. This is the pre-registered Branch~3, published as
+pre-committed. One note on how that branch applies: its antecedent as frozen
+reads ``\gtrue\ ties \mlpc,'' which is not literally what happened---\gtrue\ is
+significantly \emph{below} \mlpc. We apply it by entailment, because its
+operative consequence, ``\gtrue\ does not exceed the no-graph control,''
+follows \emph{a fortiori} from the stronger negative result, while Branches 0,
+1, 2a and 2b are each excluded on their own antecedents. The claim we take
+stays inside Branch~3's boundary; the excess---significantly below, and below
+the random floor---is reported next as a characterised instability, not as a
+claim that graph structure is harmful.
+
+\paragraph{The failure is not a converged null.} All three graph arms diverged
+during training. \PDblowTrue\ of \PDseeds\ (\gtrue), \PDblowWrong\ (\gwrong)
+and \PDblowComplete\ (\gcomplete) seeds show a sustained gradient-norm
+blow-up---\PDblowEarly\ of those \PDblowTotal\ beginning \emph{before}
+exploration annealing completes, at a median onset of
+\PDonsetLo--\PDonsetHi\% of the budget---and 10--11 of \PDseeds\ seeds in each
+graph arm finish below the random-policy floor ($\PDfloor$). The no-graph
+control is affected more mildly and later (\PDblowMlp\ of \PDseeds\ seeds,
+onset $\geq{}$92\% of the budget) and the \texttt{oracle} arm not at all (0 of
+\PDseeds). No return series contains a \texttt{NaN} or \texttt{Inf}; the metric
+reproduces from the raw episode logs, the trainer signature and parameter
+counts were audited across all runs, a read-only diagnostic found no
+implementation defect, and the same stack trains stably on \coordgrid\ at
+identical hyperparameters. We therefore do \emph{not} read this cell as ``graph
+structure does not help on MPE''---the graph arms did not converge. What it
+supports is the narrow statement that on this vehicle at this budget they do
+not exceed the no-graph control, accompanied by a characterised but
+\emph{unexplained} training instability of this stack on this environment
+family. Candidate mechanisms exist---the stabilised operator's
+residual$+$LayerNorm path is one---but we could not test them here: the
+diagnostic was read-only, and the no-graph control, which has neither residual
+nor LayerNorm, destabilised in \PDblowMlp\ of \PDseeds\ seeds as well. We label
+mechanism a hypothesis, not a finding (Section~\ref{sec:limitations}).
+
+\paragraph{Does the divergence explain the result away? (exploratory)} The
+obvious objection is that \gtrue\ would have beaten \mlpc\ had it not diverged.
+In a post-hoc, non-pre-registered check we re-read every run at its \emph{best}
+100-episode window instead of the frozen final window---a maximally generous
+readout for a diverging arm, and one biased in \gtrue's favour, since a maximum
+over a noisier curve is inflated more. \gtrue\ still falls short of \mlpc\
+($\PDpeakGap$, $d{=}\PDpeakD$, Welch $p{=}1.7{\times}10^{-7}$, MWU
+$p{=}3.7{\times}10^{-5}$): it did not exceed the no-graph control at any point
+in training, in any seed aggregate. This is exploratory support for the frozen
+conclusion, not a substitute for it.
+
+\begin{table}[t]
+  \centering
+  \footnotesize
+  \caption{\textbf{The pre-registered transfer attempt}: composed
+  \texttt{simple\_reference} pairs ($K{=}3$, $N{=}6$, native communication
+  disabled), final-window mean return over $n{=}\PDseeds$ seeds at
+  \PDsteps\ steps (pre-registration \texttt{568e759}; budget freeze and gate verdict
+  \texttt{b00e26b}; data \texttt{b5d76f9}; \texttt{results/phaseD\_external/}).
+  Reference policies measured on the same configuration: uniform random
+  $\PDfloor$, do-nothing $\PDnoop$, identity-blind scripted ceiling $\PDblind$,
+  position-omniscient scripted ceiling $\PDinformed$. \texttt{oracle} is a
+  pre-registered headroom anchor outside the contrast family, which is the
+  three \gtrue-centred contrasts. The oracle gate passes ($\PDoracleGap$ over
+  \mlpc, $d{=}\PDoracleD$), so the task is learnable when routed---yet every
+  graph arm finishes below \mlpc\ and below the random floor, having diverged
+  during training (Appendix~\ref{app:transfer}). Medians are reported alongside
+  means because the arms are tail-heavy.}
+  \label{tab:transfer}
+  \setlength{\tabcolsep}{5pt}%
+  \begin{tabular}{lrrrl}
+    \toprule
+    Arm & mean & median & sd & 95\% CI \\
+    \midrule
+    \texttt{oracle} (anchor)         & $\PDoracle$   & $\PDoracleMed$   & \PDoracleSD   & $\PDoracleCI$ \\
+    \texttt{mlp} (no graph)          & $\PDmlp$      & $\PDmlpMed$      & \PDmlpSD      & $\PDmlpCI$ \\
+    \textbf{\texttt{gnn\_true}}      & $\PDtrue$     & $\PDtrueMed$     & \PDtrueSD     & $\PDtrueCI$ \\
+    \texttt{gnn\_wrong}              & $\PDwrong$    & $\PDwrongMed$    & \PDwrongSD    & $\PDwrongCI$ \\
+    \texttt{gnn\_complete}           & $\PDcomplete$ & $\PDcompleteMed$ & \PDcompleteSD & $\PDcompleteCI$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+A second, non-confirmatory cell (the unmodified $N{=}2$ task with the native
+channel left on, \PDzeroSeeds\ seeds) was pre-registered alongside the
+confirmatory cell above as a harness sanity anchor. It failed its own validity gate---both arms learn
+mid-run and then lose it, ending at or below that cell's random floor---so we
+rest nothing on it and report it, with the per-arm instability
+characterisation, in Appendix~\ref{app:transfer}.
+
 \paragraph{Scope of the positive endpoint.} These tasks are \emph{built} so
 that routing is necessary---the right design to isolate structure from
 capacity, convention, and observability, and the pre-registered plan. The
 result \emph{coexists with} the negative endpoint; it does not show the
-negative was wrong. The positive effect now reproduces out of harness in a
+negative was wrong. The positive effect reproduces out of harness in a
 structurally unrelated, non-spatial environment (\tokenmatch,
-\S\ref{sec:structure:tokenmatch}), so it is not a gridworld artefact; both
-\tokenmatch\ and \pairrouting\ are nonetheless purpose-built cooperative tasks
-with a private-partner-routing structure, and replication on a \emph{standard}
-third-party benchmark (an MPE/LBF variant with private per-agent goals)
-remains future work---we do not generalise beyond ``task-structured routing
-under partial information.'' For reproducibility, the $N{=}6$ headline is
-\emph{bit-identical} across two independent runs spanning a script
-refactor---genuine seed determinism, not relabelled copies.
+\S\ref{sec:structure:tokenmatch}), so it is not a gridworld artefact---but
+\tokenmatch\ and \pairrouting\ are both purpose-built cooperative tasks with a
+private-partner-routing structure, and the one transfer we attempted onto
+third-party dynamics did not carry the effect there. We therefore do
+\emph{not} claim external validity for the structure effect on that vehicle.
+The positive endpoint stands on the constructed archetypes on which it was
+measured---\pairrouting, \tokenmatch, and the deep-coordination-graph
+comparison of \S\ref{sec:structure:classical}---and we rescope the claim to
+those, generalising no further than ``task-structured routing under partial
+information.'' Whether the effect survives on a third-party benchmark remains
+open: our one pre-registered attempt did not settle it in favour of the graph,
+and settling it requires a vehicle on which this operator remains stable at a
+comparable budget---bounded observations, or an aggregator and optimisation
+setting chosen for stability rather than transplanted from the
+gridworld---which we leave to future work.
 
 % =========================================================================
 \section{Discussion}
@@ -2115,7 +2404,17 @@ routing---the discriminator is the task's information structure, not the
 architecture. The two readings coexist: a graph earns its keep
 exactly when it is the only path for task-structured information \emph{and}
 points at the right neighbours, and is neutral (or, unstabilised, harmful)
-otherwise.
+otherwise. Both endpoints are measured on tasks we constructed, and we tried to
+move the positive one onto third-party dynamics: a composed
+\texttt{simple\_reference} vehicle with a native private-partner-goal
+structure, pre-registered with an oracle gate and decision branches before the
+runs (\S\ref{sec:structure:transfer}). It did not transfer. The oracle gate
+passed---the task is solvable when the information is routed---yet all three
+graph arms diverged during training and finished below both the no-graph
+control and the random floor. That is a pre-registered failure to transfer
+accompanied by a characterised instability, and it bounds where we have
+\emph{measured} the effect rather than showing the effect absent on third-party
+benchmarks: on that vehicle the graph arms never converged.
 
 \paragraph{The active ingredient is topology, not the mechanism.} A
 pre-registered classical baseline (\S\ref{sec:structure:classical}) sharpens
@@ -2138,7 +2437,11 @@ baseline at the budgets tested (\gtrue\ vs.\ \mlpqmix: Welch
 $p_{\text{Holm}}{=}0.052$, MWU $p{=}0.078$; medians coincident; every DCG arm
 below \mlpqmix)---multi-hop information routing remains open for both, and the
 GNN's advantage over DCG there reflects DCG falling below the baseline, not the
-GNN routing above it.
+GNN routing above it. Completing that cell with its two missing within-GNN
+controls sharpens the negative rather than softening it: \gtrue, \gwrong\ and
+\gcomplete\ are mutually indistinguishable on the relay and none clears the
+no-comms control, a within-GNN null consistent with none of them routing it
+(\S\ref{sec:structure:classical}).
 \emph{This is a claim about a mechanism, not a verdict on any system}: we
 test the relational operators these methods rely on (a fixed GCN and learned
 graph attention) inside one controlled QMIX-style harness on
@@ -2288,7 +2591,18 @@ We list explicit limitations rather than burying them.
         (residual$+$LayerNorm converts the plain GCN's active harm to mere
         parity) but do not sweep the full stabilisation/normalisation design
         space, and learned message passing (\algoname{GIN}) and edge-feature
-        GNNs remain open.
+        GNNs remain open. The stabilised operator also has a \emph{stability}
+        boundary of its own, which we can locate but not explain: on the
+        composed third-party vehicle of \S\ref{sec:structure:transfer} all
+        three graph arms diverged during 150k-step training, while the same
+        stack trains stably on \coordgrid\ at identical hyperparameters. We
+        characterise that divergence (Appendix~\ref{app:transfer}) but did not
+        ablate its cause; residual$+$LayerNorm is a candidate we could not
+        test---the no-graph control, which has neither, destabilised in
+        \PDblowMlp\ of \PDseeds\ seeds too---so mechanism remains a hypothesis
+        rather than a finding, and a controlled ablation (residual/LayerNorm
+        $\times$ gradient clipping $\times$ learning rate) is the experiment
+        that would settle it.
   \item \textbf{Positive endpoint is a boundary result on constructed
         archetypes.} The positive boundary
         (Section~\ref{sec:results:structure}) is an existence/boundary result on
@@ -2301,11 +2615,26 @@ We list explicit limitations rather than burying them.
         environment, replicating across the structurally unrelated, non-spatial
         \tokenmatch\ (Section~\ref{sec:structure:tokenmatch}), so it is not a
         \coordgrid\ artefact. Both tasks nonetheless share a
-        private-partner-routing structure by construction; extending the
-        measurement to a standard third-party benchmark instantiating these
-        archetypes (an MPE/LBF variant with private per-agent goals) is the
-        natural next step, and we do not generalise beyond ``task-structured
-        routing under partial information.''
+        private-partner-routing structure by construction. We attempted the
+        extension to third-party dynamics rather than deferring it---a composed
+        \texttt{simple\_reference} vehicle whose private-partner-goal structure
+        is native, pre-registered with an oracle gate and decision branches
+        before the runs (\S\ref{sec:structure:transfer})---and it failed: the
+        oracle gate passed, so the task is solvable when routed, but every
+        graph arm diverged during training and finished below the no-graph
+        control. We therefore rescope the positive endpoint to the constructed
+        archetypes measured here and do not generalise beyond
+        ``task-structured routing under partial information.'' Note what the
+        attempt does \emph{not} show: because the graph arms never converged
+        there, it is not evidence that the structure effect is absent on
+        third-party tasks. Testing that needs a vehicle on which this operator
+        remains stable at a comparable budget---bounded observations, or an
+        aggregator and optimisation setting chosen for stability rather than
+        transplanted from the gridworld---and remains open. Three further
+        things stay ours by construction on that vehicle regardless of outcome
+        (the composition into pairs, the pairing graph, and disabling the
+        native communication channel), so it is not an unmodified benchmark
+        either.
   \item \textbf{Mis-specification is sampled only at the endpoints.} We contrast
         an exactly-correct graph against a fully-wrong matching and all-to-all,
         but not the intermediate case a practitioner faces---a graph with a
@@ -2319,14 +2648,16 @@ We list explicit limitations rather than burying them.
         narrow.} The 2-hop relay (cell C of \S\ref{sec:structure:classical})
         returned a pre-registered \emph{negative}: neither the GNN nor the deep
         coordination graph exceeded the no-comms \mlpqmix\ reference at 150k
-        steps, so we make no multi-hop routing claim. That cell is limited in
-        three ways: it carries no \texttt{gnn\_wrong}/\texttt{gnn\_complete}
-        arms, so it speaks only to GNN-vs-DCG and GNN-vs-MLP and cannot test
-        within-GNN structure-dependence on the relay; it was run at a single
-        (150k) budget, so we cannot rule out that either mechanism routes with
-        more training; and it is one constructed relay task. Whether message
-        passing separates from payoff propagation on genuine multi-hop routing,
-        and at what budget, remains open.
+        steps, so we make no multi-hop routing claim. The within-GNN controls
+        that cell originally lacked have since been added (12 seeds, 150k
+        steps, byte-identical parameters, pre-registered as an addendum):
+        \gtrue, \gwrong\ and \gcomplete\ are mutually indistinguishable and
+        none clears the no-comms \mlpqmix\ control, a within-GNN null
+        consistent with none of them routing the relay. Two limits remain: it
+        was run at a single (150k) budget, so we cannot rule out that either
+        mechanism routes with more training; and it is one constructed relay
+        task. Whether message passing separates from payoff propagation on
+        genuine multi-hop routing, and at what budget, remains open.
   \item \textbf{Single-CPU training.} We did not retune learning-rate /
         batch-size choices for GPU throughput.
   \item \textbf{Seed count.} The main CoordGrid and MPE sweep runs at
@@ -2388,10 +2719,14 @@ artefact. The practical rule that unifies the two: route along task-relevant
 edges, not all-to-all, only when agents must act on information held by
 specific others they cannot observe. The positive endpoint is a boundary
 result on constructed archetypes of distributed routing and referential
-signalling; extending it to a standard third-party benchmark that instantiates
-those archetypes (with private per-agent goals) is the natural next step. We
-release the harness and the \mlpqmix\ control to make such measurements
-cheaper.
+signalling. We attempted to extend it to a third-party vehicle with a native
+private-partner-goal structure under a pre-registered protocol: the task proved
+solvable when routed (an oracle arm beat the no-graph control by
+$\PDoracleGap$, $d{=}\PDoracleD$), but all three graph arms diverged during
+training and finished below that control, so we rescope the positive endpoint
+to the archetypes measured here and leave open whether it survives on a vehicle
+where this operator stays stable. We release the harness and the \mlpqmix\
+control to make such measurements cheaper.
 
 \section*{Broader Impact Statement}
 
@@ -2641,6 +2976,83 @@ once per episode exactly as for \coordgrid.
     \bottomrule
   \end{tabular}
 \end{table}
+
+% =========================================================================
+\section{The composed-MPE transfer attempt: instability characterisation and
+the $N{=}2$ cell}
+\label{app:transfer}
+
+This appendix supports \S\ref{sec:structure:transfer}. Every number is
+transcribed from the frozen analysis in \texttt{results/phaseD\_external/}.
+The confirmatory content of that cell is the three \gtrue-centred contrasts
+reported in the main text; everything in this appendix is descriptive or
+explicitly exploratory.
+
+\paragraph{Headroom fractions.} The pre-registration mandates reporting
+$(\text{arm}-\mlpc)/(\texttt{oracle}-\mlpc)$. On the mean-based denominator
+($\PDoracleGap$) the three graph arms score $\PDhrTrue$ (\gtrue), $\PDhrWrong$
+(\gwrong) and $\PDhrComplete$ (\gcomplete); on the median-based denominator
+($+20.77$) they score $\PDhrTrueMed$, $\PDhrWrongMed$ and $\PDhrCompleteMed$.
+All six are negative. The mean-based figures are the conservative ones, for the
+same reason the mean-based contrast is: \mlpc's own mean is depressed by its
+three unstable seeds.
+
+\paragraph{Instability characterisation (exploratory, not pre-registered).}
+Onset is the first episode at which the rolling-50-episode median gradient norm
+exceeds five times its own baseline (the median over episodes 1000--2000);
+exploration annealing completes at 120k of the \PDsteps\ steps, i.e.\ 80\% of
+the budget. Table~\ref{tab:transfer-instability} summarises. On a separate,
+return-based criterion (rolling-100 return falling 10 points below its own
+peak), 11 of \PDseeds\ \gtrue\ seeds turn over before annealing completes. The
+severity ordering tracks aggregation density (\gcomplete\ $>$ \gwrong\ $>$
+\gtrue), but we do not read that ordering as a mechanism: it is exploratory and
+unablated, and the no-graph control---which has neither residual connection nor
+LayerNorm---shows the same signature in \PDblowMlp\ of \PDseeds\ seeds. No
+return series in any arm contains a \texttt{NaN} or \texttt{Inf}; losses and
+gradient norms grow large but stay finite.
+
+\begin{table}[!ht]
+  \centering
+  \footnotesize
+  \caption{Instability characterisation on the composed
+  \texttt{simple\_reference} vehicle ($n{=}\PDseeds$ seeds per arm,
+  \PDsteps\ steps). ``Blow-ups'' counts seeds whose rolling gradient norm exceeds five
+  times its own baseline; ``onset'' is the median first such step across those
+  seeds; ``drop'' is the median loss from each run's peak rolling-100 return to
+  its final window. Descriptive and exploratory: no mechanism is claimed.}
+  \label{tab:transfer-instability}
+  \begin{tabular}{lrrrr}
+    \toprule
+    Arm & blow-ups & median onset (steps) & \% of budget & median peak$\to$final drop \\
+    \midrule
+    \texttt{oracle}        & 0 / \PDseeds  & n/a & n/a & 3.0 \\
+    \texttt{mlp}           & \PDblowMlp\ / \PDseeds & 140\,750 & 94 & \PDdropMlp \\
+    \texttt{gnn\_true}     & \PDblowTrue\ / \PDseeds & \phantom{0}98\,025 & \PDonsetHi & \PDdropTrue \\
+    \texttt{gnn\_wrong}    & \PDblowWrong\ / \PDseeds & \phantom{0}83\,250 & 56 & \PDdropWrong \\
+    \texttt{gnn\_complete} & \PDblowComplete\ / \PDseeds & \phantom{0}62\,350 & \PDonsetLo & \PDdropComplete \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\paragraph{The $N{=}2$ cell, reported without leaning on it.} A cheap
+non-confirmatory cell (cell E0) was pre-registered alongside the main one: the
+\emph{unmodified} $N{=}2$ \texttt{simple\_reference} task with its native
+communication channel left on, graph vs.\ no-graph, \PDzeroSeeds\ seeds. Its
+purpose was an honesty anchor---with the environment supplying its own channel,
+a graph should be superfluous. The two arms do not differ significantly
+($\PDzeroGap$, $\PDzeroGapCI$, $d{=}\PDzeroD$, Welch $p{=}0.11$, MWU
+$p{=}0.24$; graph $\PDzeroGnn$, median $\PDzeroGnnMed$; no-graph $\PDzeroMlp$,
+median $\PDzeroMlpMed$), but that tie cannot carry the intended reading,
+because the cell fails its own pre-registered validity gate: non-degenerate
+learning by both arms. Both arms do learn mid-run---peaks of $-22.9$ to $-26.2$
+(graph) and $-17.5$ to $-22.5$ (no-graph), all above this cell's random floor
+of $\PDzeroFloor$ (do-nothing $\PDzeroNoop$)---and then lose it, the graph arm
+in \PDzeroSeeds\ of \PDzeroSeeds\ seeds and the no-graph arm in 3 of
+\PDzeroSeeds, ending with both arm means at or below that floor. A tie between
+two post-divergence states is shared failure, not redundancy. We therefore
+withdraw the redundancy sentence this cell was pre-registered to supply, and
+report the cell as a second, independent instance of the same instability---at
+$N{=}2$, with communication on, in a setting where no routing is required.
 
 % =========================================================================
 \section{External validity on standard benchmarks: LBF and a SMAC check}

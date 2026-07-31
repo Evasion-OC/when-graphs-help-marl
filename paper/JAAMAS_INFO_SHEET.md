@@ -19,7 +19,10 @@ action selection), which likewise collapses to floor on wrong or dense graphs �
 the rule generalises across mechanism families; (iii) when coordination is
 convention-reducible or fully observed, the graph confers no benefit at matched
 capacity, and the commonly used unstabilised GCN operator is actively harmful — an
-optimisation pathology that stabilisation removes.
+optimisation pathology that stabilisation removes. The positive endpoint is
+scoped to the constructed archetypes on which it was measured: a pre-registered
+attempt to transfer it onto third-party MPE dynamics did not carry it there
+(Q2), and we report that attempt as the negative it was.
 
 This matters to the AAMAS community because coordination graphs originate here, yet
 modern graph-MARL papers rarely separate the contribution of *structure* from the
@@ -46,16 +49,34 @@ across arms:
   (n.s. vs GNN-QMIX) and collapses to floor on wrong/dense graphs (d > 12,
   p_holm < 1e-10) — establishing mechanism-agnostic structure-dependence. On a
   2-hop relay task, neither mechanism routes above a no-communication baseline at
-  150k steps; reported in full as a pre-registered negative.
+  150k steps; reported in full as a pre-registered negative. A pre-registered
+  addendum completes that relay cell with its two missing within-GNN controls:
+  the task-matched, wrong and all-to-all graph arms are mutually
+  indistinguishable there and none clears the no-communication control — a
+  within-GNN null.
+- **Attempted transfer to third-party dynamics (pre-registered, timestamp-
+  verifiable), reported as a negative:** we composed an MPE `simple_reference`
+  vehicle whose private-partner-goal structure is native, disabled its own
+  communication channel, and froze the arms, metric, contrast family, oracle
+  gate and decision branches before running. The oracle gate passed (+30.06 over
+  the no-graph control, d = 2.16, 12 seeds, 150k steps), so the task is solvable
+  when the information is routed — but all three graph arms diverged during
+  training and finished below both the no-graph control (task-matched graph
+  −35.96, d = −1.73, p_holm = 1.0e-3, MWU = 7.3e-4) and the random-policy floor.
+  We publish this as the pre-registered branch it landed on, characterise the
+  instability without claiming a mechanism for it, and rescope the positive
+  endpoint to the constructed archetypes on which it was measured.
 - **Negative endpoint:** at full information the graph confers no benefit over the
   byte-identical no-graph control; the unstabilised operator's penalty grows with
   team size and recurs on MPE simple_spread (directionally on LBF); residual +
   LayerNorm stabilisation restores parity on both tested topologies.
 - **Protocol:** n = 10–12 seeds per confirmatory cell, Holm-corrected Welch t and
   Mann–Whitney across the pre-declared contrast family, effect sizes and CIs
-  throughout; two pre-registrations are timestamp-verifiable in the public
-  repository's git history; all code, configurations, per-run manifests, and
-  analysis scripts are released.
+  throughout; three pre-registrations are timestamp-verifiable in the public
+  repository's git history (committed, with their decision rules and budget
+  freezes, strictly before the data they govern, in both wall-clock time and git
+  ancestry); all code, configurations, per-run manifests, and analysis scripts
+  are released.
 
 ## 3. What papers by other authors make the most closely related contributions, and how is your paper related to them?
 
