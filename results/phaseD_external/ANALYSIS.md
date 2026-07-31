@@ -115,7 +115,7 @@ mandates reporting this):
 |---|---:|---:|
 | `gnn_true` | **−1.196** | **−2.17** |
 | `gnn_wrong` | **−1.289** | **−2.62** |
-| `gnn_complete` | **−1.683** | **−3.13** |
+| `gnn_complete` | **−1.683** | **−3.14** |
 
 Median-based denominator = +20.77 (−42.81 − (−63.58)). Both are reported because
 the rest of this document pairs every E1 mean with a median; the **mean-based
