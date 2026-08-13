@@ -439,22 +439,21 @@ attribution: on
 \coordgrid, whose graph is the experimental variable, we fix the
 encoder, mixer, optimiser, and parameter count and add two isolators---a
 no-graph control (structure vs.\ capacity) and a density-matched
-\emph{wrong}-graph control (right edges vs.\ more). When an agent must act on
+\emph{wrong}-graph control. When an agent must act on
 private information held by a specific unobserved partner, the task-matched
 graph beats \emph{all-to-all} communication---which carries the partner's signal
-but must select it---the wrong graph, and the no-graph control, at matched
-parameters and observations (Cohen's $d\approx5$, complete separation at
-$n{=}12$, Holm-corrected). Learned attention recovers the signal only on the
+but must select it---the wrong graph, and the no-graph control (Cohen's
+$d\approx5$, complete separation at $n{=}12$, Holm-corrected). Learned attention recovers the signal only on the
 right graph: at $5\times$ the budget the gap widens ($d{\approx}5\!\to\!12$). A
 pre-registered classical baseline sharpens this: a deep coordination graph
 (max-plus) reproduces the 1-hop result and shares its
 structure-dependence, so the active ingredient is task-matched topology, not the
-message-passing mechanism; on a constructed 2-hop relay neither mechanism routes
+message-passing mechanism; on a 2-hop relay neither mechanism routes
 above a no-communication baseline, leaving multi-hop routing open. When
 coordination is instead full-information or convention-reducible, the same
 architecture confers \emph{no benefit} over the parameter-matched baseline; its
 common \emph{unstabilised} form is actively harmful, but stabilisation recovers
-parity. The rule applies only when the coordination
+parity. The rule applies only when the
 topology is known or estimable. These are constructed tasks; a pre-registered
 transfer onto a composed MPE vehicle found all graph arms diverging below the
 no-graph control, scoping the positive endpoint to the archetypes tested.

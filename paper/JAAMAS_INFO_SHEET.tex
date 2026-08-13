@@ -1,0 +1,148 @@
+% JAAMAS mandatory 1-2 page information sheet (regular paper).
+% Content is the authors' text from paper/JAAMAS_INFO_SHEET.md, typeset for
+% upload alongside the manuscript. Build:  pdflatex JAAMAS_INFO_SHEET
+\documentclass[10pt,a4paper]{article}
+\usepackage[margin=2cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+\setlist[itemize]{leftmargin=1.1em,itemsep=1pt,topsep=2pt,parsep=0pt}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{3pt}
+\pagestyle{empty}
+
+\newcommand{\Q}[1]{\vspace{4pt}\textbf{#1}\par\vspace{1pt}}
+
+\begin{document}
+{\large\textbf{Information Sheet}}\par\vspace{2pt}
+\textit{When Does Graph Structure Help in Multi-Agent Reinforcement Learning?
+A Controlled Boundary} --- Ali Jabbary and Kasra Ghanavati.
+\vspace{4pt}\hrule
+
+\Q{1. What is the main claim of the paper? Why is this an important
+contribution to the autonomous agents and multi-agent systems literature?}
+
+The main claim is a \textbf{design rule with measured boundaries}: adding a
+coordination graph to value-factorised cooperative MARL helps \emph{only} when
+the graph's edges match the task's information dependencies --- the right edges,
+not more edges --- and this is a property of the \emph{topology}, not of any one
+coordination mechanism. Concretely: (i)~when an agent must act on private
+information held by one specific, unobserved partner, a task-matched graph
+decisively outperforms all-to-all communication, a density-matched wrong graph,
+and a parameter-matched no-graph control (Cohen's $d \approx 5$, complete
+seed-level separation); (ii)~the same result is reproduced by a deep
+coordination graph in the classical Guestrin\,/\,Kok--Vlassis lineage (DCG with
+max-plus action selection), which likewise collapses to floor on wrong or dense
+graphs --- so the rule generalises across mechanism families; (iii)~when
+coordination is convention-reducible or fully observed, the graph confers no
+benefit at matched capacity, and the commonly used unstabilised GCN operator is
+actively harmful --- an optimisation pathology that stabilisation removes. The
+positive endpoint is scoped to the constructed archetypes on which it was
+measured: a pre-registered attempt to transfer it onto third-party MPE dynamics
+did not carry it there, and we report that attempt as the negative it was.
+
+This matters to the AAMAS community because coordination graphs originate here,
+yet modern graph-MARL papers rarely separate the contribution of \emph{structure}
+from the capacity and communication machinery that carries it. The paper supplies
+the missing controlled attribution --- two isolators (a byte-identical no-graph
+control; a density-matched wrong-graph control) --- and reconciles the field's
+conflicting positive and negative reports via the task's information structure.
+
+\Q{2. What is the evidence you provide to support your claim? Be precise.}
+
+Controlled experiments on two constructed archetypes (pair-routing: distributed
+task allocation under partial observability with private goals; TokenMatch:
+referential signalling) plus MPE, with fixed encoder, mixer, optimiser, and
+parameter count across arms:
+
+\begin{itemize}
+\item \textbf{Positive endpoint.} Task-matched graph vs.\ all-to-all\,/\,wrong-graph\,/\,no-graph
+at matched parameters and observations: $d \approx 5$ at 30k steps, growing to
+$d \approx 12$ at 150k (12 seeds, Welch\,+\,Holm and Mann--Whitney,
+$p_{\mathrm{Holm}} < 10^{-4}$, complete seed-level separation). Replicated
+out-of-harness on TokenMatch ($\sim$96\% of maximum vs.\ rivals far below).
+Learned attention (GAT\,/\,DGN) recovers the signal only on the right graph, at
+both tested budgets.
+
+\item \textbf{Classical baseline} (pre-registered, timestamp-verifiable). A
+steelman deep coordination graph (DCG, max-plus) \emph{matches} the 1-hop
+positive on the true graph (n.s.\ vs.\ GNN-QMIX) and collapses to floor on
+wrong\,/\,dense graphs ($d > 12$, $p_{\mathrm{Holm}} < 10^{-10}$) ---
+establishing mechanism-agnostic structure-dependence. On a 2-hop relay task,
+neither mechanism routes above a no-communication baseline at 150k steps;
+reported in full as a pre-registered negative. A pre-registered addendum
+completes that relay cell with its two missing within-GNN controls: the
+task-matched, wrong and all-to-all graph arms are mutually indistinguishable
+there and none clears the no-communication control --- a within-GNN null.
+
+\item \textbf{Attempted transfer to third-party dynamics} (pre-registered,
+timestamp-verifiable), reported as a negative. We composed an MPE
+\texttt{simple\_reference} vehicle whose private-partner-goal structure is
+native, disabled its own communication channel, and froze the arms, metric,
+contrast family, oracle gate and decision branches before running. The oracle
+gate passed ($+30.06$ over the no-graph control, $d = 2.16$, 12 seeds, 150k
+steps), so the task is solvable when the information is routed --- but all three
+graph arms diverged during training and finished below both the no-graph control
+(task-matched graph $-35.96$, $d = -1.73$, $p_{\mathrm{Holm}} = 1.0\times10^{-3}$,
+MWU $= 7.3\times10^{-4}$) and the random-policy floor. We publish this as the
+pre-registered branch it landed on, characterise the instability without claiming
+a mechanism for it, and rescope the positive endpoint to the constructed
+archetypes on which it was measured.
+
+\item \textbf{Negative endpoint.} At full information the graph confers no
+benefit over the byte-identical no-graph control; the unstabilised operator's
+penalty grows with team size and recurs on MPE \texttt{simple\_spread}
+(directionally on LBF); residual\,+\,LayerNorm stabilisation restores parity on
+both tested topologies.
+
+\item \textbf{Protocol.} $n = 10$--$12$ seeds per confirmatory cell,
+Holm-corrected Welch $t$ and Mann--Whitney across the pre-declared contrast
+family, effect sizes and CIs throughout; three pre-registrations are
+timestamp-verifiable in the public repository's git history (committed, with
+their decision rules and budget freezes, strictly before the data they govern,
+in both wall-clock time and git ancestry); all code, configurations, per-run
+manifests, and analysis scripts are released.
+\end{itemize}
+
+\Q{3. What papers by other authors make the most closely related contributions,
+and how is your paper related to them?}
+
+\begin{itemize}
+\item \textbf{Kok \& Vlassis}, \textit{JMLR} 7:1789--1828 (2006), and Sparse
+Cooperative Q-learning, \textit{ICML} 2004: established sparse-beats-dense for
+tabular payoff propagation over a known coordination graph. We test this lineage
+directly via its neural descendant and show the sparse-structure rule survives
+deep function approximation under partial observability and private state ---
+while adding the capacity-matched and wrong-graph controls the classical results
+did not run.
+\item \textbf{Guestrin, Koller \& Parr} (\textit{NIPS} 2001; \textit{ICML}
+2002); \textbf{Guestrin et al.}, \textit{JAIR} 19:399--468 (2003): origin of the
+coordination-graph formalism. Our environment's edge-factored reward is a
+pairwise-factored payoff in exactly this sense; our contribution is empirical
+attribution of the structure's value inside deep value-factorisation.
+\item \textbf{B\"ohmer, Kurin \& Whiteson}, \textit{ICML} 2020 (Deep
+Coordination Graphs): the modern deep CG; we run it as our pre-registered
+classical baseline.
+\item \textbf{Rashid et al.} (QMIX, \textit{ICML} 2018\,/\,\textit{JMLR} 2020)
+and the value-decomposition line (VDN, \textit{AAMAS} 2018): the factorisation
+backbone our harness holds fixed.
+\item \textbf{Agarwal et al.}, \textit{NeurIPS} 2021 (statistical precipice):
+the evaluation-rigor protocol our statistics follow.
+\item \textbf{Panait \& Luke}, \textit{JAAMAS} 11(3):387--434 (2005): the
+cooperative-MAL survey whose framing of coordination our boundary results refine.
+\end{itemize}
+
+\Q{4. Have you published parts of your paper before, for instance in a
+conference? If so, give details.}
+
+No part of this paper has been published in any archival venue, conference, or
+workshop, and no part is under review elsewhere. An earlier version was submitted
+to and rejected by TMLR (desk) and JAIR (desk, without review); neither
+constitutes a publication, and the manuscript has been substantially revised and
+extended since (the capacity-matched and wrong-graph controls, the 150k
+robustness study, and the pre-registered classical coordination-graph baseline
+are all new). There is no arXiv preprint at submission time.
+
+\end{document}
