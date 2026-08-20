@@ -420,7 +420,7 @@
 
 % --- Title block. ---------------------------------------------------------
 \title{When Does Graph Structure Help in Multi-Agent\\
-       Reinforcement Learning? A Controlled Boundary}
+       Reinforcement Learning? The Right Edges, Not More Edges}
 
 % Authors are hidden automatically in the anonymized build (\usepackage{tmlr}
 % with no option). They appear under [preprint] / [accepted].
@@ -2643,10 +2643,15 @@ We list explicit limitations rather than burying them.
         but not the intermediate case a practitioner faces---a graph with a
         \emph{fraction} of its partner edges correct. We therefore cannot say
         whether the benefit degrades gracefully or cliffs as the graph drifts
-        from correct; a partial-correctness sweep (edges correct in
-        $\{0,0.25,0.5,0.75,1\}$) would turn the binary right-vs-wrong contrast
-        into a graded mis-specification-cost curve and is the cheapest
-        decision-relevant extension.
+        from correct. The graded sweep this needs is pre-registered but not
+        run (\texttt{results/phaseE\_misspec/PREREGISTRATION.md}, committed
+        before submission). Note that the density-matched constraint bounds
+        which levels exist at all: a 1-regular graph cannot agree with the
+        task matching on exactly $m{-}1$ of its $m$ edges, so at $N{=}10$ the
+        achievable grid is $p\in\{0,0.2,0.4,0.6,1\}$ rather than an evenly
+        spaced one. Turning the binary right-vs-wrong contrast into a graded
+        mis-specification-cost curve remains the cheapest decision-relevant
+        extension.
   \item \textbf{Multi-hop routing is unresolved, and the relay cell is
         narrow.} The 2-hop relay (cell C of \S\ref{sec:structure:classical})
         returned a pre-registered \emph{negative}: neither the GNN nor the deep

@@ -1,4 +1,4 @@
-# When Does Graph Structure Help in Multi-Agent Reinforcement Learning? A Controlled Boundary
+# When Does Graph Structure Help in Multi-Agent Reinforcement Learning? The Right Edges, Not More Edges
 
 Code, data, and analysis artifact for the paper of the same name
 (Ali Jabbary, Kasra Ghanavati).
