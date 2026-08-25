@@ -62,6 +62,17 @@ SUBSTITUTIONS: list[tuple[str, str, str]] = [
         "disclaimer -- the underlying fact (raw EPyMARL logs are not shipped) "
         "still holds post-de-anonymization (de-anonymization sweep, spec item 5).",
     ),
+    (
+        "will be published with the de-anonymized repository.",
+        "are therefore recoverable in full even where the episode-level files "
+        "themselves are not shipped.",
+        "app:repro: the anonymized build promises per-episode logs will appear "
+        "on de-anonymization. Once the repository is public that promise is "
+        "checkable, and the episode-level CSVs for phaseC / phaseC_classical / "
+        "phaseD_external are deliberately gitignored (~364 MB). Replace the "
+        "promise with the guarantee that actually holds -- exact regeneration "
+        "from the shipped seeds and configs (de-anonymization sweep, spec item 5).",
+    ),
 ]
 
 # ---------------------------------------------------------------------------

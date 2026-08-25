@@ -52,6 +52,8 @@ paper/*.toc
 paper/*.synctex.gz
 paper/*.bcf
 paper/*.run.xml
+paper/*.fdb_latexmk
+paper/*.fls
 
 # Run stdout logs
 *.out

@@ -3621,7 +3621,7 @@ On raw data: the supplementary artifact ships every aggregate and per-contrast
 statistics CSV plus the exact per-run configuration (seed, hyperparameters,
 budget) for every run; per-episode logs are regenerated bit-identically from
 those configurations (training is fully seeded and deterministic on CPU) and
-will be published with the de-anonymized repository. The Level-Based Foraging
+are therefore recoverable in full even where the episode-level files themselves are not shipped. The Level-Based Foraging
 and SMAC checks (Appendix~\ref{app:standard}) were executed in the external
 \textsc{EPyMARL} framework; their summary statistics are reported in full in
 Table~\ref{tab:lbf}, and their raw logs live outside this artifact.
