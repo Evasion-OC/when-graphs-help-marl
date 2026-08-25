@@ -398,6 +398,31 @@ def main() -> None:
 
     OUTPUT_TEX.write_text(out, encoding="utf-8", newline="\n")
 
+    # --- 6. Completeness guard on the de-anonymization sweep ---------------
+    # Each substitution above asserts it matched exactly once, but nothing
+    # asserted the *result* is free of anonymized-build language. A fossil
+    # the table misses passes every downstream gate -- page count, overfull
+    # boxes, undefined references, the prohibited-claims grep -- and ships
+    # anonymous-submission wording into a single-blind journal. That is not
+    # hypothetical: the app:repro promise that per-episode logs would be
+    # published on de-anonymization survived two builds. Fail here rather
+    # than relying on someone remembering to grep the PDF.
+    anon_re = re.compile(r"anonymi|openreview|double-?blind|under review",
+                         re.IGNORECASE)
+    leaks = [
+        (n, line)
+        for n, line in enumerate(out.splitlines(), 1)
+        if anon_re.search(line) and not line.lstrip().startswith("%")
+    ]
+    if leaks:
+        for n, line in leaks:
+            print(f"  LEAK {OUTPUT_TEX.name}:{n}: {line.strip()}")
+        die("de-anonymization sweep incomplete -- anonymized-build language "
+            f"survives into {OUTPUT_TEX.name} ({len(leaks)} line(s) listed "
+            "above). Add a SUBSTITUTIONS entry for each, or extend this "
+            "guard if a hit is a genuine false positive.")
+    print(f"  de-anonymization guard: clean ({len(SUBSTITUTIONS)} applied)")
+
     n_words_abs = len(re.findall(r"[A-Za-z0-9][A-Za-z0-9\-']*",
                                   re.sub(r"\\[a-zA-Z]+\*?(\[[^\]]*\])?(\{[^{}]*\})?", " ",
                                          re.sub(r"[{}~]", " ", abstract_text))))
