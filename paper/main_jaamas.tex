@@ -2691,6 +2691,21 @@ We list explicit limitations rather than burying them.
         spaced one. Turning the binary right-vs-wrong contrast into a graded
         mis-specification-cost curve remains the cheapest decision-relevant
         extension.
+  \item \textbf{The graph is supplied, not discovered.} Every result here hands
+        the model its coordination graph exogenously---the task's own matching,
+        a density-matched permutation of it, all-to-all, or a $k$-NN proximity
+        graph---so our rule is conditional in the way a practitioner feels
+        directly: the right edges help only if you can obtain them. Where the
+        structure is given by the domain (a communication topology, a contact
+        network, an assignment the scheduler already holds) that condition is
+        met. Where it must instead be inferred from experience it is an open
+        problem with an active literature
+        \citep{duan_2024_ltscg,duan_2024_gacg,gupta_2026_dmcg}, and our own
+        controls are what make that literature hard to evaluate: a learned
+        graph that improves return has moved topology, selection, and capacity
+        together. We therefore do not claim that an inferred graph recovers the
+        effect we measure with a given one; applying these isolators to a
+        graph-inference method is the natural next test and remains open.
   \item \textbf{Multi-hop routing is unresolved, and the relay cell is
         narrow.} The 2-hop relay (cell C of \S\ref{sec:structure:classical})
         returned a pre-registered \emph{negative}: neither the GNN nor the deep
