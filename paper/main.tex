@@ -839,7 +839,14 @@ against a wrong-graph control. Closest in spirit,
 abstraction helps cooperative agents and find it improves sample efficiency on
 spatially structured tasks; they use a learned relational critic and measure
 return, however, and run neither a density-matched wrong-graph nor a
-parameter-matched no-graph control. Our positioning relative to this lineage is
+parameter-matched no-graph control. The line runs into 2026 without closing it:
+\algoname{DMCG} \citep{gupta_2026_dmcg} composes coordination graphs dynamically
+and goes further than most on capacity, adding capacity-scaled graph
+baselines---yet its no-graph arms are standard \algoname{VDN}/\algoname{QMIX}
+rather than parameter-matched controls, and no arm holds edge density fixed while
+making the topology wrong; a concurrent survey of GNN-based communication
+\citep{cuzinrambaud_2026_survey} finds the subfield still lacks a common
+framework for comparing them. Our positioning relative to this lineage is
 therefore specific rather than a claim of first-ever: \citet{kok_2004_sparseq}
 and \citet{kok_2006_payoffprop} established that sparse task structure beats
 dense for tabular payoff propagation with \emph{known} payoffs; our contribution
@@ -1137,10 +1144,10 @@ final-window returns. Three results:
         independent learning: \qmix\ (mean $84.02$, 95\% CI
         $[83.41, 84.62]$) $>$ \vdn\ (mean $66.02$, CI $[62.57, 69.48]$) $>$
         \iql\ (mean $34.62$, CI $[32.61, 36.64]$).\footnote{\vdn\ and \gnnqmix\
-        round to the same $66.02$ at two decimals ($66.023$ and $66.015$
-        respectively; Table~\ref{tab:phase1_summary}); this is a coincidence of
-        two independent runs, not a duplicated row---their CIs differ markedly
-        ($[62.57, 69.48]$ vs.\ $[57.11, 74.92]$).} The \iql\ vs.\ \vdn\ gap
+        both round to $66.02$ ($66.023$ vs.\ $66.015$;
+        Table~\ref{tab:phase1_summary}): a coincidence of two independent runs,
+        not a duplicated row---their CIs differ markedly ($[62.57, 69.48]$
+        vs.\ $[57.11, 74.92]$).} The \iql\ vs.\ \vdn\ gap
         is Holm-significant ($p_{\text{Holm}} < 0.001$) and the \iql\
         vs.\ \qmix\ gap strongly so ($p_{\text{Holm}} < 0.001$). The
         Phase-0 acceptance criterion is met.
