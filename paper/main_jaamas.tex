@@ -98,6 +98,21 @@
 % the few that would otherwise break badly.
 \tolerance=9999
 \emergencystretch=3em
+% xurl: let long DOI URLs in the bibliography break at many more points.
+% sn-basic.bst renders every DOI as \url{https://doi.org/10....}; without
+% extra break opportunities those are single unbreakable boxes, and the
+% justification slack they force shows up as underfull \hbox warnings in
+% the reference list. xurl only ADDS break points -- it changes no glyph,
+% no font, and no URL text.
+\usepackage{xurl}
+% Note on the three 'OT1/cmtt/bx/n not available' LaTeX Font Info lines in
+% this build's log: Computer Modern has no bold typewriter, and OT1cmtt.fd
+% already declares the ssub -> cmtt/m/n fallback, so those lines are emitted
+% BY that declared substitution -- re-declaring it here changes nothing
+% (verified). They are Font Info, not warnings. Do NOT 'fix' them by forcing
+% \textmd{} around \texttt{} in main.tex: main.tex is shared with the TMLR
+% build, whose lmodern DOES have a bold typewriter (T1/lmtt/b), so that edit
+% silently de-bolds genuinely bold table cells and headings in main.pdf.
 % sn-jnl.cls globally \gdef's \orcidlogo (via \includegraphics{Orcidlogo.eps},
 % an asset the template package does not ship) purely so its own \orcid{URL}
 % macro has something to call. The orcidlink package (self-contained, no
@@ -3061,7 +3076,7 @@ once per episode exactly as for \coordgrid.
 
 % =========================================================================
 \section{The composed-MPE transfer attempt: instability characterisation and
-the $N{=}2$ cell}
+the \texorpdfstring{$N{=}2$}{N=2} cell}
 \label{app:transfer}
 
 This appendix supports \S\ref{sec:structure:transfer}. Every number is
@@ -3116,7 +3131,7 @@ gradient norms grow large but stay finite.
   \end{tabular}
 \end{table}
 
-\paragraph{The $N{=}2$ cell, reported without leaning on it.} A cheap
+\paragraph{The \texorpdfstring{$N{=}2$}{N=2} cell, reported without leaning on it.} A cheap
 non-confirmatory cell (cell E0) was pre-registered alongside the main one: the
 \emph{unmodified} $N{=}2$ \texttt{simple\_reference} task with its native
 communication channel left on, graph vs.\ no-graph, \PDzeroSeeds\ seeds. Its
