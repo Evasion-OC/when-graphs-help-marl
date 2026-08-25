@@ -624,14 +624,19 @@ into a single ``when does it help'' statement rather than overturning it.
         to parity with the controls (Appendix~\ref{app:repaired}), so what
         survives for the stabilised operator is the weaker, robust
         \emph{no-benefit} claim.
-  \item We implement \iql, \vdn, \qmix, and \gnnqmix\ in a single harness
-        with shared encoder, mixer, optimiser, and exploration schedule
-        (Figure~\ref{fig:overview}B), so the only difference between
-        \gnnqmix\ and \qmix\ is the GNN. To isolate the graph from the
-        capacity it adds (Gap~2) we include \mlpqmix, a parameter-matched
-        no-graph control (byte-identical parameter count, no neighbour
-        aggregation); and \gatqmix, a graph-\emph{attention} variant that
-        tests whether the result is specific to the fixed GCN.
+  \item \textbf{A controlled-attribution design others can apply.} A graph
+        module changes architecture and capacity at once, so we pair every
+        graph arm with two isolators: \mlpqmix, a parameter-matched no-graph
+        control (byte-identical parameter count, no neighbour aggregation)
+        separating structure from capacity (Gap~2); and a density-matched
+        wrong-graph control separating the right edges from merely more
+        edges. Arms differ only in the graph, so a measured difference is
+        attributable to it. We instantiate this in one harness with \iql,
+        \vdn, \qmix, \gnnqmix, and \gatqmix\ (a graph-\emph{attention} variant
+        testing GCN-specificity) sharing encoder, mixer, optimiser, and
+        exploration schedule (Figure~\ref{fig:overview}B). The design is not
+        specific to our tasks or to \qmix, and we apply it unchanged at both
+        endpoints.
   \item We pre-register three falsifiable hypotheses
         (Section~\ref{sec:hypotheses}) and test them with a pilot,
         a graph-regime sweep, and a depth $\times$ diameter ablation
