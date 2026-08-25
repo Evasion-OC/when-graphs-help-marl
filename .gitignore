@@ -54,6 +54,8 @@ paper/*.bcf
 paper/*.run.xml
 paper/*.fdb_latexmk
 paper/*.fls
+# Submission source bundle: rebuilt on demand, contents already tracked
+paper/JAAMAS_source_files.zip
 
 # Run stdout logs
 *.out
